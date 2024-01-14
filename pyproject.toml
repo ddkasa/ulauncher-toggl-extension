@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "ulauncher-toggl-extension"
 version = "0.1.0"
-description = ""
+description = "Toggl time tracker extension for Ulauncher."
 authors = ["David Kasakaitis <davidkasakaitis@proton.me>"]
 readme = "README.md"
 
