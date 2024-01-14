@@ -1,0 +1,19 @@
+{
+  "required_api_version": "2",
+  "name": "Ulauncher Toggl Time Tracker Extension",
+  "description": "Toggl time tracker extension.",
+  "developer_name": "David Kasakaitis",
+  "icon": "images/icon.png",
+  "options": {
+    "query_debounce": 0.1
+  },
+  "preferences": [
+    {
+      "id": "toggl_keyword",
+      "type": "keyword",
+      "name": "Keyword",
+      "description": "Keyword for triggering the toggl extension",
+      "default_value": "tgl"
+    }
+  ]
+}
