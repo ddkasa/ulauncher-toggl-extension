@@ -20,6 +20,30 @@
       "type": "input",
       "name": "Default Project",
       "description": "Name of the default project you want to use."
+    },
+    {
+      "id": "toggl_config_location",
+      "type": "input",
+      "name": "Toggl Config",
+      "description": "Absolute path of your Togglrc file.",
+      "default_value": "~/.togglrc"
+    },
+    {
+      "id": "max_search_result",
+      "type": "select",
+      "name": "Maximum number of results",
+      "default_value": 10,
+      "options": [
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12"
+      ]
     }
   ]
 }
