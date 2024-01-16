@@ -3,7 +3,7 @@
   "name": "Ulauncher Toggl Time Tracker Extension",
   "description": "Toggl time tracker extension.",
   "developer_name": "David Kasakaitis",
-  "icon": "images/icon.png",
+  "icon": "images/icon.svg",
   "options": {
     "query_debounce": 0.1
   },
