@@ -5,8 +5,10 @@ from ulauncher.api.shared.action.RenderResultListAction import RenderResultListA
 from ulauncher.api.shared.event import ItemEnterEvent, KeywordQueryEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
+from ulauncher_toggl_extension.toggl import *
 
-class DemoExtension(Extension):
+
+class TogglExtension(Extension):
     def __init__(self):
         super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
@@ -29,4 +31,4 @@ class KeywordQueryEventListener(EventListener):
 
 
 if __name__ == "__main__":
-    DemoExtension().run()
+    TogglExtension().run()

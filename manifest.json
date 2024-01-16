@@ -14,6 +14,12 @@
       "name": "Keyword",
       "description": "Keyword for triggering the toggl extension",
       "default_value": "tgl"
+    },
+    {
+      "id": "project",
+      "type": "input",
+      "name": "Default Project",
+      "description": "Name of the default project you want to use."
     }
   ]
 }
