@@ -1,7 +1,7 @@
 {
   "required_api_version": "2",
-  "name": "Ulauncher Toggl Time Tracker Extension",
-  "description": "Toggl time tracker extension.",
+  "name": "Toggl Time Tracker",
+  "description": "Toggl tracker extension for managing time management tasks.",
   "developer_name": "David Kasakaitis",
   "icon": "images/icon.svg",
   "options": {
@@ -11,7 +11,7 @@
     {
       "id": "toggl_keyword",
       "type": "keyword",
-      "name": "Keyword",
+      "name": "Extension",
       "description": "Keyword for triggering the toggl extension",
       "default_value": "tgl"
     },
@@ -29,7 +29,7 @@
       "default_value": "~/.togglrc"
     },
     {
-      "id": "max_search_result",
+      "id": "max_search_results",
       "type": "select",
       "name": "Maximum number of results",
       "default_value": 10,
