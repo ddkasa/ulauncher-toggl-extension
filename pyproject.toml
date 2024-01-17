@@ -6,7 +6,8 @@ authors = ["David Kasakaitis <davidkasakaitis@proton.me>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "3.11.6"
+togglcli = "^2.4.4"
 
 
 [tool.poetry.group.dev.dependencies]
