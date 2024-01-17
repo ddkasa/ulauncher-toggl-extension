@@ -1,5 +1,6 @@
-from dataclasses import dataclass
 from typing import NamedTuple
+
+from toggl import api, tuils
 
 from ulauncher_toggl_extension.toggl import toggl_cli as tcli
 
@@ -14,16 +15,8 @@ class TogglTracker(NamedTuple):
     description: str
 
 
-class TrackerError(Exception):
-    """Exception related to anything todo with Toggl data."""
-
-
-class NotTrackingerror(TrackerError):
-    """Exception if a user is not tracking on Toggl."""
-
-
 class TogglManager:
-    def __init__(self) -> None:
+    def __init__(self, workspace_id: int) -> None:
         pass
 
     def collect_trackers(self):
