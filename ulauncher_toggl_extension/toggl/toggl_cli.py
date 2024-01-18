@@ -1,5 +1,6 @@
 import re
 import subprocess as sp
+from datetime import timedelta
 from typing import TYPE_CHECKING, Final, NamedTuple, Optional
 
 if TYPE_CHECKING:
@@ -66,20 +67,67 @@ class TogglCli:
     def check_running(self) -> TogglTracker | None:
         NOT_RUNNING = "There is no time entry running!"
 
-        cmd = [self.BASE_COMMAND, "now"]
+        cmd = ["now"]
 
-        run = sp.run(cmd, capture_output=True)
+        run = self.base_command(cmd)
 
-        if run.stdout == NOT_RUNNING:
+        if run == NOT_RUNNING:
             return
 
         return
+
+    def continue_tracker(self, *args) -> str:
+        cmd = ["continue"]
+        return self.base_command(cmd)
 
     def construct_tracker(self, data: dict) -> TogglTracker:
         tracker = TogglTracker(**data)
         return tracker
 
     def stop_tracker(self) -> str:
-        cmd = [self.BASE_COMMAND, "stop"]
+        cmd = ["stop"]
+        return self.base_command(cmd)
+
+    def start_tracker(
+        self,
+        tags: Optional[tuple[str, ...]] = None,
+        project: Optional[int | str] = None,
+    ) -> str:
+        cmd = ["start"]
+        if tags is not None:
+            cmd.append("-t")
+            tag_str = tags.join(",")
+            cmd.append(tag_str)
+        if project is not None:
+            cmd.append("-o")
+            cmd.append(str(project))
+
+        return self.base_command(cmd)
+
+    def add_tracker(
+        self,
+        name: str,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        tags: Optional[tuple[str, ...]] = None,
+        project: Optional[int | str] = None,
+    ) -> str:
+        cmd = ["add", name]
+        return self.base_command(cmd)
+
+    def base_command(self, cmd: list) -> str:
+        cmd.insert(0, self.BASE_COMMAND)
         run = sp.run(cmd, capture_output=True)
         return str(run.stdout)
+
+    def rm_tracker(self, tracker: int) -> str:
+        cmd = ["rm", str(tracker)]
+        return self.base_command(cmd)
+
+    def tracker_now(self) -> str:
+        cmd = ["now"]
+        return self.base_command(cmd)
+
+    def sum_tracker(self) -> str:
+        cmd = ["sum"]
+        return self.base_command(cmd)
