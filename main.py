@@ -1,8 +1,9 @@
 import logging
 import sys
 from pprint import pprint
-from typing import Iterable
+from typing import Callable, Iterable, Optional, is_typeddict
 
+from gi.repository import Notify
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
@@ -10,10 +11,11 @@ from ulauncher.api.shared.action.RenderResultListAction import RenderResultListA
 from ulauncher.api.shared.event import ItemEnterEvent, KeywordQueryEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
+from ulauncher_toggl_extension import util
 from ulauncher_toggl_extension.toggl.toggl_manager import (
+    NotificationParameters,
     QueryParameters,
     TogglManager,
-    TogglTracker,
 )
 
 
@@ -21,8 +23,9 @@ class TogglExtension(Extension):
     def __init__(self):
         super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
+        self.notification = None
 
-    def parse_query(self, query: list[str]) -> list:
+    def process_query(self, query: list[str]) -> list:
         tracker_obj = TogglManager(self.preferences)
 
         if len(query) == 1:
@@ -48,15 +51,31 @@ class TogglExtension(Extension):
         if results is None:
             defaults = tracker_obj.default_options(*query)
             return self.generate_results(defaults)
+        elif isinstance(results, NotificationParameters):
+            self.show_notification(results)
+            return HideWindowAction()
 
         return self.generate_results(results)
+
+    def show_notification(
+        self, data: NotificationParameters, on_close: Optional[Callable] = None
+    ):
+        icon = str(data.icon.absolute())
+        if not Notify.is_initted():
+            Notify.init("TogglExtension")
+        # icon = util.get_icon_path()
+        if self.notification is None:
+            self.notification = Notify.Notification.new(data.title, data.body, icon)
+        else:
+            self.notification.update(data.title, data.body, icon)
+        if on_close is not None:
+            self.notification.connect("closed", on_close)
+        self.notification.show()
 
     def generate_results(
         self, actions: Iterable[QueryParameters]
     ) -> list[ExtensionResultItem]:
         items = [ExtensionResultItem(**item._asdict()) for item in actions]
-
-        print(items)
 
         return items
 
@@ -64,7 +83,7 @@ class TogglExtension(Extension):
 class KeywordQueryEventListener(EventListener):
     def on_event(self, event: KeywordQueryEvent, extension: TogglExtension):
         query = event.get_query().split()
-        processed_query = extension.parse_query(query)
+        processed_query = extension.process_query(query)
 
         return RenderResultListAction(processed_query)
 
