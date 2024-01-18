@@ -32,12 +32,6 @@ class TogglManager:
             SetUserQueryAction("tgl cnt"),
         ),
         QueryParameters(
-            "images/tip.svg",
-            "Goal Tracker",
-            "Start a Toggl tracker with a goal duration.",
-            SetUserQueryAction("tgl gl"),
-        ),
-        QueryParameters(
             "images/start.svg",
             "Start",
             "Start a Toggl tracker",
@@ -48,6 +42,12 @@ class TogglManager:
             "Stop",
             "Stop the current Toggl tracker",
             SetUserQueryAction("tgl stp"),
+        ),
+        QueryParameters(
+            "images/start.svg",
+            "Add",
+            "Add a toggl time tracker at a specified time.",
+            SetUserQueryAction("tgl add"),
         ),
     )
 
@@ -106,9 +106,6 @@ class TogglManager:
 
     def summate_trackers(self, *args) -> None:
         img = "images/report.svg"
-
-    def goal_tracker(self, *args) -> None:
-        img = "images/tip.svg"
 
     def list_trackers(
         self, *args, post_method: Optional[MethodType] = None

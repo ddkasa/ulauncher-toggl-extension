@@ -41,7 +41,6 @@ class TogglExtension(Extension):
             "stp": tracker_obj.stop_tracker,
             "rm": tracker_obj.remove_tracker,
             "sum": tracker_obj.summate_trackers,
-            "gl": tracker_obj.summate_trackers,
             "ls": tracker_obj.list_trackers,
         }
 
