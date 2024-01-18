@@ -1,6 +1,7 @@
 import logging
 import sys
 from pprint import pprint
+from typing import Iterable
 
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -9,7 +10,11 @@ from ulauncher.api.shared.action.RenderResultListAction import RenderResultListA
 from ulauncher.api.shared.event import ItemEnterEvent, KeywordQueryEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
-from ulauncher_toggl_extension.toggl.toggl_manager import TogglManager, TogglTracker
+from ulauncher_toggl_extension.toggl.toggl_manager import (
+    QueryParameters,
+    TogglManager,
+    TogglTracker,
+)
 
 
 class TogglExtension(Extension):
@@ -21,7 +26,8 @@ class TogglExtension(Extension):
         tracker_obj = TogglManager(self.preferences)
 
         if len(query) == 1:
-            return self.generate_results({})
+            defaults = tracker_obj.default_options(*query)
+            return self.generate_results(defaults)
 
         query.pop(0)
 
@@ -38,21 +44,20 @@ class TogglExtension(Extension):
 
         method = QUERY_MATCH.get(query[0], tracker_obj.default_options)
 
-        results = method(query)
+        results = method(*query)
+        if results is None:
+            defaults = tracker_obj.default_options(*query)
+            return self.generate_results(defaults)
 
         return self.generate_results(results)
 
-    def generate_results(self, settings: dict) -> list:
-        items = []
-        for i in range(5):
-            items.append(
-                ExtensionResultItem(
-                    icon="images/icon.svg",
-                    name="Item %s" % i,
-                    description="Item description %s" % i,
-                    on_enter=HideWindowAction(),
-                )
-            )
+    def generate_results(
+        self, actions: Iterable[QueryParameters]
+    ) -> list[ExtensionResultItem]:
+        items = [ExtensionResultItem(**item._asdict()) for item in actions]
+
+        print(items)
+
         return items
 
 
