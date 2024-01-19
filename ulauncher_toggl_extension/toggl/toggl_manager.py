@@ -1,4 +1,5 @@
 import logging
+from functools import partial
 from pathlib import Path
 from types import MethodType
 from typing import Callable, NamedTuple, Optional
@@ -9,9 +10,16 @@ from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
 from ulauncher_toggl_extension.toggl import toggl_cli as tcli
 
+START_IMG = Path("images/start.svg")
+EDIT_IMG = Path("images/edit.svg")
+STOP_IMG = Path("images/stop.svg")
+DELETE_IMG = Path("images/delete.svg")
+CONTINUE_IMG = Path("images/continue.svg")
+REPORT_IMG = Path("images/report.svg")
+
 
 class QueryParameters(NamedTuple):
-    icon: str
+    icon: Path
     name: str
     description: str
     on_enter: Callable
@@ -26,25 +34,25 @@ class NotificationParameters(NamedTuple):
 class TogglManager:
     BASIC_TASKS = (
         QueryParameters(
-            "images/continue.svg",
+            CONTINUE_IMG,
             "Continue",
             "Continue the latest Toggl time tracker",
             SetUserQueryAction("tgl cnt"),
         ),
         QueryParameters(
-            "images/start.svg",
+            START_IMG,
             "Start",
             "Start a Toggl tracker",
             SetUserQueryAction("tgl stt"),
         ),
         QueryParameters(
-            "images/stop.svg",
+            STOP_IMG,
             "Stop",
             "Stop the current Toggl tracker",
             SetUserQueryAction("tgl stp"),
         ),
         QueryParameters(
-            "images/start.svg",
+            START_IMG,
             "Add",
             "Add a toggl time tracker at a specified time.",
             SetUserQueryAction("tgl add"),
@@ -66,27 +74,32 @@ class TogglManager:
     def default_options(self, *_) -> tuple[QueryParameters, ...]:
         return self.BASIC_TASKS
 
-    def continue_tracker(self, *args) -> tuple[QueryParameters]:
-        img = "images/continue.svg"
+    def continue_tracker(
+        self, *args
+    ) -> tuple[QueryParameters, ...] | NotificationParameters:
+        img = CONTINUE_IMG
 
-        if self.tcli.check_running() is not None:
-            return self.default_options(*args)
+        # if self.tcli.check_running() is not None:
+        #     return self.default_options(*args)
+        #
+        # if len(args) == 1:
+        #     return self.list_trackers(*args, post_method=self.continue_tracker)
 
-        if len(args) == 1:
-            return self.list_trackers(*args, post_method=self.continue_tracker)
+        cnt = self.tcli.continue_tracker(*args)
+        noti = NotificationParameters(cnt, img)
 
-        return ()
+        return noti
 
     def start_tracker(self, *args) -> None:
         # TODO: integrate @ for a project & # for tags
-        img = "images/start.svg"
+        img = START_IMG
 
         if len(args) == 1:
             return self.list_trackers(*args, post_method=self.start_tracker)
         return
 
     def add_tracker(self, *args) -> None:
-        img = "images/start.svg"
+        img = START_IMG
 
         msg = self.tcli.add_tracker(args[0])
 
@@ -95,23 +108,23 @@ class TogglManager:
         return
 
     def edit_tracker(self, *args) -> None:
-        img = "images/edit.svg"
+        img = EDIT_IMG
 
     def stop_tracker(self, *args) -> NotificationParameters:
-        img = Path("images/stop.svg")
+        img = STOP_IMG
         msg = self.tcli.stop_tracker()
         param = NotificationParameters(str(msg), img)
         return param
 
     def remove_tracker(self, *args) -> None:
-        img = "images/delete.svg"
+        img = DELETE_IMG
 
     def summate_trackers(self, *args) -> None:
-        img = "images/report.svg"
+        img = REPORT_IMG
 
     def list_trackers(
         self, *args, post_method: Optional[MethodType] = None
-    ) -> list[QueryParameters]:
-        img = "images/report.svg"
+    ) -> tuple[QueryParameters, ...]:
+        img = REPORT_IMG
         trackers = self.tcli.list_trackers()
         return ()
