@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Final, NamedTuple, Optional
 
 if TYPE_CHECKING:
-    from ulauncher_toggl_extension.toggl.toggl_manager import TogglManager
+    from ulauncher_toggl_extension.toggl.toggl_manager import TogglManager, TogglViewer
 
 
 class TogglTracker(NamedTuple):
@@ -24,7 +24,7 @@ class TogglCli:
     BASE_COMMAND: Final[str] = "toggl"
     __slots__ = ("_config_path", "_max_results", "_workspace_id", "_latest_trackers")
 
-    def __init__(self, parent: "TogglManager") -> None:
+    def __init__(self, parent: "TogglViewer | TogglManager") -> None:
         self._config_path = parent._config_path
         self._max_results = parent._max_results
         self._workspace_id = parent._workspace_id
