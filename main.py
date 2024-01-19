@@ -40,7 +40,7 @@ class TogglExtension(Extension):
             "cnt": tviewer.continue_tracker,
             "stp": tviewer.stop_tracker,
             "rm": tviewer.remove_tracker,
-            "sum": tviewer.summate_trackers,
+            "sum": tviewer.total_trackers,
             "ls": tviewer.list_trackers,
         }
 
@@ -57,7 +57,7 @@ class TogglExtension(Extension):
         self, actions: Iterable[QueryParameters]
     ) -> list[ExtensionResultItem]:
         results = []
-        for item in actions:
+        for i, item in enumerate(actions, start=1):
             action = ExtensionResultItem(
                 icon=str(item.icon),
                 name=item.name,
@@ -65,6 +65,9 @@ class TogglExtension(Extension):
                 on_enter=item.on_enter,
             )
             results.append(action)
+
+            if i == self.preferences["max_search_results"]:
+                break
 
         return results
 
@@ -79,8 +82,6 @@ class KeywordQueryEventListener(EventListener):
 
 class ItemEnterEventListener(EventListener):
     def on_event(self, event: ItemEnterEvent, extension: TogglExtension):
-        # event is instance of ItemEnterEvent
-        log.debug("Item Enter Event")
         data = event.get_data()
 
         if not data():
