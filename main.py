@@ -1,4 +1,4 @@
-import logging
+import logging as log
 import sys
 from pprint import pprint
 from typing import Callable, Iterable, Optional, is_typeddict
@@ -23,9 +23,10 @@ class TogglExtension(Extension):
     def __init__(self):
         super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
+        self.subscribe(ItemEnterEvent, ItemEnterEventListener())
         self.notification = None
 
-    def process_query(self, query: list[str]) -> list:
+    def process_query(self, query: list[str]) -> list | Callable:
         tracker_obj = TogglManager(self.preferences)
 
         if len(query) == 1:
@@ -52,7 +53,7 @@ class TogglExtension(Extension):
             return self.generate_results(defaults)
         elif isinstance(results, NotificationParameters):
             self.show_notification(results)
-            return HideWindowAction()
+            return HideWindowAction
 
         return self.generate_results(results)
 
@@ -74,9 +75,17 @@ class TogglExtension(Extension):
     def generate_results(
         self, actions: Iterable[QueryParameters]
     ) -> list[ExtensionResultItem]:
-        items = [ExtensionResultItem(**item._asdict()) for item in actions]
+        results = []
+        for item in actions:
+            action = ExtensionResultItem(
+                icon=str(item.icon),
+                name=item.name,
+                description=item.description,
+                on_enter=item.on_enter,
+            )
+            results.append(action)
 
-        return items
+        return results
 
 
 class KeywordQueryEventListener(EventListener):
@@ -87,6 +96,19 @@ class KeywordQueryEventListener(EventListener):
         return RenderResultListAction(processed_query)
 
 
+class ItemEnterEventListener(EventListener):
+    def on_event(self, event: ItemEnterEvent, extension: TogglExtension):
+        # event is instance of ItemEnterEvent
+        log.debug("Item Enter Event")
+        data = event.get_data()
+
+        log.debug(data)
+        # do additional actions here...
+
+        # you may want to return another list of results
+        return HideWindowAction(keep_app_open=False)
+
+
 if __name__ == "__main__":
-    logger = logging.getLogger(__name__)
+    logger = log.getLogger(__name__)
     TogglExtension().run()

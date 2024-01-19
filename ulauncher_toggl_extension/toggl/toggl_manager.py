@@ -88,6 +88,8 @@ class TogglManager:
     def add_tracker(self, *args) -> None:
         img = "images/start.svg"
 
+        msg = self.tcli.add_tracker(args[0])
+
         for item in args:
             pass
         return
