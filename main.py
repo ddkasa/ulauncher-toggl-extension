@@ -20,13 +20,20 @@ from ulauncher_toggl_extension.toggl.toggl_manager import (
 
 
 class TogglExtension(Extension):
+    __slots__ = "latest_trackers"
+
     def __init__(self):
         super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
         self.subscribe(ItemEnterEvent, ItemEnterEventListener())
 
+        self.latest_trackers = []
+
     def process_query(self, query: list[str]) -> list | Callable:
-        tviewer = TogglViewer(self.preferences)
+        tviewer = TogglViewer(self)
+
+        if not self.latest_trackers:
+            tviewer.tcli.list_trackers(refresh=True)
 
         if len(query) == 1:
             defaults = tviewer.default_options(*query)
@@ -83,8 +90,11 @@ class KeywordQueryEventListener(EventListener):
 class ItemEnterEventListener(EventListener):
     def on_event(self, event: ItemEnterEvent, extension: TogglExtension):
         data = event.get_data()
-
-        if not data():
+        execution = data()
+        if isinstance(execution, list):
+            log.debug("Display a lot more options")
+            return RenderResultListAction(extension.generate_results(execution))
+        if not execution:
             return SetUserQueryAction("tgl ")
 
         log.info("Successfuly excecuted %s", data)

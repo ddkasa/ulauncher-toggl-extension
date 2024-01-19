@@ -2,10 +2,11 @@ import logging as log
 from functools import cache, partial
 from pathlib import Path
 from types import MethodType
-from typing import Callable, NamedTuple, Optional
+from typing import TYPE_CHECKING, Callable, NamedTuple, Optional
 
 from gi.repository import Notify
 from ulauncher.api.shared.action.BaseAction import BaseAction
+from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 
@@ -14,6 +15,10 @@ from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
 from ulauncher_toggl_extension.toggl import toggl_cli as tcli
+
+if TYPE_CHECKING:
+    from main import TogglExtension
+
 
 START_IMG = Path("images/start.svg")
 EDIT_IMG = Path("images/edit.svg")
@@ -40,15 +45,23 @@ class NotificationParameters(NamedTuple):
 
 
 class TogglViewer:
-    __slots__ = ("_config_path", "_max_results", "_workspace_id", "tcli", "manager")
+    __slots__ = (
+        "_config_path",
+        "_max_results",
+        "_workspace_id",
+        "tcli",
+        "manager",
+        "extension",
+    )
 
-    def __init__(self, preferences: dict) -> None:
-        self._config_path = Path(preferences["toggl_config_location"])
-        self._max_results: int = preferences["max_search_results"]
-        self._workspace_id = preferences["project"]
+    def __init__(self, ext: "TogglExtension") -> None:
+        self.extension = ext
+        self._config_path = Path(ext.preferences["toggl_config_location"])
+        self._max_results: int = ext.preferences["max_search_results"]
+        self._workspace_id = ext.preferences["project"]
 
-        self.tcli = tcli.TogglCli(self)
-        self.manager = TogglManager(preferences)
+        self.tcli = tcli.TogglCli(ext)
+        self.manager = TogglManager(ext.preferences, tcli)
 
     @cache
     def default_options(self, *_) -> tuple[QueryParameters, ...]:
@@ -96,7 +109,7 @@ class TogglViewer:
                 "List",
                 f"View the last {self._max_results} trackers.",
                 ExtensionCustomAction(
-                    partial(self.manager.total_trackers), keep_app_open=True
+                    partial(self.manager.list_trackers), keep_app_open=True
                 ),
             ),
         )
@@ -115,6 +128,7 @@ class TogglViewer:
             ),
         )
 
+        self.tcli.list_trackers()
         return [base_param]
 
     def start_tracker(self, *args) -> list[QueryParameters]:
@@ -218,22 +232,22 @@ class TogglManager:
         "_config_path",
         "_max_results",
         "_workspace_id",
-        "tcli",
+        "cli",
         "notification",
     )
 
-    def __init__(self, preferences: dict) -> None:
+    def __init__(self, preferences: dict, cli: tcli.TogglCli) -> None:
         self._config_path = Path(preferences["toggl_config_location"])
         self._max_results: int = preferences["max_search_results"]
         self._workspace_id = preferences["project"]
 
-        self.tcli = tcli.TogglCli(self)
+        self.cli = cli
 
         self.notification = None
 
     def continue_tracker(self, *args) -> bool:
         img = CONTINUE_IMG
-        cnt = self.tcli.continue_tracker(*args)
+        cnt = self.cli.continue_tracker(*args)
         noti = NotificationParameters(cnt, img)
 
         self.show_notification(noti)
@@ -250,7 +264,7 @@ class TogglManager:
     def add_tracker(self, *args) -> bool:
         img = START_IMG
 
-        msg = self.tcli.add_tracker(args[0])
+        msg = self.cli.add_tracker(args[0])
 
         return True
 
@@ -259,7 +273,7 @@ class TogglManager:
 
     def stop_tracker(self, *args) -> bool:
         img = STOP_IMG
-        msg = self.tcli.stop_tracker()
+        msg = self.cli.stop_tracker()
         noti = NotificationParameters(str(msg), img)
         self.show_notification(noti)
         return True
@@ -274,10 +288,17 @@ class TogglManager:
 
     def list_trackers(
         self, *args, post_method: Optional[MethodType] = None
-    ) -> tuple[QueryParameters, ...]:
+    ) -> list[QueryParameters]:
         img = REPORT_IMG
-        trackers = self.tcli.list_trackers()
-        return ()
+        trackers = self.cli.list_trackers()
+        queries = []
+        for tracker in trackers:
+            param = QueryParameters(
+                img, tracker.description, tracker.stop, HideWindowAction()
+            )
+            queries.append(param)
+
+        return queries
 
     def show_notification(
         self, data: NotificationParameters, on_close: Optional[Callable] = None

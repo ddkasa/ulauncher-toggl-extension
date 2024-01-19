@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Final, NamedTuple, Optional
 
 if TYPE_CHECKING:
-    from ulauncher_toggl_extension.toggl.toggl_manager import TogglManager, TogglViewer
+    from main import TogglExtension
 
 
 class TogglTracker(NamedTuple):
@@ -13,56 +13,49 @@ class TogglTracker(NamedTuple):
     """
 
     description: str
-    entry_id: int
-    project: str
-    start: str
-    duration: str
-    stop: Optional[str] = None
+    entry_id: str
+    stop: str
+    project: Optional[str] = None
+    start: Optional[str] = None
+    duration: Optional[str] = None
 
 
 class TogglCli:
     BASE_COMMAND: Final[str] = "toggl"
-    __slots__ = ("_config_path", "_max_results", "_workspace_id", "_latest_trackers")
+    __slots__ = "extension"
 
-    def __init__(self, parent: "TogglViewer | TogglManager") -> None:
-        self._config_path = parent._config_path
-        self._max_results = parent._max_results
-        self._workspace_id = parent._workspace_id
+    def __init__(self, extension: "TogglExtension") -> None:
+        self.extension = extension
 
-        self._latest_trackers = []
+    def list_trackers(self, refresh: bool = False) -> list[TogglTracker]:
+        if not refresh:
+            return self.extension.latest_trackers
 
-    def list_trackers(self, refresh: bool = False) -> list:
         cmd = [
-            self.BASE_COMMAND,
             "ls",
             "--fields",
-            "description,id,project,stop",  # Toggl CLI really slow in adding additonal queries
+            "description,id,stop",  # Toggl CLI really slow when looking projects
         ]
+        # RIGHT_ALIGNED = {"start", "stop", "duration"}
+        run = self.base_command(cmd).splitlines()
+        self.extension.latest_trackers = []
+        checked_ids = set()
+        cnt = 1
+        for item in run:
+            if cnt == 1:
+                continue
+            # HACK/BUG: this will fail if any variable has more than 1 space within them
+            desc, toggl_id, stop = re.split(r"\s{2,}", item)
+            if toggl_id in checked_ids:
+                continue
+            checked_ids.add(toggl_id)
+            cnt += 1
+            tracker = TogglTracker(desc.strip(), toggl_id, stop.strip())
+            self.extension.latest_trackers.append(tracker)
+            if cnt == self.extension.preferences["max_search_results"]:
+                break
 
-        RIGHT_ALIGNED = {"start", "stop", "duration"}
-        self._latest_trackers = []
-        with sp.Popen(cmd, universal_newlines=True, bufsize=1, stdout=sp.PIPE) as shell:
-            for i, line in enumerate(shell.stdout):
-                if i == 0:
-                    continue
-
-                parts = re.split(r"{2,}", line.strip())
-                description, duration, start, stop, entry_id, project = parts
-                obj = TogglTracker(
-                    entry_id=int(entry_id),
-                    description=description,
-                    duration=duration,
-                    start=start,
-                    stop=stop,
-                    project=project,
-                )
-                self._latest_trackers.append(obj)
-
-        # Print the result
-        for item in self._latest_trackers:
-            print(item)
-
-        return self._latest_trackers
+        return self.extension.latest_trackers
 
     def check_running(self) -> TogglTracker | None:
         NOT_RUNNING = "There is no time entry running!"
@@ -78,6 +71,10 @@ class TogglCli:
 
     def continue_tracker(self, *args) -> str:
         cmd = ["continue"]
+
+        if len(args) == 2:
+            cmd.append(args[-1])
+
         return self.base_command(cmd)
 
     def construct_tracker(self, data: dict) -> TogglTracker:
@@ -96,7 +93,7 @@ class TogglCli:
         cmd = ["start"]
         if tags is not None:
             cmd.append("-t")
-            tag_str = tags.join(",")
+            tag_str = ",".join(tags)
             cmd.append(tag_str)
         if project is not None:
             cmd.append("-o")
@@ -115,10 +112,10 @@ class TogglCli:
         cmd = ["add", name]
         return self.base_command(cmd)
 
-    def base_command(self, cmd: list) -> str:
+    def base_command(self, cmd: list[str]) -> str:
         cmd.insert(0, self.BASE_COMMAND)
-        run = sp.run(cmd, capture_output=True)
-        return str(run.stdout)
+        run = sp.check_output(cmd, text=True)
+        return str(run)
 
     def rm_tracker(self, tracker: int) -> str:
         cmd = ["rm", str(tracker)]
