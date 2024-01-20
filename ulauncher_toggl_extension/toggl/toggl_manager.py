@@ -63,7 +63,7 @@ class TogglViewer:
         self.manager = TogglManager(ext)
 
     @cache
-    def default_options(self, *_) -> tuple[QueryParameters, ...]:
+    def default_options(self, *args) -> tuple[QueryParameters, ...]:
         BASIC_TASKS = (
             QueryParameters(
                 CONTINUE_IMG,
@@ -120,18 +120,29 @@ class TogglViewer:
     def continue_tracker(self, *args) -> list[QueryParameters]:
         img = CONTINUE_IMG
 
-        base_param = QueryParameters(
-            img,
-            "Continue",
-            "Continue the last tracker.",
-            ExtensionCustomAction(
-                partial(self.manager.continue_tracker, *args),
-                keep_app_open=False,
-            ),
+        base_param = [
+            QueryParameters(
+                img,
+                "Continue",
+                "Continue the last tracker.",
+                ExtensionCustomAction(
+                    partial(self.manager.continue_tracker, *args),
+                    keep_app_open=False,
+                ),
+            )
+        ]
+
+        trackers = self.manager.create_list_actions(
+            img=img,
+            post_method=ExtensionCustomAction,
+            custom_method=partial(self.manager.continue_tracker),
+            count_offset=-1,
+            text_formatter="Continue tracking {name}",
         )
 
-        self.tcli.list_trackers()
-        return [base_param]
+        base_param.extend(trackers)
+
+        return base_param
 
     def start_tracker(self, *args) -> list[QueryParameters]:
         # TODO: integrate @ for a project & # for tags
@@ -231,17 +242,17 @@ class TogglViewer:
 
 class TogglManager:
     __slots__ = (
-        "_config_path",
-        "_max_results",
-        "_workspace_id",
+        "config_path",
+        "max_results",
+        "workspace_id",
         "cli",
         "notification",
     )
 
     def __init__(self, ext: "TogglExtension") -> None:
-        self._config_path = ext.config_path
-        self._max_results = ext.max_results
-        self._workspace_id = ext.workspace_id
+        self.config_path = ext.config_path
+        self.max_results = ext.max_results
+        self.workspace_id = ext.workspace_id
 
         self.cli = tcli.TogglCli(ext.config_path, ext.max_results, ext.workspace_id)
 
@@ -265,7 +276,6 @@ class TogglManager:
 
     def add_tracker(self, *args) -> bool:
         img = START_IMG
-
         msg = self.cli.add_tracker(args[0])
 
         return True
@@ -289,14 +299,47 @@ class TogglManager:
         return True
 
     def list_trackers(
-        self, *args, post_method: Optional[MethodType] = None
+        self,
+        *args,
     ) -> list[QueryParameters]:
         img = REPORT_IMG
-        trackers = self.cli.list_trackers()
+
+        return self.create_list_actions(img)
+
+    def create_list_actions(
+        self,
+        img: Path,
+        post_method=DoNothingAction,
+        custom_method: Optional[partial] = None,
+        count_offset: int = 0,
+        text_formatter: str = "{stop}",
+        keep_open: bool = False,
+    ) -> list[QueryParameters]:
+        trackers = self.cli.list_trackers(refresh=True)
         queries = []
-        for tracker in trackers:
+        for i, tracker in enumerate(trackers, start=1):
+            if self.max_results - count_offset == i:
+                break
+
+            if custom_method is not None:
+                func = partial(custom_method, tracker)
+                meth = post_method(func, keep_app_open=keep_open)
+            else:
+                meth = post_method()
+
             param = QueryParameters(
-                img, tracker.description, tracker.stop, HideWindowAction()
+                img,
+                tracker.description,
+                text_formatter.format(
+                    stop=tracker.stop,
+                    tid=tracker.entry_id,
+                    name=tracker.description,
+                    project=tracker.project,
+                    tags=tracker.tags,
+                    start=tracker.start,
+                    duration=tracker.duration,
+                ),
+                meth,
             )
             queries.append(param)
 

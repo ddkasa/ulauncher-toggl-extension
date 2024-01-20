@@ -108,9 +108,10 @@ class ItemEnterEventListener(EventListener):
     def on_event(self, event: ItemEnterEvent, extension: TogglExtension):
         data = event.get_data()
         execution = data()
-        if isinstance(execution, list):
+        if not isinstance(execution, bool):
             log.debug("Display a lot more options")
-            return RenderResultListAction(extension.generate_results(execution))
+            results = extension.generate_results(execution)
+            return RenderResultListAction(results)
         if not execution:
             return SetUserQueryAction("tgl ")
 
