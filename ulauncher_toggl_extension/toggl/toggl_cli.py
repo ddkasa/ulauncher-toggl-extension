@@ -1,3 +1,4 @@
+import logging as log
 import re
 import subprocess as sp
 from datetime import timedelta
@@ -19,6 +20,7 @@ class TogglTracker(NamedTuple):
     project: Optional[str] = None
     start: Optional[str] = None
     duration: Optional[str] = None
+    tags: Optional[list[str]] = None
 
 
 class TogglCli:
@@ -38,6 +40,7 @@ class TogglCli:
         if not refresh:
             return self.latest_trackers
 
+        log.info("Refreshing Toggl tracker list.")
         cmd = [
             "ls",
             "--fields",
@@ -50,12 +53,13 @@ class TogglCli:
         cnt = 1
         for item in run:
             if cnt == 1:
+                cnt += 1
                 continue
             # HACK/BUG: this will fail if any variable has more than 1 space within them
             desc, toggl_id, stop = re.split(r"\s{2,}", item)
-            if toggl_id in checked_ids:
+            if desc in checked_ids:
                 continue
-            checked_ids.add(toggl_id)
+            checked_ids.add(desc)
             cnt += 1
             tracker = TogglTracker(desc.strip(), toggl_id, stop.strip())
             self.latest_trackers.append(tracker)
