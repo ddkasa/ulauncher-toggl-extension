@@ -1,5 +1,6 @@
 import logging as log
 import sys
+from pathlib import Path
 from pprint import pprint
 from typing import Callable, Iterable, Optional, is_typeddict
 
@@ -33,7 +34,7 @@ class TogglExtension(Extension):
         tviewer = TogglViewer(self)
 
         if not self.latest_trackers:
-            tviewer.tcli.list_trackers(refresh=True)
+            self.latest_trackers = tviewer.tcli.list_trackers(refresh=True)
 
         if len(query) == 1:
             defaults = tviewer.default_options(*query)
@@ -77,6 +78,22 @@ class TogglExtension(Extension):
                 break
 
         return results
+
+    @property
+    def config_path(self) -> Path:
+        return Path(self.preferences["toggl_config_location"])
+
+    @property
+    def workspace_id(self) -> int | None:
+        try:
+            return int(self.preferences["project"])
+        except ValueError:
+            log.warning("Default project not setup!")
+            return None
+
+    @property
+    def max_results(self) -> int:
+        return self.preferences["max_search_results"]
 
 
 class KeywordQueryEventListener(EventListener):
