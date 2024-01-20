@@ -1,6 +1,7 @@
 import re
 import subprocess as sp
 from datetime import timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING, Final, NamedTuple, Optional
 
 if TYPE_CHECKING:
@@ -22,14 +23,20 @@ class TogglTracker(NamedTuple):
 
 class TogglCli:
     BASE_COMMAND: Final[str] = "toggl"
-    __slots__ = "extension"
+    __slots__ = ("config_path", "max_results", "workspace_id", "latest_trackers")
 
-    def __init__(self, extension: "TogglExtension") -> None:
-        self.extension = extension
+    def __init__(
+        self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
+    ) -> None:
+        self.config_path = config_path
+        self.max_results = max_results
+        self.workspace_id = workspace_id
+
+        self.latest_trackers = []
 
     def list_trackers(self, refresh: bool = False) -> list[TogglTracker]:
         if not refresh:
-            return self.extension.latest_trackers
+            return self.latest_trackers
 
         cmd = [
             "ls",
@@ -38,7 +45,7 @@ class TogglCli:
         ]
         # RIGHT_ALIGNED = {"start", "stop", "duration"}
         run = self.base_command(cmd).splitlines()
-        self.extension.latest_trackers = []
+        self.latest_trackers = []
         checked_ids = set()
         cnt = 1
         for item in run:
@@ -51,11 +58,11 @@ class TogglCli:
             checked_ids.add(toggl_id)
             cnt += 1
             tracker = TogglTracker(desc.strip(), toggl_id, stop.strip())
-            self.extension.latest_trackers.append(tracker)
-            if cnt == self.extension.preferences["max_search_results"]:
+            self.latest_trackers.append(tracker)
+            if cnt == self.max_results:
                 break
 
-        return self.extension.latest_trackers
+        return self.latest_trackers
 
     def check_running(self) -> TogglTracker | None:
         NOT_RUNNING = "There is no time entry running!"

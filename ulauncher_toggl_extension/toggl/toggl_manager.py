@@ -55,13 +55,12 @@ class TogglViewer:
     )
 
     def __init__(self, ext: "TogglExtension") -> None:
-        self.extension = ext
-        self._config_path = Path(ext.preferences["toggl_config_location"])
-        self._max_results: int = ext.preferences["max_search_results"]
-        self._workspace_id = ext.preferences["project"]
+        self._config_path = ext.config_path
+        self._max_results = ext.max_results
+        self._workspace_id = ext.workspace_id
 
-        self.tcli = tcli.TogglCli(ext)
-        self.manager = TogglManager(ext.preferences, tcli)
+        self.tcli = tcli.TogglCli(ext.config_path, ext.max_results, ext.workspace_id)
+        self.manager = TogglManager(ext)
 
     @cache
     def default_options(self, *_) -> tuple[QueryParameters, ...]:
@@ -82,7 +81,10 @@ class TogglViewer:
                 STOP_IMG,
                 "Stop",
                 "Stop the current Toggl tracker",
-                SetUserQueryAction("tgl stp"),
+                ExtensionCustomAction(
+                    partial(self.manager.stop_tracker, *args),
+                    keep_app_open=False,
+                ),
             ),
             QueryParameters(
                 START_IMG,
@@ -236,12 +238,12 @@ class TogglManager:
         "notification",
     )
 
-    def __init__(self, preferences: dict, cli: tcli.TogglCli) -> None:
-        self._config_path = Path(preferences["toggl_config_location"])
-        self._max_results: int = preferences["max_search_results"]
-        self._workspace_id = preferences["project"]
+    def __init__(self, ext: "TogglExtension") -> None:
+        self._config_path = ext.config_path
+        self._max_results = ext.max_results
+        self._workspace_id = ext.workspace_id
 
-        self.cli = cli
+        self.cli = tcli.TogglCli(ext.config_path, ext.max_results, ext.workspace_id)
 
         self.notification = None
 
