@@ -130,7 +130,7 @@ class TogglViewer:
 
         return BASIC_TASKS
 
-    def continue_tracker(self, *args) -> list[QueryParameters]:
+    def continue_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = CONTINUE_IMG
 
         base_param = [
@@ -147,8 +147,7 @@ class TogglViewer:
 
         return base_param
 
-    def start_tracker(self, *args) -> list[QueryParameters]:
-        # TODO: integrate @ for a project & # for tags
+    def start_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = START_IMG
 
         base_param = [
@@ -175,7 +174,7 @@ class TogglViewer:
 
         return base_param
 
-    def add_tracker(self, *args) -> list[QueryParameters]:
+    def add_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = EDIT_IMG
         base_param = QueryParameters(
             img,
@@ -189,19 +188,19 @@ class TogglViewer:
 
         return [base_param]
 
-    def edit_tracker(self, *args) -> list[QueryParameters]:
+    def edit_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = EDIT_IMG
         params = QueryParameters(
             img,
             "Edit",
             "Edit a tracker.",
             ExtensionCustomAction(
-                partial(self.manager.edit_tracker, *args), keep_app_ope=True
+                partial(self.manager.edit_tracker, *args), keep_app_open=True
             ),
         )
         return [params]
 
-    def stop_tracker(self, *args) -> list[QueryParameters]:
+    def stop_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = STOP_IMG
         params = QueryParameters(
             img,
@@ -214,7 +213,7 @@ class TogglViewer:
         )
         return [params]
 
-    def remove_tracker(self, *args) -> list[QueryParameters]:
+    def remove_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = DELETE_IMG
         params = [
             QueryParameters(
@@ -239,7 +238,7 @@ class TogglViewer:
 
         return params
 
-    def total_trackers(self, *args) -> list[QueryParameters]:
+    def total_trackers(self, *args, **kwargs) -> list[QueryParameters]:
         img = REPORT_IMG
 
         params = QueryParameters(
@@ -253,7 +252,7 @@ class TogglViewer:
         return [params]
 
     def list_trackers(
-        self, *args, post_method: Optional[MethodType] = None
+        self, *args, post_method: Optional[MethodType] = None, **kwargs
     ) -> list[QueryParameters]:
         img = BROWSER_IMG
         params = QueryParameters(
@@ -310,13 +309,16 @@ class TogglManager:
         return True
 
     def add_tracker(self, *args) -> bool:
+        # TODO: integrate @ for a project & # for tags
         img = START_IMG
         msg = self.cli.add_tracker(args[0])
 
         return True
 
-    def edit_tracker(self, *args) -> None:
+    def edit_tracker(self, *args) -> bool:
         img = EDIT_IMG
+
+        return False
 
     def stop_tracker(self, *args) -> bool:
         img = STOP_IMG

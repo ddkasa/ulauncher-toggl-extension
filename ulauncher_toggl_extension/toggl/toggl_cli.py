@@ -36,6 +36,12 @@ class TogglCli:
 
         self.latest_trackers = []
 
+    def base_command(self, cmd: list[str]) -> str:
+        cmd.insert(0, self.BASE_COMMAND)
+        log.debug("Running subcommand: %s", " ".join(cmd))
+        run = sp.check_output(cmd, text=True)
+        return str(run)
+
     def list_trackers(self, refresh: bool = False) -> list[TogglTracker]:
         if not refresh:
             return self.latest_trackers
@@ -102,10 +108,6 @@ class TogglCli:
 
         return self.base_command(cmd)
 
-    def construct_tracker(self, data: dict) -> TogglTracker:
-        tracker = TogglTracker(**data)
-        return tracker
-
     def stop_tracker(self) -> str:
         cmd = ["stop"]
 
@@ -137,19 +139,20 @@ class TogglCli:
     def add_tracker(
         self,
         name: str,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
+        start: str,
+        stop: str,
         tags: Optional[tuple[str, ...]] = None,
         project: Optional[int | str] = None,
     ) -> str:
-        cmd = ["add", name]
-        return self.base_command(cmd)
+        cmd = ["add", start, stop, name]
+        if tags is not None:
+            cmd.append("-t")
+            cmd.append(",".join(tags))
+        if project is not None:
+            cmd.append("-o")
+            cmd.append(str(project))
 
-    def base_command(self, cmd: list[str]) -> str:
-        cmd.insert(0, self.BASE_COMMAND)
-        log.debug("Running subcommand: %s", " ".join(cmd))
-        run = sp.check_output(cmd, text=True)
-        return str(run)
+        return self.base_command(cmd)
 
     def rm_tracker(self, tracker: int) -> str:
         cmd = ["rm", str(tracker)]
