@@ -43,13 +43,20 @@ class TogglExtension(Extension):
         query.pop(0)
 
         QUERY_MATCH = {
+            "start": tviewer.start_tracker,
             "stt": tviewer.start_tracker,
             "add": tviewer.add_tracker,
+            "continue": tviewer.continue_tracker,
             "cnt": tviewer.continue_tracker,
+            "stop": tviewer.stop_tracker,
             "stp": tviewer.stop_tracker,
+            "delete": tviewer.remove_tracker,
+            "remove": tviewer.remove_tracker,
             "rm": tviewer.remove_tracker,
+            "report": tviewer.total_trackers,
             "sum": tviewer.total_trackers,
             "ls": tviewer.list_trackers,
+            "list": tviewer.list_trackers,
         }
 
         method = QUERY_MATCH.get(query[0], tviewer.default_options)
