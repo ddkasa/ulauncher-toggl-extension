@@ -26,7 +26,7 @@ class TogglTracker(NamedTuple):
 
 class TogglCli:
     BASE_COMMAND: Final[str] = "toggl"
-    __slots__ = ("config_path", "max_results", "workspace_id", "latest_trackers")
+    __slots__ = ("config_path", "max_results", "workspace_id")
 
     def __init__(
         self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
@@ -44,8 +44,17 @@ class TogglCli:
     def count_table(self, header: str) -> list[int]:
         return []
 
+    def cache_data(self, data: list, file_path: Path, time: datetime) -> None:
+        pass
+
+    def load_data(self, data: str, file_path: Path) -> dict:
+        return {}
+
 
 class TrackerCli(TogglCli):
+    __slots__ = "latest_trackers"
+    CACHE_LEN: Final[timedelta] = timedelta(days=1)
+
     def __init__(
         self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
     ) -> None:
@@ -112,7 +121,7 @@ class TrackerCli(TogglCli):
     def continue_tracker(self, *args) -> str:
         cmd = ["continue"]
 
-        if args and args[0] != "cnt":
+        if args and args[0] not in {"continue", "cnt"}:
             cmd.append("-s")
             cmd.append(args[0])
 
@@ -204,7 +213,8 @@ class TProject(NamedTuple):
 
 
 class TogglProjects(TogglCli):
-    __slots__ = ("project_list", "max_results", "default_config")
+    CACHE_LEN: Final[timedelta] = timedelta(weeks=1)
+    __slots__ = "project_list"
 
     def __init__(
         self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
@@ -213,7 +223,12 @@ class TogglProjects(TogglCli):
 
         self.project_list = []
 
-    def list_projects(self, *args, active: bool = True, **kwargs) -> list[TProject]:
+    def list_projects(
+        self, *args, active: bool = True, refresh: bool = False, **kwargs
+    ) -> list[TProject]:
+        if not refresh:
+            return self.project_list
+
         projects = []
 
         cmd = ["ls", "-f", "+hex_color,+active"]

@@ -15,7 +15,12 @@ from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
 from ulauncher_toggl_extension import toggl
-from ulauncher_toggl_extension.toggl import toggl_cli as tcli
+from ulauncher_toggl_extension.toggl.toggl_cli import (
+    TogglProjects,
+    TogglTracker,
+    TProject,
+    TrackerCli,
+)
 
 if TYPE_CHECKING:
     from main import TogglExtension
@@ -47,23 +52,25 @@ class NotificationParameters(NamedTuple):
 
 class TogglViewer:
     __slots__ = (
-        "_config_path",
-        "_max_results",
-        "_workspace_id",
-        "cli",
+        "config_path",
+        "max_results",
+        "default_project",
+        "tcli",
         "manager",
         "extension",
     )
 
     def __init__(self, ext: "TogglExtension") -> None:
-        self._config_path = ext.config_path
-        self._max_results = ext.max_results
-        self._workspace_id = ext.workspace_id
+        self.config_path = ext.config_path
+        self.max_results = ext.max_results
+        self.default_project = ext.default_project
 
-        self.cli = tcli.TogglCli(ext.config_path, ext.max_results, ext.workspace_id)
-        self.manager = TogglManager(ext)
+        self.tcli = TrackerCli(self.config_path, self.max_results, self.default_project)
+        self.manager = TogglManager(
+            self.config_path, self.max_results, self.default_project
+        )
 
-    def default_options(self, *args) -> list[QueryParameters]:
+    def default_options(self, *args, **kwargs) -> list[QueryParameters]:
         BASIC_TASKS = [
             QueryParameters(
                 START_IMG,
@@ -103,14 +110,14 @@ class TogglViewer:
             QueryParameters(
                 BROWSER_IMG,
                 "List",
-                f"View the last {self._max_results} trackers.",
+                f"View the last {self.max_results} trackers.",
                 ExtensionCustomAction(
                     partial(self.manager.list_trackers), keep_app_open=True
                 ),
             ),
         ]
 
-        current = self.cli.check_running()
+        current = self.tcli.check_running()
         if current is None:
             current = QueryParameters(
                 CONTINUE_IMG,
@@ -258,7 +265,7 @@ class TogglViewer:
         params = QueryParameters(
             img,
             "List",
-            f"View the last {self._max_results} trackers.",
+            f"View the last {self.max_results} trackers.",
             ExtensionCustomAction(
                 partial(self.manager.list_trackers, *args), keep_app_open=True
             ),
@@ -271,23 +278,25 @@ class TogglManager:
         "config_path",
         "max_results",
         "workspace_id",
-        "cli",
+        "tcli",
         "notification",
     )
 
-    def __init__(self, ext: "TogglExtension") -> None:
-        self.config_path = ext.config_path
-        self.max_results = ext.max_results
-        self.workspace_id = ext.workspace_id
+    def __init__(
+        self, config_path: Path, max_results: int, default_project: int | None
+    ) -> None:
+        self.config_path = config_path
+        self.max_results = max_results
+        self.workspace_id = default_project
 
-        self.cli = tcli.TogglCli(ext.config_path, ext.max_results, ext.workspace_id)
+        self.tcli = TrackerCli(self.config_path, self.max_results, self.workspace_id)
 
         self.notification = None
 
     def continue_tracker(self, *args) -> bool:
         img = CONTINUE_IMG
 
-        cnt = self.cli.continue_tracker(*args)
+        cnt = self.tcli.continue_tracker(*args)
         noti = NotificationParameters(cnt, img)
 
         self.show_notification(noti)
@@ -297,12 +306,12 @@ class TogglManager:
         # TODO: integrate @ for a project & # for tags
         img = START_IMG
 
-        if args and isinstance(args[0], tcli.TogglTracker):
+        if args and isinstance(args[0], TogglTracker):
             name = f'"{args[0].description}"'
         else:
             return False
 
-        cnt = self.cli.start_tracker(name=name)
+        cnt = self.tcli.start_tracker(name=name)
         noti = NotificationParameters(cnt, img)
 
         self.show_notification(noti)
@@ -311,7 +320,7 @@ class TogglManager:
     def add_tracker(self, *args) -> bool:
         # TODO: integrate @ for a project & # for tags
         img = START_IMG
-        msg = self.cli.add_tracker(args[0])
+        msg = self.tcli.add_tracker(*args)
 
         return True
 
@@ -322,20 +331,20 @@ class TogglManager:
 
     def stop_tracker(self, *args) -> bool:
         img = STOP_IMG
-        msg = self.cli.stop_tracker()
+        msg = self.tcli.stop_tracker()
         noti = NotificationParameters(str(msg), img)
         self.show_notification(noti)
         return True
 
-    def remove_tracker(self, toggl_id: int | tcli.TogglTracker) -> bool:
-        if isinstance(toggl_id, tcli.TogglTracker):
+    def remove_tracker(self, toggl_id: int | TogglTracker) -> bool:
+        if isinstance(toggl_id, TogglTracker):
             toggl_id = int(toggl_id.entry_id)
         elif not isinstance(toggl_id, int):
             return False
 
         img = DELETE_IMG
 
-        cnt = self.cli.rm_tracker(tracker=toggl_id)
+        cnt = self.tcli.rm_tracker(tracker=toggl_id)
         noti = NotificationParameters(cnt, img)
 
         self.show_notification(noti)
@@ -344,7 +353,7 @@ class TogglManager:
     def total_trackers(self, *args) -> list[QueryParameters]:
         img = REPORT_IMG
 
-        data = self.cli.sum_tracker()
+        data = self.tcli.sum_tracker()
         queries = []
         for day, time in data:
             param = QueryParameters(img, day, time, DoNothingAction())
@@ -371,7 +380,7 @@ class TogglManager:
         text_formatter: str = "Stopped: {stop}",
         keep_open: bool = False,
     ) -> list[QueryParameters]:
-        trackers = self.cli.list_trackers(refresh=True)
+        trackers = self.tcli.list_trackers(refresh=True)
         queries = []
 
         for i, tracker in enumerate(trackers, start=1):

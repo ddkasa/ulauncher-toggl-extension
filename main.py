@@ -33,7 +33,7 @@ class TogglExtension(Extension):
         tviewer = TogglViewer(self)
 
         if not self.latest_trackers:
-            self.latest_trackers = tviewer.cli.list_trackers(refresh=True)
+            self.latest_trackers = tviewer.tcli.list_trackers(refresh=True)
 
         if len(query) == 1:
             defaults = tviewer.default_options(*query)
@@ -113,7 +113,7 @@ class TogglExtension(Extension):
         return Path(self.preferences["toggl_config_location"])
 
     @property
-    def workspace_id(self) -> int | None:
+    def default_project(self) -> int | None:
         try:
             return int(self.preferences["project"])
         except ValueError:
