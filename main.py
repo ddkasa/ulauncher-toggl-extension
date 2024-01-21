@@ -12,7 +12,6 @@ from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 from ulauncher.api.shared.event import ItemEnterEvent, KeywordQueryEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
-from ulauncher_toggl_extension import util
 from ulauncher_toggl_extension.toggl.toggl_manager import (
     NotificationParameters,
     QueryParameters,
@@ -61,12 +60,35 @@ class TogglExtension(Extension):
 
         method = QUERY_MATCH.get(query[0], tviewer.default_options)
 
-        results = method(*query)
+        kwargs = self.parse_query(query)
+
+        results = method(*query, **kwargs)
         if results is None:
             defaults = tviewer.default_options(*query)
             return self.generate_results(defaults)
 
         return self.generate_results(results)
+
+    def parse_query(self, query: list[str]) -> dict[str, str]:
+        arguments = {}
+        for i, item in enumerate(query):
+            if i == 0:
+                arguments["action"] = item
+            elif item[0] == "#":
+                arguments["tags"] = item[1:]
+            elif item[0] == "@":
+                item = item[1:]
+                try:
+                    item = int(item)
+                except ValueError:
+                    pass
+                arguments["project"] = item
+            elif item[0] == ">":
+                arguments["start"] = item[1:]
+            elif item[0] == "<":
+                arguments["stop"] = item[1:]
+
+        return arguments
 
     def generate_results(
         self, actions: Iterable[QueryParameters]
