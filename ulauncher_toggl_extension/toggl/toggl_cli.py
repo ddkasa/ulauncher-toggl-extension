@@ -1,7 +1,8 @@
+import json
 import logging as log
 import re
 import subprocess as sp
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, NamedTuple, Optional
 
@@ -34,13 +35,22 @@ class TogglCli:
         self.max_results = max_results
         self.workspace_id = workspace_id
 
-        self.latest_trackers = []
-
     def base_command(self, cmd: list[str]) -> str:
         cmd.insert(0, self.BASE_COMMAND)
         log.debug("Running subcommand: %s", " ".join(cmd))
         run = sp.check_output(cmd, text=True)
         return str(run)
+
+    def count_table(self, header: str) -> list[int]:
+        return []
+
+
+class TrackerCli(TogglCli):
+    def __init__(
+        self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
+    ) -> None:
+        super().__init__(config_path, max_results, workspace_id)
+        self.latest_trackers = []
 
     def list_trackers(self, refresh: bool = False) -> list[TogglTracker]:
         if not refresh:
@@ -183,3 +193,35 @@ class TogglCli:
             days.append((day, time))
 
         return days
+
+
+class TProject(NamedTuple):
+    name: str
+    project_id: int
+    client: str
+    color: str
+    active: bool = True
+
+
+class TogglProjects(TogglCli):
+    __slots__ = ("project_list", "max_results", "default_config")
+
+    def __init__(
+        self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
+    ) -> None:
+        super().__init__(config_path, max_results, workspace_id)
+
+        self.project_list = []
+
+    def list_projects(self, *args, active: bool = True, **kwargs) -> list[TProject]:
+        projects = []
+
+        cmd = ["ls", "-f", "+hex_color,+active"]
+
+        run = self.base_command(cmd)
+
+        return projects
+
+    def base_command(self, cmd: list[str]) -> str:
+        cmd.insert(0, "projects")
+        return super().base_command(cmd)
