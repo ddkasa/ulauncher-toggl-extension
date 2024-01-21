@@ -69,16 +69,29 @@ class TogglCli:
         return self.latest_trackers
 
     def check_running(self) -> TogglTracker | None:
-        NOT_RUNNING = "There is no time entry running!"
+        # TODO: Optimise this to use the latest list tracker call instead
+        # for certain instances for more efficient usage
 
         cmd = ["now"]
 
-        run = self.base_command(cmd)
-
-        if run == NOT_RUNNING:
+        try:
+            run = self.base_command(cmd)
+        except sp.CalledProcessError:
             return
 
-        return
+        lines = run.splitlines()
+
+        desc, toggl_id = lines[0].split("#")
+        _, duration = lines[2].split(": ", maxsplit=1)
+        _, project = lines[3].split(": ", maxsplit=1)
+        _, start = lines[4].split(": ", maxsplit=1)
+
+        _, tags = lines[6].split(": ", maxsplit=1)
+        tracker = TogglTracker(
+            desc, toggl_id, "running", project, start, duration, tags.split(",")
+        )
+
+        return tracker
 
     def continue_tracker(self, *args) -> str:
         cmd = ["continue"]

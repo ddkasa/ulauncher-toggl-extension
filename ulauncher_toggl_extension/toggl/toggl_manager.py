@@ -19,7 +19,7 @@ from ulauncher_toggl_extension.toggl import toggl_cli as tcli
 if TYPE_CHECKING:
     from main import TogglExtension
 
-
+APP_IMG = Path("images/icon.svg")
 START_IMG = Path("images/start.svg")
 EDIT_IMG = Path("images/edit.svg")
 ADD_IMG = Path("images/add.svg")  # TODO: Needs to be created.
@@ -49,7 +49,7 @@ class TogglViewer:
         "_config_path",
         "_max_results",
         "_workspace_id",
-        "tcli",
+        "cli",
         "manager",
         "extension",
     )
@@ -59,18 +59,11 @@ class TogglViewer:
         self._max_results = ext.max_results
         self._workspace_id = ext.workspace_id
 
-        self.tcli = tcli.TogglCli(ext.config_path, ext.max_results, ext.workspace_id)
+        self.cli = tcli.TogglCli(ext.config_path, ext.max_results, ext.workspace_id)
         self.manager = TogglManager(ext)
 
-    @cache
-    def default_options(self, *args) -> tuple[QueryParameters, ...]:
-        BASIC_TASKS = (
-            QueryParameters(
-                CONTINUE_IMG,
-                "Continue",
-                "Continue the latest Toggl time tracker",
-                SetUserQueryAction("tgl cnt"),
-            ),
+    def default_options(self, *args) -> list[QueryParameters]:
+        BASIC_TASKS = [
             QueryParameters(
                 START_IMG,
                 "Start",
@@ -114,7 +107,22 @@ class TogglViewer:
                     partial(self.manager.list_trackers), keep_app_open=True
                 ),
             ),
-        )
+        ]
+
+        cnt = self.cli.check_running()
+        if cnt is None:
+            cnt = QueryParameters(
+                CONTINUE_IMG,
+                "Continue",
+                "Continue the latest Toggl time tracker",
+                SetUserQueryAction("tgl cnt"),
+            )
+        else:
+            cnt = QueryParameters(
+                APP_IMG, "Currently Running", cnt.description, DoNothingAction()
+            )
+
+        BASIC_TASKS.insert(0, cnt)
         return BASIC_TASKS
 
     def continue_tracker(self, *args) -> list[QueryParameters]:
@@ -300,10 +308,11 @@ class TogglManager:
         self.show_notification(noti)
         return True
 
-    def remove_tracker(self, *args) -> None:
+    def remove_tracker(self, *args) -> bool:
         img = DELETE_IMG
+        return True
 
-    def total_trackers(self, *args) -> None:
+    def total_trackers(self, *args) -> list[QueryParameters]:
         img = REPORT_IMG
 
         return True
