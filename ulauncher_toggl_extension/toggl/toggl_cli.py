@@ -159,6 +159,19 @@ class TogglCli:
         cmd = ["now"]
         return self.base_command(cmd)
 
-    def sum_tracker(self) -> str:
+    def sum_tracker(self) -> list[tuple[str, str]]:
         cmd = ["sum"]
-        return self.base_command(cmd)
+
+        run = self.base_command(cmd).splitlines()
+
+        days: list[tuple[str, str]] = []
+        for i, item in enumerate(run):
+            if i + 1 == self.max_results:
+                break
+            if i == 0:
+                continue
+            day = item[:12].strip()
+            time = item[12:].strip()
+            days.append((day, time))
+
+        return days

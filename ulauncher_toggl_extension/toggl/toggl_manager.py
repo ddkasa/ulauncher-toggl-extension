@@ -109,20 +109,24 @@ class TogglViewer:
             ),
         ]
 
-        cnt = self.cli.check_running()
-        if cnt is None:
-            cnt = QueryParameters(
+        current = self.cli.check_running()
+        if current is None:
+            current = QueryParameters(
                 CONTINUE_IMG,
                 "Continue",
                 "Continue the latest Toggl time tracker",
                 SetUserQueryAction("tgl cnt"),
             )
         else:
-            cnt = QueryParameters(
-                APP_IMG, "Currently Running", cnt.description, DoNothingAction()
+            current = QueryParameters(
+                APP_IMG,
+                f"Currently Running: {current.description}",
+                f"Since: {current.start} @{current.project}",
+                DoNothingAction(),
             )
 
-        BASIC_TASKS.insert(0, cnt)
+        BASIC_TASKS.insert(0, current)
+
         return BASIC_TASKS
 
     def continue_tracker(self, *args) -> list[QueryParameters]:
@@ -315,7 +319,15 @@ class TogglManager:
     def total_trackers(self, *args) -> list[QueryParameters]:
         img = REPORT_IMG
 
-        return True
+        data = self.cli.sum_tracker()
+        queries = []
+        for day, time in data:
+            param = QueryParameters(img, day, time, DoNothingAction())
+            # TODO: Possibly could show a break down of the topx trackers in
+            # the future.
+            queries.append(param)
+
+        return queries
 
     def list_trackers(
         self,
@@ -331,7 +343,7 @@ class TogglManager:
         post_method=DoNothingAction,
         custom_method: Optional[partial] = None,
         count_offset: int = 0,
-        text_formatter: str = "{stop}",
+        text_formatter: str = "Stopped: {stop}",
         keep_open: bool = False,
     ) -> list[QueryParameters]:
         trackers = self.cli.list_trackers(refresh=True)
@@ -347,10 +359,9 @@ class TogglManager:
             else:
                 meth = post_method()
 
-            param = QueryParameters(
-                img,
-                tracker.description,
-                text_formatter.format(
+            text = tracker.stop
+            if tracker.stop != "running":
+                text = text_formatter.format(
                     stop=tracker.stop,
                     tid=tracker.entry_id,
                     name=tracker.description,
@@ -358,7 +369,12 @@ class TogglManager:
                     tags=tracker.tags,
                     start=tracker.start,
                     duration=tracker.duration,
-                ),
+                )
+
+            param = QueryParameters(
+                img,
+                tracker.description,
+                text,
                 meth,
             )
             queries.append(param)
