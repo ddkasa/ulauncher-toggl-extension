@@ -153,14 +153,19 @@ class TogglCli:
 
     def rm_tracker(self, tracker: int) -> str:
         cmd = ["rm", str(tracker)]
-        return self.base_command(cmd)
+
+        try:
+            return self.base_command(cmd)
+        except sp.CalledProcessError as t:
+            log.error("Tracker deletion error: %s", t)
+            return "Tracker with id {tracker} does not exist!"
 
     def tracker_now(self) -> str:
         cmd = ["now"]
         return self.base_command(cmd)
 
     def sum_tracker(self) -> list[tuple[str, str]]:
-        cmd = ["sum"]
+        cmd = ["sum", "-st"]
 
         run = self.base_command(cmd).splitlines()
 

@@ -14,6 +14,7 @@ from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 ## from toggl import api, tuils
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
+from ulauncher_toggl_extension import toggl
 from ulauncher_toggl_extension.toggl import toggl_cli as tcli
 
 if TYPE_CHECKING:
@@ -215,16 +216,28 @@ class TogglViewer:
 
     def remove_tracker(self, *args) -> list[QueryParameters]:
         img = DELETE_IMG
-        params = QueryParameters(
-            img,
-            "Delete",
-            "Delete tracker.",
-            ExtensionCustomAction(
-                partial(self.manager.remove_tracker, *args),
-                keep_app_open=False,
-            ),
+        params = [
+            QueryParameters(
+                img,
+                "Delete",
+                "Delete tracker.",
+                ExtensionCustomAction(
+                    partial(self.manager.remove_tracker, *args),
+                    keep_app_open=False,
+                ),
+            )
+        ]
+        trackers = self.manager.create_list_actions(
+            img=img,
+            post_method=ExtensionCustomAction,
+            custom_method=partial(self.manager.remove_tracker),
+            count_offset=-1,
+            text_formatter="Delete tracker {name}",
         )
-        return [params]
+
+        params.extend(trackers)
+
+        return params
 
     def total_trackers(self, *args) -> list[QueryParameters]:
         img = REPORT_IMG
@@ -312,8 +325,18 @@ class TogglManager:
         self.show_notification(noti)
         return True
 
-    def remove_tracker(self, *args) -> bool:
+    def remove_tracker(self, toggl_id: int | tcli.TogglTracker) -> bool:
+        if isinstance(toggl_id, tcli.TogglTracker):
+            toggl_id = int(toggl_id.entry_id)
+        elif not isinstance(toggl_id, int):
+            return False
+
         img = DELETE_IMG
+
+        cnt = self.cli.rm_tracker(tracker=toggl_id)
+        noti = NotificationParameters(cnt, img)
+
+        self.show_notification(noti)
         return True
 
     def total_trackers(self, *args) -> list[QueryParameters]:
@@ -323,8 +346,8 @@ class TogglManager:
         queries = []
         for day, time in data:
             param = QueryParameters(img, day, time, DoNothingAction())
-            # TODO: Possibly could show a break down of the topx trackers in
-            # the future.
+            # TODO: Possibly could show a break down of the topx trackers for
+            # that given day the future instead of nothing.
             queries.append(param)
 
         return queries
