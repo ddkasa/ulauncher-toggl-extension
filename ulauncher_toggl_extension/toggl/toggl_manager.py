@@ -132,33 +132,35 @@ class TogglViewer:
             )
         ]
 
-        trackers = self.manager.create_list_actions(
-            img=img,
-            post_method=ExtensionCustomAction,
-            custom_method=partial(self.manager.continue_tracker),
-            count_offset=-1,
-            text_formatter="Continue tracking {name}",
-        )
-
-        base_param.extend(trackers)
-
         return base_param
 
     def start_tracker(self, *args) -> list[QueryParameters]:
         # TODO: integrate @ for a project & # for tags
         img = START_IMG
 
-        base_param = QueryParameters(
-            img,
-            "Start",
-            "Start a new tracker.",
-            ExtensionCustomAction(
-                partial(self.manager.start_tracker, *args),
-                keep_app_open=False,
-            ),
+        base_param = [
+            QueryParameters(
+                img,
+                "Start",
+                "Start a new tracker.",
+                ExtensionCustomAction(
+                    partial(self.manager.start_tracker, *args),
+                    keep_app_open=False,
+                ),
+            )
+        ]
+
+        trackers = self.manager.create_list_actions(
+            img=img,
+            post_method=ExtensionCustomAction,
+            custom_method=partial(self.manager.start_tracker),
+            count_offset=-1,
+            text_formatter="Start tracking {name}",
         )
 
-        return [base_param]
+        base_param.extend(trackers)
+
+        return base_param
 
     def add_tracker(self, *args) -> list[QueryParameters]:
         img = EDIT_IMG
@@ -260,6 +262,7 @@ class TogglManager:
 
     def continue_tracker(self, *args) -> bool:
         img = CONTINUE_IMG
+
         cnt = self.cli.continue_tracker(*args)
         noti = NotificationParameters(cnt, img)
 
@@ -270,8 +273,15 @@ class TogglManager:
         # TODO: integrate @ for a project & # for tags
         img = START_IMG
 
-        if len(args) == 1:
+        if args and isinstance(args[0], tcli.TogglTracker):
+            name = f'"{args[0].description}"'
+        else:
             return False
+
+        cnt = self.cli.start_tracker(name=name)
+        noti = NotificationParameters(cnt, img)
+
+        self.show_notification(noti)
         return True
 
     def add_tracker(self, *args) -> bool:
@@ -317,6 +327,7 @@ class TogglManager:
     ) -> list[QueryParameters]:
         trackers = self.cli.list_trackers(refresh=True)
         queries = []
+
         for i, tracker in enumerate(trackers, start=1):
             if self.max_results - count_offset == i:
                 break

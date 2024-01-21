@@ -83,8 +83,9 @@ class TogglCli:
     def continue_tracker(self, *args) -> str:
         cmd = ["continue"]
 
-        if len(args) == 2:
-            cmd.append(args[-1])
+        if args and args[0] != "cnt":
+            cmd.append("-s")
+            cmd.append(args[0])
 
         return self.base_command(cmd)
 
@@ -94,14 +95,22 @@ class TogglCli:
 
     def stop_tracker(self) -> str:
         cmd = ["stop"]
-        return self.base_command(cmd)
+
+        try:
+            run = self.base_command(cmd)
+        except sp.CalledProcessError as t:
+            log.error("Stopping tracker unsucessful: %s", t)
+            run = "Toggl tracker not running!"
+
+        return run
 
     def start_tracker(
         self,
+        name: str,
         tags: Optional[tuple[str, ...]] = None,
         project: Optional[int | str] = None,
     ) -> str:
-        cmd = ["start"]
+        cmd = ["start", name]
         if tags is not None:
             cmd.append("-t")
             tag_str = ",".join(tags)
@@ -125,6 +134,7 @@ class TogglCli:
 
     def base_command(self, cmd: list[str]) -> str:
         cmd.insert(0, self.BASE_COMMAND)
+        log.debug("Running subcommand: %s", " ".join(cmd))
         run = sp.check_output(cmd, text=True)
         return str(run)
 
