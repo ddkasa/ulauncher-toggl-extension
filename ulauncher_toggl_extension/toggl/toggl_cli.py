@@ -2,9 +2,10 @@ import json
 import logging as log
 import re
 import subprocess as sp
+from abc import ABCMeta, abstractmethod
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Final, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Final, NamedTuple, Optional
 
 if TYPE_CHECKING:
     from main import TogglExtension
@@ -24,9 +25,9 @@ class TogglTracker(NamedTuple):
     tags: Optional[list[str]] = None
 
 
-class TogglCli:
+class TogglCli(metaclass=ABCMeta):
     BASE_COMMAND: Final[str] = "toggl"
-    __slots__ = ("config_path", "max_results", "workspace_id")
+    __slots__ = ("config_path", "max_results", "workspace_id", "_cache_path")
 
     def __init__(
         self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
@@ -34,6 +35,9 @@ class TogglCli:
         self.config_path = config_path
         self.max_results = max_results
         self.workspace_id = workspace_id
+
+        self._cache_path = Path(__file__).parents[2] / "cache"
+        self._cache_path.mkdir(parents=True, exist_ok=True)
 
     def base_command(self, cmd: list[str]) -> str:
         cmd.insert(0, self.BASE_COMMAND)
@@ -44,16 +48,37 @@ class TogglCli:
     def count_table(self, header: str) -> list[int]:
         return []
 
-    def cache_data(self, data: list, file_path: Path, time: datetime) -> None:
-        pass
+    def cache_data(self, data: list) -> None:
+        log.debug(f"Caching new data to {self.cache_path}")
+        data = data.copy()
+        data.append(datetime.now())
+        with self.cache_path.open("w", encoding="utf-8") as file:
+            file.write(json.dumps(data, cls=CustomSerializer))
 
-    def load_data(self, data: str, file_path: Path) -> dict:
-        return {}
+    def load_data(self) -> list | None:
+        log.debug(f"Loading cached data from {self.cache_path}")
+        with self.cache_path.open("r", encoding="utf-8") as file:
+            data = json.loads(file.read(), cls=CustomDeserializer)
+
+        date = data.pop(0)
+        if datetime.now() - self.CACHE_LEN <= date:
+            return
+
+        return data
+
+    @property
+    @abstractmethod
+    def cache_path(self) -> Path:
+        return self._cache_path
+
+    @property
+    @abstractmethod
+    def CACHE_LEN(self) -> timedelta:
+        return timedelta()
 
 
 class TrackerCli(TogglCli):
     __slots__ = "latest_trackers"
-    CACHE_LEN: Final[timedelta] = timedelta(days=1)
 
     def __init__(
         self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
@@ -62,14 +87,20 @@ class TrackerCli(TogglCli):
         self.latest_trackers = []
 
     def list_trackers(self, refresh: bool = False) -> list[TogglTracker]:
-        if not refresh:
+        if not refresh and self.latest_trackers:
             return self.latest_trackers
+
+        if not refresh and self.cache_path.exists():
+            data = self.load_data()
+            if isinstance(data, list):
+                return data
 
         log.info("Refreshing Toggl tracker list.")
         cmd = [
             "ls",
             "--fields",
-            "description,id,stop",  # Toggl CLI really slow when looking projects
+            "description,id,stop",
+            # Toggl CLI really slow when looking projects
         ]
         # RIGHT_ALIGNED = {"start", "stop", "duration"}
         run = self.base_command(cmd).splitlines()
@@ -90,6 +121,8 @@ class TrackerCli(TogglCli):
             self.latest_trackers.append(tracker)
             if cnt == self.max_results:
                 break
+
+        self.cache_data(self.latest_trackers)
 
         return self.latest_trackers
 
@@ -203,6 +236,14 @@ class TrackerCli(TogglCli):
 
         return days
 
+    @property
+    def cache_path(self) -> Path:
+        return super().cache_path / Path("tracker_history.json")
+
+    @property
+    def CACHE_LEN(self) -> timedelta:
+        return timedelta(days=1)
+
 
 class TProject(NamedTuple):
     name: str
@@ -213,7 +254,6 @@ class TProject(NamedTuple):
 
 
 class TogglProjects(TogglCli):
-    CACHE_LEN: Final[timedelta] = timedelta(weeks=1)
     __slots__ = "project_list"
 
     def __init__(
@@ -240,3 +280,59 @@ class TogglProjects(TogglCli):
     def base_command(self, cmd: list[str]) -> str:
         cmd.insert(0, "projects")
         return super().base_command(cmd)
+
+    @property
+    def cache_path(self) -> Path:
+        return super().cache_path / Path("tracker_history.json")
+
+    @property
+    def CACHE_LEN(self) -> timedelta:
+        return timedelta(weeks=1)
+
+
+class CustomSerializer(json.JSONEncoder):
+    def encode(  # pyright: ignore [reportIncompatibleMethodOverride]
+        self, obj: Any
+    ) -> str:
+        if isinstance(obj, list):
+            new_obj = []
+            for item in obj:
+                if isinstance(item, (TProject, TogglTracker)):
+                    name = type(item).__name__
+                    item = item._asdict()
+                    item["data type"] = name
+                new_obj.append(item)
+
+            return super().encode(new_obj)
+        return super().encode(obj)
+
+    def default(self, obj):  # pyright: ignore [reportIncompatibleMethodOverride]
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+
+class CustomDeserializer(json.JSONDecoder):
+    def decode(  # pyright: ignore [reportIncompatibleMethodOverride]
+        self, obj, **kwargs
+    ) -> Any:
+        obj = super().decode(obj, **kwargs)
+
+        decoded_obj = []
+        for item in obj:
+            if isinstance(item, dict):
+                dt = item.get("data type")
+                if dt is not None:
+                    item.pop("data type")
+                    if dt == "TProject":
+                        item = TProject(**item)
+                    elif dt == "TogglTracker":
+                        item = TogglTracker(**item)
+
+            elif isinstance(item, str):
+                item = datetime.fromisoformat(item)
+                decoded_obj.insert(0, item)
+
+            decoded_obj.append(item)
+
+        return decoded_obj

@@ -116,7 +116,6 @@ class TogglViewer:
                 ),
             ),
         ]
-
         current = self.tcli.check_running()
         if current is None:
             current = QueryParameters(
@@ -380,7 +379,7 @@ class TogglManager:
         text_formatter: str = "Stopped: {stop}",
         keep_open: bool = False,
     ) -> list[QueryParameters]:
-        trackers = self.tcli.list_trackers(refresh=True)
+        trackers = self.tcli.list_trackers()
         queries = []
 
         for i, tracker in enumerate(trackers, start=1):
@@ -418,7 +417,7 @@ class TogglManager:
     def show_notification(
         self, data: NotificationParameters, on_close: Optional[Callable] = None
     ) -> None:
-        icon = str(data.icon.absolute())
+        icon = str(Path(__file__).parents[2] / data.icon)
         if not Notify.is_initted():
             Notify.init("TogglExtension")
         if self.notification is None:

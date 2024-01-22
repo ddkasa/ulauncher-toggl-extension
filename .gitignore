@@ -1,2 +1,8 @@
+# env
 .venv
+
+# compliation
 __pycache__
+
+# toggl cache
+cache
