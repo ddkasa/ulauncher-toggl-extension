@@ -139,7 +139,7 @@ class TrackerCli(TogglCli):
             "ls",
             "--fields",
             "+project,+id,+tags",
-            # Toggl CLI really slow when looking for projects
+            # BUG: Toggl CLI really slow when looking for projects
         ]
         run = self.base_command(cmd).splitlines()
         header_size = self.count_table(run[0])
@@ -316,16 +316,52 @@ class TogglProjects(TogglCli):
     def list_projects(
         self, *args, active: bool = True, refresh: bool = False, **kwargs
     ) -> list[TProject]:
-        if not refresh:
+        if not refresh and self.project_list:
             return self.project_list
 
-        projects = []
+        if not refresh and self.cache_path.exists():
+            data = self.load_data()
+            if isinstance(data, list):
+                return data
+
+        self.project_list = []
 
         cmd = ["ls", "-f", "+hex_color,+active"]
 
-        run = self.base_command(cmd)
+        run = self.base_command(cmd).splitlines()
+        header_size = self.count_table(run[0])
+        checked_names = set()
+        cnt = 0
+        for item in run:
+            if cnt == 1:
+                cnt += 1
+                continue
+            item_data = self.format_line(header_size, item, checked_names)
 
-        return projects
+            if item_data is None:
+                continue
+
+            name, client, active_item, project_id, hex_color = item_data
+
+            active_item = True if active_item == "True" else False
+
+            if not active_item and active:
+                continue
+
+            checked_names.add(name)
+            cnt += 1
+            tracker = TProject(
+                name=name,
+                project_id=int(project_id),
+                client=client,
+                color=hex_color,
+                active=active_item,
+            )
+            self.project_list.append(tracker)
+
+        self.cache_data(self.project_list)
+
+        return self.project_list
 
     def base_command(self, cmd: list[str]) -> str:
         cmd.insert(0, "projects")
