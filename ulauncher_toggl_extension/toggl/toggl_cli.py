@@ -46,12 +46,50 @@ class TogglCli(metaclass=ABCMeta):
         return str(run)
 
     def count_table(self, header: str) -> list[int]:
-        return []
+        RIGHT_ALIGNED = {"start", "stop", "duration"}
+
+        count = []
+        current_word = ""
+
+        for index, letter in enumerate(header):
+            right = current_word.strip().lower() in RIGHT_ALIGNED
+
+            if (
+                not right
+                and current_word
+                and current_word[-1] == " "
+                and letter != " "
+                and any(x.isalpha() for x in current_word)
+            ):
+                current_word = ""
+                count.append(index)
+
+            elif right and current_word[-1] != " " and letter == " ":
+                current_word = ""
+                count.append(index)
+
+            current_word += letter
+
+        return count
+
+    def format_line(
+        self, header_size: list[int], item: str, names: Optional[set] = None
+    ) -> list[str] | None:
+        prev = 0
+        item_data = []
+        for index in header_size:
+            d = item[prev:index].strip()
+            if isinstance(names, set) and d in names:
+                return
+            item_data.append(d)
+            prev = index
+        item_data.append(item[prev:].strip())
+        return item_data
 
     def cache_data(self, data: list) -> None:
         log.debug(f"Caching new data to {self.cache_path}")
         data = data.copy()
-        data.append(datetime.now())
+        data.insert(0, datetime.now())
         with self.cache_path.open("w", encoding="utf-8") as file:
             file.write(json.dumps(data, cls=CustomSerializer))
 
@@ -61,7 +99,8 @@ class TogglCli(metaclass=ABCMeta):
             data = json.loads(file.read(), cls=CustomDeserializer)
 
         date = data.pop(0)
-        if datetime.now() - self.CACHE_LEN <= date:
+        print(date, datetime.now() - self.CACHE_LEN)
+        if datetime.now() - self.CACHE_LEN >= date:
             return
 
         return data
@@ -99,25 +138,36 @@ class TrackerCli(TogglCli):
         cmd = [
             "ls",
             "--fields",
-            "description,id,stop",
-            # Toggl CLI really slow when looking projects
+            "+project,+id,+tags",
+            # Toggl CLI really slow when looking for projects
         ]
-        # RIGHT_ALIGNED = {"start", "stop", "duration"}
         run = self.base_command(cmd).splitlines()
+        header_size = self.count_table(run[0])
         self.latest_trackers = []
-        checked_ids = set()
+        checked_names = set()
         cnt = 1
         for item in run:
             if cnt == 1:
                 cnt += 1
                 continue
-            # HACK/BUG: this will fail if any variable has more than 1 space within them
-            desc, toggl_id, stop = re.split(r"\s{2,}", item)
-            if desc in checked_ids:
+            item_data = self.format_line(header_size, item, checked_names)
+
+            if item_data is None:
                 continue
-            checked_ids.add(desc)
+
+            desc, dur, start, stop, project, toggl_id, tags = item_data
+
+            checked_names.add(desc)
             cnt += 1
-            tracker = TogglTracker(desc.strip(), toggl_id, stop.strip())
+            tracker = TogglTracker(
+                description=desc.strip(),
+                entry_id=toggl_id,
+                stop=stop.strip(),
+                project=project,
+                duration=dur,
+                start=start,
+                tags=tags.split(", "),
+            )
             self.latest_trackers.append(tracker)
             if cnt == self.max_results:
                 break
@@ -332,6 +382,7 @@ class CustomDeserializer(json.JSONDecoder):
             elif isinstance(item, str):
                 item = datetime.fromisoformat(item)
                 decoded_obj.insert(0, item)
+                continue
 
             decoded_obj.append(item)
 

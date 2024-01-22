@@ -33,7 +33,7 @@ class TogglExtension(Extension):
         tviewer = TogglViewer(self)
 
         if not self.latest_trackers:
-            self.latest_trackers = tviewer.tcli.list_trackers(refresh=True)
+            self.latest_trackers = tviewer.tcli.list_trackers()
 
         if len(query) == 1:
             defaults = tviewer.default_options(*query)
