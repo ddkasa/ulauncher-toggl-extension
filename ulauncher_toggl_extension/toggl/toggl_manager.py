@@ -4,6 +4,10 @@ from pathlib import Path
 from types import MethodType
 from typing import TYPE_CHECKING, Callable, NamedTuple, Optional
 
+import gi
+
+gi.require_version("Notify", "0.7")
+
 from gi.repository import Notify
 from ulauncher.api.shared.action.BaseAction import BaseAction
 from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
@@ -115,6 +119,12 @@ class TogglViewer:
                     partial(self.manager.list_trackers), keep_app_open=True
                 ),
             ),
+            QueryParameters(
+                APP_IMG,
+                "Projects",
+                "View & Edit projects.",
+                SetUserQueryAction("tgl project"),
+            ),
         ]
         current = self.tcli.check_running()
         if current is None:
@@ -122,7 +132,7 @@ class TogglViewer:
                 CONTINUE_IMG,
                 "Continue",
                 "Continue the latest Toggl time tracker",
-                SetUserQueryAction("tgl cnt"),
+                ExtensionCustomAction(partial(self.manager.continue_tracker)),
             )
         else:
             current = QueryParameters(
@@ -162,7 +172,7 @@ class TogglViewer:
                 "Start",
                 "Start a new tracker.",
                 ExtensionCustomAction(
-                    partial(self.manager.start_tracker, *args),
+                    partial(self.manager.start_tracker),
                     keep_app_open=False,
                 ),
             )
@@ -173,7 +183,7 @@ class TogglViewer:
             post_method=ExtensionCustomAction,
             custom_method=partial(self.manager.start_tracker),
             count_offset=-1,
-            text_formatter="Start tracking {name}",
+            text_formatter="Start tracking {name} @{project}",
         )
 
         base_param.extend(trackers)
@@ -305,12 +315,12 @@ class TogglManager:
         # TODO: integrate @ for a project & # for tags
         img = START_IMG
 
-        if args and isinstance(args[0], TogglTracker):
-            name = f'"{args[0].description}"'
-        else:
+        print(*args)
+
+        if not args or not isinstance(args[0], TogglTracker):
             return False
 
-        cnt = self.tcli.start_tracker(name=name)
+        cnt = self.tcli.start_tracker(args[0])
         noti = NotificationParameters(cnt, img)
 
         self.show_notification(noti)
@@ -368,7 +378,7 @@ class TogglManager:
     ) -> list[QueryParameters]:
         img = REPORT_IMG
 
-        return self.create_list_actions(img)
+        return self.create_list_actions(img, refresh=True)
 
     def create_list_actions(
         self,
@@ -378,8 +388,9 @@ class TogglManager:
         count_offset: int = 0,
         text_formatter: str = "Stopped: {stop}",
         keep_open: bool = False,
+        refresh: bool = False,
     ) -> list[QueryParameters]:
-        trackers = self.tcli.list_trackers()
+        trackers = self.tcli.list_trackers(refresh)
         queries = []
 
         for i, tracker in enumerate(trackers, start=1):
@@ -403,6 +414,8 @@ class TogglManager:
                     start=tracker.start,
                     duration=tracker.duration,
                 )
+            elif custom_method is not None:
+                continue
 
             param = QueryParameters(
                 img,
