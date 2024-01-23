@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Final, NamedTuple, Optional
 
 if TYPE_CHECKING:
     from main import TogglExtension
+    from ulauncher_toggl_extension.toggl.toggl_manager import TogglManager
 
 
 class TogglTracker(NamedTuple):
@@ -99,8 +100,8 @@ class TogglCli(metaclass=ABCMeta):
             data = json.loads(file.read(), cls=CustomDeserializer)
 
         date = data.pop(0)
-        print(date, datetime.now() - self.CACHE_LEN)
         if datetime.now() - self.CACHE_LEN >= date:
+            log.info("%s: Cache of date. Will request new data.", self.__name__)
             return
 
         return data
@@ -221,20 +222,15 @@ class TrackerCli(TogglCli):
 
         return run
 
-    def start_tracker(
-        self,
-        name: str,
-        tags: Optional[tuple[str, ...]] = None,
-        project: Optional[int | str] = None,
-    ) -> str:
-        cmd = ["start", name]
-        if tags is not None:
+    def start_tracker(self, tracker: TogglTracker) -> str:
+        cmd = ["start", tracker.entry_id]
+        if tracker.tags is not None:
             cmd.append("-t")
-            tag_str = ",".join(tags)
+            tag_str = ",".join(tracker.tags)
             cmd.append(tag_str)
-        if project is not None:
+        if tracker.project is not None:
             cmd.append("-o")
-            cmd.append(str(project))
+            cmd.append(str(tracker.project))
 
         return self.base_command(cmd)
 
@@ -248,11 +244,15 @@ class TrackerCli(TogglCli):
     ) -> str:
         cmd = ["add", start, stop, name]
         if tags is not None:
-            cmd.append("-t")
+            cmd.append("--tags")
             cmd.append(",".join(tags))
         if project is not None:
-            cmd.append("-o")
-            cmd.append(str(project))
+            cmd.append("--project")
+            if isinstance(project, str):
+                _, pid = TogglProjects.project_name_formatter(str(project))
+            else:
+                pid = project
+            cmd.append(str(pid))
 
         return self.base_command(cmd)
 
@@ -367,13 +367,19 @@ class TogglProjects(TogglCli):
         cmd.insert(0, "projects")
         return super().base_command(cmd)
 
+    @staticmethod
+    def project_name_formatter(name: str) -> tuple[str, int]:
+        name, project_id = name.split("(#")
+        name = name.strip()
+        return name, int(project_id[:-1])
+
     @property
     def cache_path(self) -> Path:
         return super().cache_path / Path("tracker_history.json")
 
     @property
     def CACHE_LEN(self) -> timedelta:
-        return timedelta(weeks=1)
+        return timedelta(weeks=2)
 
 
 class CustomSerializer(json.JSONEncoder):
