@@ -3,11 +3,10 @@ from functools import cache, partial
 from pathlib import Path
 from types import MethodType
 from typing import TYPE_CHECKING, Callable, NamedTuple, Optional
-
 import gi
 
-gi.require_version("Notify", "0.7")
 
+gi.require_version("Notify", "0.7")
 from gi.repository import Notify
 from ulauncher.api.shared.action.BaseAction import BaseAction
 from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
@@ -25,6 +24,9 @@ from ulauncher_toggl_extension.toggl.toggl_cli import (
     TProject,
     TrackerCli,
 )
+
+# from ulauncher_toggl_extension import utils
+# utils.ensure_import("togglcli")
 
 if TYPE_CHECKING:
     from main import TogglExtension

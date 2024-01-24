@@ -101,7 +101,7 @@ class TogglCli(metaclass=ABCMeta):
 
         date = data.pop(0)
         if datetime.now() - self.CACHE_LEN >= date:
-            log.info("%s: Cache of date. Will request new data.", self.__name__)
+            log.info("%s: Cache of date. Will request new data.", self.__str__)
             return
 
         return data
