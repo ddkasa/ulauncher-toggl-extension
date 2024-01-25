@@ -375,7 +375,7 @@ class TogglProjects(TogglCli):
 
     @property
     def cache_path(self) -> Path:
-        return super().cache_path / Path("tracker_history.json")
+        return super().cache_path / Path("project_history.json")
 
     @property
     def CACHE_LEN(self) -> timedelta:

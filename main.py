@@ -41,6 +41,8 @@ class TogglExtension(Extension):
 
         query.pop(0)
 
+        # TODO: Switch this with fuzzy searcher.
+
         QUERY_MATCH = {
             "start": tviewer.start_tracker,
             "stt": tviewer.start_tracker,
@@ -56,6 +58,8 @@ class TogglExtension(Extension):
             "sum": tviewer.total_trackers,
             "ls": tviewer.list_trackers,
             "list": tviewer.list_trackers,
+            "project": tviewer.get_projects,
+            "projects": tviewer.get_projects,
         }
 
         method = QUERY_MATCH.get(query[0], tviewer.default_options)
@@ -117,12 +121,15 @@ class TogglExtension(Extension):
         try:
             return int(self.preferences["project"])
         except ValueError:
-            log.warning("Default project not setup!")
+            log.debug("Default project not setup!")
             return None
 
     @property
     def max_results(self) -> int:
-        return self.preferences["max_search_results"]
+        try:
+            return int(self.preferences["max_search_results"])
+        except ValueError:
+            return 10
 
 
 class KeywordQueryEventListener(EventListener):

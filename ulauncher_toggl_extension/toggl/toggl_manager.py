@@ -3,8 +3,8 @@ from functools import cache, partial
 from pathlib import Path
 from types import MethodType
 from typing import TYPE_CHECKING, Callable, NamedTuple, Optional
-import gi
 
+import gi
 
 gi.require_version("Notify", "0.7")
 from gi.repository import Notify
@@ -125,7 +125,9 @@ class TogglViewer:
                 APP_IMG,
                 "Projects",
                 "View & Edit projects.",
-                SetUserQueryAction("tgl project"),
+                ExtensionCustomAction(
+                    partial(self.manager.list_projects), keep_app_open=True
+                ),
             ),
         ]
         current = self.tcli.check_running()
@@ -185,7 +187,7 @@ class TogglViewer:
             post_method=ExtensionCustomAction,
             custom_method=partial(self.manager.start_tracker),
             count_offset=-1,
-            text_formatter="Start tracking {name} @{project}",
+            text_formatter="Start {name} @{project}",
         )
 
         base_param.extend(trackers)
@@ -283,6 +285,18 @@ class TogglViewer:
         )
         return [params]
 
+    def get_projects(self, *args, **kwargs) -> list[QueryParameters]:
+        img = APP_IMG
+        data = QueryParameters(
+            img,
+            "Projects",
+            "View & Edit projects.",
+            ExtensionCustomAction(
+                partial(self.manager.list_projects), keep_app_open=True
+            ),
+        )
+        return [data]
+
 
 class TogglManager:
     __slots__ = (
@@ -290,6 +304,7 @@ class TogglManager:
         "max_results",
         "workspace_id",
         "tcli",
+        "pcli",
         "notification",
     )
 
@@ -301,6 +316,7 @@ class TogglManager:
         self.workspace_id = default_project
 
         self.tcli = TrackerCli(self.config_path, self.max_results, self.workspace_id)
+        self.pcli = TogglProjects(self.config_path, self.max_results, self.workspace_id)
 
         self.notification = None
 
@@ -382,6 +398,51 @@ class TogglManager:
 
         return self.create_list_actions(img, refresh=True)
 
+    def list_projects(self, *args, **kwargs) -> list[QueryParameters]:
+        img = APP_IMG
+        data = self.create_list_actions(
+            img, text_formatter="Client: {client}", data_type="project"
+        )
+        return data
+
+    def tracker_builder(
+        self, img: Path, meth: MethodType, text_formatter: str, tracker: TogglTracker
+    ) -> QueryParameters | None:
+        text = tracker.stop
+        if tracker.stop != "running":
+            text = text_formatter.format(
+                stop=tracker.stop,
+                tid=tracker.entry_id,
+                name=tracker.description,
+                project=tracker.project,
+                tags=tracker.tags,
+                start=tracker.start,
+                duration=tracker.duration,
+            )
+        else:
+            return
+
+        param = QueryParameters(
+            img,
+            tracker.description,
+            text,
+            meth,
+        )
+        return param
+
+    def project_builder(
+        self, img: Path, meth: MethodType, text_formatter: str, project: TProject
+    ) -> QueryParameters:
+        text = text_formatter.format(
+            name=project.name,
+            project_id=project.project_id,
+            client=project.client,
+            color=project.color,
+            active=project.active,
+        )
+        param = QueryParameters(img, project.name, text, meth)
+        return param
+
     def create_list_actions(
         self,
         img: Path,
@@ -391,40 +452,33 @@ class TogglManager:
         text_formatter: str = "Stopped: {stop}",
         keep_open: bool = False,
         refresh: bool = False,
+        data_type: str = "tracker",
     ) -> list[QueryParameters]:
-        trackers = self.tcli.list_trackers(refresh)
+        if data_type == "tracker":
+            list_data = self.tcli.list_trackers(refresh)
+        else:
+            list_data = self.pcli.list_projects(refresh)
+
         queries = []
 
-        for i, tracker in enumerate(trackers, start=1):
+        for i, data in enumerate(list_data, start=1):
             if self.max_results - count_offset == i:
                 break
 
             if custom_method is not None:
-                func = partial(custom_method, tracker)
+                func = partial(custom_method, data)
                 meth = post_method(func, keep_app_open=keep_open)
             else:
                 meth = post_method()
 
-            text = tracker.stop
-            if tracker.stop != "running":
-                text = text_formatter.format(
-                    stop=tracker.stop,
-                    tid=tracker.entry_id,
-                    name=tracker.description,
-                    project=tracker.project,
-                    tags=tracker.tags,
-                    start=tracker.start,
-                    duration=tracker.duration,
-                )
-            elif custom_method is not None:
+            if isinstance(data, TogglTracker):
+                param = self.tracker_builder(img, meth, text_formatter, data)
+            else:
+                param = self.project_builder(img, meth, text_formatter, data)
+
+            if param is None:
                 continue
 
-            param = QueryParameters(
-                img,
-                tracker.description,
-                text,
-                meth,
-            )
             queries.append(param)
 
         return queries
