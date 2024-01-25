@@ -256,6 +256,38 @@ class TrackerCli(TogglCli):
 
         return self.base_command(cmd)
 
+    def edit_tracker(self, *args, **kwargs) -> str | None:
+        cmd = ["now"]
+
+        description = kwargs.get("description")
+        if description is not None:
+            cmd.append("--description")
+            cmd.append(description)
+
+        project = kwargs.get("project")
+        if project is not None:
+            cmd.append("--project")
+            cmd.append(project)
+
+        start = kwargs.get("start")
+        if start is not None:
+            cmd.append("--start")
+            cmd.append(start)
+
+        tags = kwargs.get("tags")
+        if tags is not None:
+            cmd.append("--tags")
+            cmd.append(tags)
+
+        if len(cmd) == 1:
+            return
+
+        try:
+            return self.base_command(cmd)
+        except sp.CalledProcessError as t:
+            log.error("Tracker deletion error: %s", t)
+            return "Tracker is current not running."
+
     def rm_tracker(self, tracker: int) -> str:
         cmd = ["rm", str(tracker)]
 

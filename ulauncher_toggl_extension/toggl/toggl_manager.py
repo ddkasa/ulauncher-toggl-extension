@@ -130,8 +130,8 @@ class TogglViewer:
                 ),
             ),
         ]
-        current = self.tcli.check_running()
-        if current is None:
+        current_tracker = self.tcli.check_running()
+        if current_tracker is None:
             current = QueryParameters(
                 CONTINUE_IMG,
                 "Continue",
@@ -141,9 +141,12 @@ class TogglViewer:
         else:
             current = QueryParameters(
                 APP_IMG,
-                f"Currently Running: {current.description}",
-                f"Since: {current.start} @{current.project}",
-                DoNothingAction(),
+                f"Currently Running: {current_tracker.description}",
+                f"Since: {current_tracker.start} @{current_tracker.project}",
+                ExtensionCustomAction(
+                    partial(self.edit_tracker, current=current_tracker),
+                    keep_app_open=True,
+                ),
             )
 
         BASIC_TASKS.insert(0, current)
@@ -210,12 +213,16 @@ class TogglViewer:
 
     def edit_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = EDIT_IMG
+        tracker = kwargs["current"]
+        if tracker is None:
+            return SetUserQueryAction("tgl ")
+
         params = QueryParameters(
             img,
-            "Edit",
-            "Edit a tracker.",
+            tracker.description,
+            "Edit the running tracker.",
             ExtensionCustomAction(
-                partial(self.manager.edit_tracker, *args), keep_app_open=True
+                partial(self.manager.edit_tracker, *args, **kwargs), keep_app_open=True
             ),
         )
         return [params]
@@ -344,21 +351,31 @@ class TogglManager:
         self.show_notification(noti)
         return True
 
-    def add_tracker(self, *args) -> bool:
+    def add_tracker(self, *args, **kwargs) -> bool:
         # TODO: integrate @ for a project & # for tags
         img = START_IMG
-        msg = self.tcli.add_tracker(*args)
+        msg = self.tcli.add_tracker(*args, **kwargs)
+        noti = NotificationParameters(msg, img)
+        self.show_notification(noti)
 
         return True
 
-    def edit_tracker(self, *args) -> bool:
+    def edit_tracker(self, *args, **kwargs) -> bool:
         img = EDIT_IMG
 
-        return False
+        msg = self.tcli.edit_tracker(*args, **kwargs)
+        if msg == "Tracker is current not running." or msg is None:
+            return False
+
+        noti = NotificationParameters(msg, img)
+        self.show_notification(noti)
+
+        return True
 
     def stop_tracker(self, *args) -> bool:
         img = STOP_IMG
         msg = self.tcli.stop_tracker()
+
         noti = NotificationParameters(str(msg), img)
         self.show_notification(noti)
         return True
