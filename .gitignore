@@ -1,5 +1,6 @@
 # env
 .venv
+.envrc
 
 # compliation
 __pycache__
