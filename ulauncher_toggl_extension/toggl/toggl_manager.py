@@ -1,3 +1,4 @@
+import enum
 import logging as log
 from datetime import datetime, timedelta
 from functools import cache, partial
@@ -36,11 +37,25 @@ APP_IMG = Path("images/icon.svg")
 START_IMG = Path("images/start.svg")
 EDIT_IMG = Path("images/edit.svg")
 ADD_IMG = Path("images/add.svg")  # TODO: Needs to be created.
+PROJECT_IMG = Path("images/project.svg")  # TODO: Needs to created.
 STOP_IMG = Path("images/stop.svg")
 DELETE_IMG = Path("images/delete.svg")
 CONTINUE_IMG = Path("images/continue.svg")
 REPORT_IMG = Path("images/reports.svg")
 BROWSER_IMG = Path("images/browser.svg")
+
+
+class TipSeverity(enum.Enum):
+    INFO = enum.auto()
+    WARNING = enum.auto()
+    ERROR = enum.auto()
+
+
+TIP_IMAGES = {
+    TipSeverity.INFO: Path("images/tip.svg"),
+    TipSeverity.ERROR: Path("images/tip-error.svg"),
+    TipSeverity.WARNING: Path("images/tip-warning.svg"),
+}
 
 
 class QueryParameters(NamedTuple):
@@ -209,33 +224,49 @@ class TogglViewer:
 
     def add_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = EDIT_IMG
-        base_param = QueryParameters(
-            img,
-            "Add",
-            "Add a new tracker.",
-            ExtensionCustomAction(
-                partial(self.manager.add_tracker, *args),
-                keep_app_open=True,
-            ),
-        )
+        msg = "Add a new tracker"
+        if args:
+            msg += f" with description {args[0]}."
+        else:
+            msg += "."
 
-        return [base_param]
+        base_param = [
+            QueryParameters(
+                img,
+                "Add",
+                msg,
+                ExtensionCustomAction(
+                    partial(self.manager.add_tracker, *args),
+                    keep_app_open=True,
+                ),
+            )
+        ]
+
+        base_param.extend(self.generate_basic_hints())
+
+        return base_param
 
     def edit_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = EDIT_IMG
-        tracker = kwargs["current"]
+        tracker = kwargs.get("current")
         if tracker is None:
             return SetUserQueryAction("tgl ")
 
-        params = QueryParameters(
-            img,
-            tracker.description,
-            "Edit the running tracker.",
-            ExtensionCustomAction(
-                partial(self.manager.edit_tracker, *args, **kwargs), keep_app_open=True
-            ),
-        )
-        return [params]
+        params = [
+            QueryParameters(
+                img,
+                tracker.description,
+                "Edit the running tracker.",
+                ExtensionCustomAction(
+                    partial(self.manager.edit_tracker, *args, **kwargs),
+                    keep_app_open=True,
+                ),
+            )
+        ]
+
+        params.extend(self.generate_basic_hints())
+
+        return params
 
     def stop_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = STOP_IMG
@@ -314,6 +345,16 @@ class TogglViewer:
         )
         return [data]
 
+    @cache
+    def generate_basic_hints(self) -> list[QueryParameters]:
+        hint_messages = (
+            "Set a project with the @ symbol",
+            "Add tags with the # symbol.",
+            "Set start and end time with > | < respectively",
+        )
+        hints = self.manager.generate_hint(hint_messages)
+        return hints
+
 
 class TogglManager:
     __slots__ = (
@@ -348,8 +389,6 @@ class TogglManager:
 
     def start_tracker(self, *args) -> bool:
         img = START_IMG
-
-        print(*args)
 
         if not args or not isinstance(args[0], TogglTracker):
             return False
@@ -544,3 +583,21 @@ class TogglManager:
         if on_close is not None:
             self.notification.connect("closed", on_close)
         self.notification.show()
+
+    def generate_hint(
+        self,
+        message: tuple[str, ...],
+        action: BaseAction = DoNothingAction(),
+        level: TipSeverity = TipSeverity.INFO,
+    ) -> list[QueryParameters]:
+        IMG = TIP_IMAGES.get(level)
+        if IMG is None:
+            raise AttributeError("Level | Severity was not found.")
+
+        hints = []
+
+        for desc in message:
+            param = QueryParameters(IMG, level.name.title(), desc, action)
+            hints.append(param)
+
+        return hints

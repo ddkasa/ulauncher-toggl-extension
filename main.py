@@ -51,6 +51,8 @@ class TogglExtension(Extension):
             "cnt": tviewer.continue_tracker,
             "stop": tviewer.stop_tracker,
             "stp": tviewer.stop_tracker,
+            "edit": tviewer.edit_tracker,
+            "now": tviewer.edit_tracker,
             "delete": tviewer.remove_tracker,
             "remove": tviewer.remove_tracker,
             "rm": tviewer.remove_tracker,
@@ -64,6 +66,7 @@ class TogglExtension(Extension):
 
         method = QUERY_MATCH.get(query[0], tviewer.default_options)
 
+        query.pop(0)
         kwargs = self.parse_query(query)
 
         results = method(*query, **kwargs)
