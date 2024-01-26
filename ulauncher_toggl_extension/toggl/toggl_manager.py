@@ -1,4 +1,5 @@
 import logging as log
+from datetime import datetime, timedelta
 from functools import cache, partial
 from pathlib import Path
 from types import MethodType
@@ -296,7 +297,7 @@ class TogglViewer:
             "List",
             f"View the last {self.max_results} trackers.",
             ExtensionCustomAction(
-                partial(self.manager.list_trackers, *args), keep_app_open=True
+                partial(self.manager.list_trackers, *args, **kwargs), keep_app_open=True
             ),
         )
         return [params]
@@ -407,20 +408,38 @@ class TogglManager:
         data = self.tcli.sum_tracker()
         queries = []
         for day, time in data:
-            param = QueryParameters(img, day, time, DoNothingAction())
-            # TODO: Possibly could show a break down of the topx trackers for
-            # that given day the future instead of nothing.
+            if day == "total":
+                meth = DoNothingAction()
+            else:
+                if day == "today":
+                    start = datetime.now()
+                elif day == "yesterday":
+                    start = datetime.now() - timedelta(days=1)
+                else:
+                    start = datetime.strptime(day, "%m/%d/%Y")
+                start -= timedelta(days=1)
+                end = start + timedelta(days=2)
+
+                meth = ExtensionCustomAction(
+                    partial(
+                        self.list_trackers,
+                        start=start.date().isoformat(),
+                        stop=end.date().isoformat(),
+                    ),
+                    keep_app_open=True,
+                )
+            param = QueryParameters(img, day, time, meth)
+
             queries.append(param)
 
         return queries
 
-    def list_trackers(
-        self,
-        *args,
-    ) -> list[QueryParameters]:
+    def list_trackers(self, *args, **kwargs) -> list[QueryParameters]:
         img = REPORT_IMG
 
-        return self.create_list_actions(img, refresh="refresh" in args)
+        return self.create_list_actions(
+            img, refresh="refresh" in args, keyword_args=kwargs
+        )
 
     def list_projects(self, *args, **kwargs) -> list[QueryParameters]:
         img = APP_IMG
@@ -429,6 +448,7 @@ class TogglManager:
             text_formatter="Client: {client}",
             data_type="project",
             refresh="refresh" in args,
+            keyword_args=kwargs,
         )
         return data
 
@@ -480,11 +500,12 @@ class TogglManager:
         keep_open: bool = False,
         refresh: bool = False,
         data_type: str = "tracker",
+        keyword_args: dict = {},
     ) -> list[QueryParameters]:
         if data_type == "tracker":
-            list_data = self.tcli.list_trackers(refresh)
+            list_data = self.tcli.list_trackers(refresh, **keyword_args)
         else:
-            list_data = self.pcli.list_projects(refresh=refresh)
+            list_data = self.pcli.list_projects(refresh=refresh, **keyword_args)
 
         queries = []
 

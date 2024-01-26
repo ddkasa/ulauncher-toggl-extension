@@ -129,10 +129,14 @@ class TrackerCli(TogglCli):
     def list_trackers(
         self, *args, refresh: bool = False, **kwargs
     ) -> list[TogglTracker]:
-        if not refresh and self.latest_trackers:
+        start_time = kwargs.get("start", False)
+        end_time = kwargs.get("stop", False)
+        times = start_time or end_time
+
+        if not refresh and self.latest_trackers and not times:
             return self.latest_trackers
 
-        if not refresh and self.cache_path.exists():
+        if not refresh and self.cache_path.exists() and not times:
             data = self.load_data()
             if isinstance(data, list):
                 return data
@@ -144,18 +148,20 @@ class TrackerCli(TogglCli):
             "+project,+id,+tags",
             # BUG: Toggl CLI really slow when looking for projects
         ]
-
-        start_time = kwargs.get("start", False)
         if start_time:
             cmd.append("--start")
             cmd.append(start_time)
 
-        end_time = kwargs.get("stop", False)
         if end_time:
             cmd.append("--stop")
             cmd.append(end_time)
 
-        run = self.base_command(cmd).splitlines()
+        try:
+            run = self.base_command(cmd).splitlines()
+        except sp.CalledProcessError:
+            log.error("Failed to retrieve tracker list. Returning last cache.")
+            return self.latest_trackers
+
         header_size = self.count_table(run[0])
         self.latest_trackers = []
         checked_names = set()
