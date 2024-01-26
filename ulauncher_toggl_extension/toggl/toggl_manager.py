@@ -36,13 +36,14 @@ if TYPE_CHECKING:
 APP_IMG = Path("images/icon.svg")
 START_IMG = Path("images/start.svg")
 EDIT_IMG = Path("images/edit.svg")
-ADD_IMG = Path("images/add.svg")  # TODO: Needs to be created.
+ADD_IMG = Path("images/add.svg")
 PROJECT_IMG = Path("images/project.svg")  # TODO: Needs to created.
 STOP_IMG = Path("images/stop.svg")
 DELETE_IMG = Path("images/delete.svg")
 CONTINUE_IMG = Path("images/continue.svg")
 REPORT_IMG = Path("images/reports.svg")
 BROWSER_IMG = Path("images/browser.svg")
+BLANK_IMG = Path("images/blank.svg")
 
 
 class TipSeverity(enum.Enum):
@@ -179,7 +180,7 @@ class TogglViewer:
                 "Continue",
                 "Continue the last tracker.",
                 ExtensionCustomAction(
-                    partial(self.manager.continue_tracker, *args),
+                    partial(self.manager.continue_tracker, *args, **kwargs),
                     keep_app_open=False,
                 ),
             )
@@ -223,7 +224,7 @@ class TogglViewer:
         return base_param
 
     def add_tracker(self, *args, **kwargs) -> list[QueryParameters]:
-        img = EDIT_IMG
+        img = ADD_IMG
         msg = "Add a new tracker"
         if args:
             msg += f" with description {args[0]}."
@@ -346,13 +347,13 @@ class TogglViewer:
         return [data]
 
     @cache
-    def generate_basic_hints(self) -> list[QueryParameters]:
+    def generate_basic_hints(self, max_values: int = 3) -> list[QueryParameters]:
         hint_messages = (
             "Set a project with the @ symbol",
             "Add tags with the # symbol.",
             "Set start and end time with > | < respectively",
         )
-        hints = self.manager.generate_hint(hint_messages)
+        hints = self.manager.generate_hint(hint_messages[:max_values])
         return hints
 
 
@@ -378,10 +379,10 @@ class TogglManager:
 
         self.notification = None
 
-    def continue_tracker(self, *args) -> bool:
+    def continue_tracker(self, *args, **kwargs) -> bool:
         img = CONTINUE_IMG
 
-        cnt = self.tcli.continue_tracker(*args)
+        cnt = self.tcli.continue_tracker(*args, **kwargs)
         noti = NotificationParameters(cnt, img)
 
         self.show_notification(noti)
@@ -400,7 +401,7 @@ class TogglManager:
         return True
 
     def add_tracker(self, *args, **kwargs) -> bool:
-        img = START_IMG
+        img = ADD_IMG
         msg = self.tcli.add_tracker(*args, **kwargs)
         noti = NotificationParameters(msg, img)
         self.show_notification(noti)
