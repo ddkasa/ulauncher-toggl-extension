@@ -1,8 +1,6 @@
 import logging as log
-import sys
 from pathlib import Path
-from pprint import pprint
-from typing import Callable, Iterable, Optional, is_typeddict
+from typing import Callable, Iterable
 
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -11,12 +9,9 @@ from ulauncher.api.shared.action.RenderResultListAction import RenderResultListA
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 from ulauncher.api.shared.event import ItemEnterEvent, KeywordQueryEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
+from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 
-from ulauncher_toggl_extension.toggl.toggl_manager import (
-    NotificationParameters,
-    QueryParameters,
-    TogglViewer,
-)
+from ulauncher_toggl_extension.toggl.toggl_manager import QueryParameters, TogglViewer
 
 
 class TogglExtension(Extension):
@@ -41,7 +36,7 @@ class TogglExtension(Extension):
 
         query.pop(0)
 
-        # TODO: Switch this with fuzzy searcher.
+        # TODO: Switch this to a fuzzy finder.
 
         QUERY_MATCH = {
             "start": tviewer.start_tracker,
@@ -103,13 +98,23 @@ class TogglExtension(Extension):
     ) -> list[ExtensionResultItem]:
         results = []
         for i, item in enumerate(actions, start=1):
-            action = ExtensionResultItem(
-                icon=str(item.icon),
-                name=item.name,
-                description=item.description,
-                on_enter=item.on_enter,
-                on_alt_enter=item.on_alt_enter,
-            )
+            if item.small:
+                print(item)
+                action = ExtensionSmallResultItem(
+                    icon=str(item.icon),
+                    name=f"{item.name}: {item.description}",
+                    description=item.description,
+                    on_enter=item.on_enter,
+                    on_alt_enter=item.on_alt_enter,
+                )
+            else:
+                action = ExtensionResultItem(
+                    icon=str(item.icon),
+                    name=item.name,
+                    description=item.description,
+                    on_enter=item.on_enter,
+                    on_alt_enter=item.on_alt_enter,
+                )
             results.append(action)
 
             if i == self.preferences["max_search_results"]:
@@ -135,6 +140,10 @@ class TogglExtension(Extension):
             return int(self.preferences["max_search_results"])
         except ValueError:
             return 10
+
+    @property
+    def toggled_hints(self) -> bool:
+        return self.preferences["hints"]
 
 
 class KeywordQueryEventListener(EventListener):

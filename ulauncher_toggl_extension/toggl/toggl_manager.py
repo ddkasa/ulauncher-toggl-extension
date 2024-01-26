@@ -65,6 +65,7 @@ class QueryParameters(NamedTuple):
     description: str
     on_enter: BaseAction
     on_alt_enter: Optional[BaseAction] = None
+    small: bool = False
 
 
 class NotificationParameters(NamedTuple):
@@ -81,12 +82,14 @@ class TogglViewer:
         "tcli",
         "manager",
         "extension",
+        "hints",
     )
 
     def __init__(self, ext: "TogglExtension") -> None:
         self.config_path = ext.config_path
         self.max_results = ext.max_results
         self.default_project = ext.default_project
+        self.hints = ext.toggled_hints
 
         self.tcli = TrackerCli(self.config_path, self.max_results, self.default_project)
         self.manager = TogglManager(
@@ -348,6 +351,9 @@ class TogglViewer:
 
     @cache
     def generate_basic_hints(self, max_values: int = 3) -> list[QueryParameters]:
+        if not self.hints:
+            return []
+
         hint_messages = (
             "Set a project with the @ symbol",
             "Add tags with the # symbol.",
@@ -590,6 +596,7 @@ class TogglManager:
         message: tuple[str, ...],
         action: BaseAction = DoNothingAction(),
         level: TipSeverity = TipSeverity.INFO,
+        small: bool = True,
     ) -> list[QueryParameters]:
         IMG = TIP_IMAGES.get(level)
         if IMG is None:
@@ -598,7 +605,7 @@ class TogglManager:
         hints = []
 
         for desc in message:
-            param = QueryParameters(IMG, level.name.title(), desc, action)
+            param = QueryParameters(IMG, level.name.title(), desc, action, small=small)
             hints.append(param)
 
         return hints

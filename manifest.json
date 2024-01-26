@@ -5,7 +5,7 @@
   "developer_name": "David Kasakaitis",
   "icon": "images/icon.svg",
   "options": {
-    "query_debounce": 1
+    "query_debounce": 0.5
   },
   "preferences": [
     {
@@ -19,7 +19,7 @@
       "id": "project",
       "type": "input",
       "name": "Default Project",
-      "description": "Name of the default project you want to use."
+      "description": "Project ID of the default project you want to use."
     },
     {
       "id": "toggl_config_location",
@@ -34,15 +34,26 @@
       "name": "Maximum number of results",
       "default_value": 10,
       "options": [
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-        "11",
-        "12"
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "id": "hints",
+      "type": "select",
+      "name": "Hints",
+      "description": "Do you want to see hints to help with usage of the application?",
+      "default_value": true,
+      "options": [
+        true,
+        false
       ]
     }
   ]
