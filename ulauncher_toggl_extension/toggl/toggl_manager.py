@@ -346,7 +346,6 @@ class TogglManager:
         return True
 
     def start_tracker(self, *args) -> bool:
-        # TODO: integrate @ for a project & # for tags
         img = START_IMG
 
         print(*args)
@@ -361,7 +360,6 @@ class TogglManager:
         return True
 
     def add_tracker(self, *args, **kwargs) -> bool:
-        # TODO: integrate @ for a project & # for tags
         img = START_IMG
         msg = self.tcli.add_tracker(*args, **kwargs)
         noti = NotificationParameters(msg, img)

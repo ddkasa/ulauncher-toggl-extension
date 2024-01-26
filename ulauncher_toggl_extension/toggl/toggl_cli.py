@@ -205,8 +205,6 @@ class TrackerCli(TogglCli):
     def continue_tracker(self, *args, **kwargs) -> str:
         cmd = ["continue"]
 
-        print(args)
-
         if args and isinstance(args[0], TogglTracker):
             desc = args[0].description
             cmd.append(desc)
@@ -231,28 +229,36 @@ class TrackerCli(TogglCli):
     def start_tracker(self, tracker: TogglTracker) -> str:
         cmd = ["start", tracker.entry_id]
         if tracker.tags is not None:
-            cmd.append("-t")
+            cmd.append("--tags")
             tag_str = ",".join(tracker.tags)
             cmd.append(tag_str)
         if tracker.project is not None:
-            cmd.append("-o")
+            cmd.append("--project")
             cmd.append(str(tracker.project))
 
         return self.base_command(cmd)
 
-    def add_tracker(
-        self,
-        name: str,
-        start: str,
-        stop: str,
-        tags: Optional[tuple[str, ...]] = None,
-        project: Optional[int | str] = None,
-    ) -> str:
-        cmd = ["add", start, stop, name]
-        if tags is not None:
+    def add_tracker(self, *args, **kwargs) -> str:
+        start = kwargs.get("start", False)
+        stop = kwargs.get("stop", False)
+        if not start:
+            return "Missing start date/time."
+        if not stop:
+            return "Missing stop time"
+
+        desc = args[2:3] or False
+        if not desc:
+            return "No tracker description given."
+
+        cmd = ["add", start, stop, desc]
+
+        tags = kwargs.get("tags", False)
+        if tags:
             cmd.append("--tags")
             cmd.append(",".join(tags))
-        if project is not None:
+
+        project = kwargs.get("project", False)
+        if project:
             cmd.append("--project")
             if isinstance(project, str):
                 _, pid = TogglProjects.project_name_formatter(str(project))
@@ -260,7 +266,11 @@ class TrackerCli(TogglCli):
                 pid = project
             cmd.append(str(pid))
 
-        return self.base_command(cmd)
+        try:
+            return self.base_command(cmd)
+        except sp.CalledProcessError as p:
+            log.error("Adding tracker with name %s was unsuccessful: %s", desc, p)
+            return f"Adding tracker with name {desc} was unsuccessful."
 
     def edit_tracker(self, *args, **kwargs) -> str | None:
         cmd = ["now"]
