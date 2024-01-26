@@ -202,12 +202,18 @@ class TrackerCli(TogglCli):
 
         return tracker
 
-    def continue_tracker(self, *args) -> str:
+    def continue_tracker(self, *args, **kwargs) -> str:
         cmd = ["continue"]
 
-        if args and args[0] not in {"continue", "cnt"}:
-            cmd.append("-s")
-            cmd.append(args[0])
+        print(args)
+
+        if args and isinstance(args[0], TogglTracker):
+            desc = args[0].description
+            cmd.append(desc)
+        start = kwargs.get("start", False)
+        if start:
+            cmd.append("--start")
+            cmd.append(start)
 
         return self.base_command(cmd)
 

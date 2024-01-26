@@ -137,6 +137,7 @@ class TogglViewer:
                 "Continue",
                 "Continue the latest Toggl time tracker",
                 ExtensionCustomAction(partial(self.manager.continue_tracker)),
+                SetUserQueryAction("tgl continue"),
             )
         else:
             current = QueryParameters(
@@ -167,6 +168,14 @@ class TogglViewer:
                 ),
             )
         ]
+        trackers = self.manager.create_list_actions(
+            img=img,
+            post_method=ExtensionCustomAction,
+            custom_method=partial(self.manager.continue_tracker),
+            count_offset=-1,
+            text_formatter="Continue {name} @{project}",
+        )
+        base_param.extend(trackers)
 
         return base_param
 

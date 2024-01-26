@@ -74,6 +74,7 @@ class TogglExtension(Extension):
         return self.generate_results(results)
 
     def parse_query(self, query: list[str]) -> dict[str, str]:
+        # TODO: Input sanitizing in order to throw away invalid arguments.
         arguments = {}
         for i, item in enumerate(query):
             if i == 0:
@@ -104,6 +105,7 @@ class TogglExtension(Extension):
                 name=item.name,
                 description=item.description,
                 on_enter=item.on_enter,
+                on_alt_enter=item.on_alt_enter,
             )
             results.append(action)
 
