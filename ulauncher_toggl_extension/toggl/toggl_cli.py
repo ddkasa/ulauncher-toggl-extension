@@ -126,7 +126,9 @@ class TrackerCli(TogglCli):
         super().__init__(config_path, max_results, workspace_id)
         self.latest_trackers = []
 
-    def list_trackers(self, refresh: bool = False) -> list[TogglTracker]:
+    def list_trackers(
+        self, *args, refresh: bool = False, **kwargs
+    ) -> list[TogglTracker]:
         if not refresh and self.latest_trackers:
             return self.latest_trackers
 
@@ -142,6 +144,17 @@ class TrackerCli(TogglCli):
             "+project,+id,+tags",
             # BUG: Toggl CLI really slow when looking for projects
         ]
+
+        start_time = kwargs.get("start", False)
+        if start_time:
+            cmd.append("--start")
+            cmd.append(start_time)
+
+        end_time = kwargs.get("stop", False)
+        if end_time:
+            cmd.append("--stop")
+            cmd.append(end_time)
+
         run = self.base_command(cmd).splitlines()
         header_size = self.count_table(run[0])
         self.latest_trackers = []
@@ -173,7 +186,8 @@ class TrackerCli(TogglCli):
             if cnt == self.max_results:
                 break
 
-        self.cache_data(self.latest_trackers)
+        if refresh:
+            self.cache_data(self.latest_trackers)
 
         return self.latest_trackers
 
