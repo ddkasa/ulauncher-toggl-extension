@@ -126,7 +126,7 @@ class TogglViewer:
                 "Projects",
                 "View & Edit projects.",
                 ExtensionCustomAction(
-                    partial(self.manager.list_projects), keep_app_open=True
+                    partial(self.manager.list_projects, *args), keep_app_open=True
                 ),
             ),
         ]
@@ -299,7 +299,7 @@ class TogglViewer:
             "Projects",
             "View & Edit projects.",
             ExtensionCustomAction(
-                partial(self.manager.list_projects), keep_app_open=True
+                partial(self.manager.list_projects, *args, **kwargs), keep_app_open=True
             ),
         )
         return [data]
@@ -413,12 +413,15 @@ class TogglManager:
     ) -> list[QueryParameters]:
         img = REPORT_IMG
 
-        return self.create_list_actions(img, refresh=True)
+        return self.create_list_actions(img, refresh="refresh" in args)
 
     def list_projects(self, *args, **kwargs) -> list[QueryParameters]:
         img = APP_IMG
         data = self.create_list_actions(
-            img, text_formatter="Client: {client}", data_type="project"
+            img,
+            text_formatter="Client: {client}",
+            data_type="project",
+            refresh="refresh" in args,
         )
         return data
 
@@ -474,7 +477,7 @@ class TogglManager:
         if data_type == "tracker":
             list_data = self.tcli.list_trackers(refresh)
         else:
-            list_data = self.pcli.list_projects(refresh)
+            list_data = self.pcli.list_projects(refresh=refresh)
 
         queries = []
 
