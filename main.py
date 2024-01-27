@@ -1,4 +1,5 @@
-import logging as log
+import logging
+import os
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -12,6 +13,8 @@ from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 
 from ulauncher_toggl_extension.toggl.toggl_manager import QueryParameters, TogglViewer
+
+log = logging.getLogger(__name__)
 
 
 class TogglExtension(Extension):
@@ -99,7 +102,6 @@ class TogglExtension(Extension):
         results = []
         for i, item in enumerate(actions, start=1):
             if item.small:
-                print(item)
                 action = ExtensionSmallResultItem(
                     icon=str(item.icon),
                     name=f"{item.name}: {item.description}",
@@ -124,7 +126,11 @@ class TogglExtension(Extension):
 
     @property
     def config_path(self) -> Path:
-        return Path(self.preferences["toggl_config_location"])
+        loc = Path(self.preferences["toggl_config_location"])
+        if loc.exists():
+            return loc
+        log.warning("Toggl config file does not exist. Using default.")
+        return Path(".togglrc")
 
     @property
     def default_project(self) -> int | None:
@@ -171,5 +177,4 @@ class ItemEnterEventListener(EventListener):
 
 
 if __name__ == "__main__":
-    logger = log.getLogger(__name__)
     TogglExtension().run()

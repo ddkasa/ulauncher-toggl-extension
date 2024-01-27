@@ -26,7 +26,7 @@
       "type": "input",
       "name": "Toggl Config",
       "description": "Absolute path of your Togglrc file.",
-      "default_value": "~/.togglrc"
+      "default_value": "/.togglrc"
     },
     {
       "id": "max_search_results",

@@ -1,5 +1,5 @@
 import enum
-import logging as log
+import logging
 from datetime import datetime, timedelta
 from functools import cache, partial
 from pathlib import Path
@@ -32,6 +32,8 @@ from ulauncher_toggl_extension.toggl.toggl_cli import (
 
 if TYPE_CHECKING:
     from main import TogglExtension
+
+log = logging.getLogger(__name__)
 
 APP_IMG = Path("images/icon.svg")
 START_IMG = Path("images/start.svg")

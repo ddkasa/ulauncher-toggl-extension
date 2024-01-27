@@ -1,5 +1,6 @@
 import json
-import logging as log
+import logging
+import os
 import re
 import subprocess as sp
 from abc import ABCMeta, abstractmethod
@@ -10,6 +11,9 @@ from typing import TYPE_CHECKING, Any, Final, NamedTuple, Optional
 if TYPE_CHECKING:
     from main import TogglExtension
     from ulauncher_toggl_extension.toggl.toggl_manager import TogglManager
+
+
+log = logging.getLogger(__name__)
 
 
 class TogglTracker(NamedTuple):
@@ -27,7 +31,7 @@ class TogglTracker(NamedTuple):
 
 
 class TogglCli(metaclass=ABCMeta):
-    BASE_COMMAND: Final[str] = "toggl"
+    BASE_COMMAND: Final[str] = "~/.local/bin/toggl"
     __slots__ = ("config_path", "max_results", "workspace_id", "_cache_path")
 
     def __init__(
@@ -42,9 +46,19 @@ class TogglCli(metaclass=ABCMeta):
 
     def base_command(self, cmd: list[str]) -> str:
         cmd.insert(0, self.BASE_COMMAND)
-        log.debug("Running subcommand: %s", " ".join(cmd))
-        run = sp.check_output(cmd, text=True)
-        return str(run)
+        tcmd = " ".join(cmd)
+        log.debug("Running subcommand: %s", tcmd)
+
+        run = sp.run(
+            tcmd,
+            text=True,
+            env=dict(os.environ),
+            shell=True,
+            stdout=sp.PIPE,
+            stderr=sp.PIPE,
+        )
+
+        return str(run.stdout.strip())
 
     def count_table(self, header: str) -> list[int]:
         RIGHT_ALIGNED = {"start", "stop", "duration"}
@@ -101,7 +115,7 @@ class TogglCli(metaclass=ABCMeta):
 
         date = data.pop(0)
         if datetime.now() - self.CACHE_LEN >= date:
-            log.info("%s: Cache of date. Will request new data.", self.__str__)
+            log.info("%s: Cache out of date. Will request new data.", self.__str__)
             return
 
         return data
@@ -140,6 +154,7 @@ class TrackerCli(TogglCli):
             data = self.load_data()
             if isinstance(data, list):
                 return data
+            refresh = True
 
         log.info("Refreshing Toggl tracker list.")
         cmd = [
@@ -206,6 +221,9 @@ class TrackerCli(TogglCli):
         try:
             run = self.base_command(cmd)
         except sp.CalledProcessError:
+            return
+
+        if run == "There is no time entry running!":
             return
 
         lines = run.splitlines()
