@@ -78,7 +78,7 @@ class NotificationParameters(NamedTuple):
 
 class TogglViewer:
     __slots__ = (
-        "config_path",
+        "toggl_exec_path",
         "max_results",
         "default_project",
         "tcli",
@@ -88,14 +88,16 @@ class TogglViewer:
     )
 
     def __init__(self, ext: "TogglExtension") -> None:
-        self.config_path = ext.config_path
+        self.toggl_exec_path = ext.toggl_exec_path
         self.max_results = ext.max_results
         self.default_project = ext.default_project
         self.hints = ext.toggled_hints
 
-        self.tcli = TrackerCli(self.config_path, self.max_results, self.default_project)
+        self.tcli = TrackerCli(
+            self.toggl_exec_path, self.max_results, self.default_project
+        )
         self.manager = TogglManager(
-            self.config_path, self.max_results, self.default_project
+            self.toggl_exec_path, self.max_results, self.default_project
         )
 
     def default_options(self, *args, **kwargs) -> list[QueryParameters]:
@@ -366,7 +368,7 @@ class TogglViewer:
 
 class TogglManager:
     __slots__ = (
-        "config_path",
+        "exec_path",
         "max_results",
         "workspace_id",
         "tcli",
@@ -377,12 +379,12 @@ class TogglManager:
     def __init__(
         self, config_path: Path, max_results: int, default_project: int | None
     ) -> None:
-        self.config_path = config_path
+        self.exec_path = config_path
         self.max_results = max_results
         self.workspace_id = default_project
 
-        self.tcli = TrackerCli(self.config_path, self.max_results, self.workspace_id)
-        self.pcli = TogglProjects(self.config_path, self.max_results, self.workspace_id)
+        self.tcli = TrackerCli(self.exec_path, self.max_results, self.workspace_id)
+        self.pcli = TogglProjects(self.exec_path, self.max_results, self.workspace_id)
 
         self.notification = None
 
@@ -600,7 +602,7 @@ class TogglManager:
         small: bool = True,
     ) -> list[QueryParameters]:
         IMG = TIP_IMAGES.get(level)
-        if IMG is None:
+        if not isinstance(IMG, Path):
             raise AttributeError("Level | Severity was not found.")
 
         hints = []

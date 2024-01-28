@@ -19,21 +19,23 @@
       "id": "project",
       "type": "input",
       "name": "Default Project",
-      "description": "Project ID of the default project you want to use."
+      "description": "ID of the default project you want to use."
     },
     {
-      "id": "toggl_config_location",
+      "id": "toggl_exectuable_location",
       "type": "input",
-      "name": "Toggl Config",
-      "description": "Absolute path of your Togglrc file.",
-      "default_value": "/.togglrc"
+      "name": "Toggl Exectutable",
+      "description": "Absolute path to your toggl executable.",
+      "default_value": "~/.local/bin/toggl"
     },
     {
       "id": "max_search_results",
       "type": "select",
-      "name": "Maximum number of results",
+      "name": "Maximum number of results.",
+      "description": "Set to -1 for no limit.(Not Implemented)",
       "default_value": 10,
       "options": [
+        -1,
         4,
         5,
         6,

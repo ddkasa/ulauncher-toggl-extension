@@ -31,13 +31,12 @@ class TogglTracker(NamedTuple):
 
 
 class TogglCli(metaclass=ABCMeta):
-    BASE_COMMAND: Final[str] = "~/.local/bin/toggl"
-    __slots__ = ("config_path", "max_results", "workspace_id", "_cache_path")
+    __slots__ = ("toggl_exec_path", "max_results", "workspace_id", "_cache_path")
 
     def __init__(
         self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
     ) -> None:
-        self.config_path = config_path
+        self.toggl_exec_path = str(config_path)
         self.max_results = max_results
         self.workspace_id = workspace_id
 
@@ -45,7 +44,7 @@ class TogglCli(metaclass=ABCMeta):
         self._cache_path.mkdir(parents=True, exist_ok=True)
 
     def base_command(self, cmd: list[str]) -> str:
-        cmd.insert(0, self.BASE_COMMAND)
+        cmd.insert(0, self.toggl_exec_path)
         tcmd = " ".join(cmd)
         log.debug("Running subcommand: %s", tcmd)
 

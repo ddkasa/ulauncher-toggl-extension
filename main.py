@@ -1,5 +1,4 @@
 import logging
-import os
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -125,12 +124,12 @@ class TogglExtension(Extension):
         return results
 
     @property
-    def config_path(self) -> Path:
-        loc = Path(self.preferences["toggl_config_location"])
+    def toggl_exec_path(self) -> Path:
+        loc = Path(self.preferences["toggl_exectuable_location"])
         if loc.exists():
             return loc
-        log.warning("Toggl config file does not exist. Using default.")
-        return Path(".togglrc")
+        log.error("Toggl does not exist. Using default.")
+        return Path.home() / Path(".local/bin/toggl")
 
     @property
     def default_project(self) -> int | None:
@@ -138,7 +137,7 @@ class TogglExtension(Extension):
             return int(self.preferences["project"])
         except ValueError:
             log.debug("Default project not setup!")
-            return None
+            return
 
     @property
     def max_results(self) -> int:
