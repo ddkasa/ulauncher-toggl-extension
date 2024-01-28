@@ -14,9 +14,6 @@ from ulauncher.api.shared.action.BaseAction import BaseAction
 from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
-
-# TODO: Integrate this instead of cli + as soon 3.12v exists for the API
-## from toggl import api, tuils
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
 from ulauncher_toggl_extension import toggl
@@ -26,6 +23,9 @@ from ulauncher_toggl_extension.toggl.toggl_cli import (
     TProject,
     TrackerCli,
 )
+
+# TODO: Integrate this instead of cli + as soon 3.12v exists for the API
+## from toggl import api, tuils
 
 # from ulauncher_toggl_extension import utils
 # utils.ensure_import("togglcli")
@@ -85,6 +85,7 @@ class TogglViewer:
         "manager",
         "extension",
         "hints",
+        "current_tracker",
     )
 
     def __init__(self, ext: "TogglExtension") -> None:
@@ -100,7 +101,25 @@ class TogglViewer:
             self.toggl_exec_path, self.max_results, self.default_project
         )
 
+        self.current_tracker = self.tcli.check_running()
+
     def default_options(self, *args, **kwargs) -> list[QueryParameters]:
+        if not self.toggl_exec_path.exists():
+            warning = self.manager.generate_hint(
+                "TogglCli is not properly configured.",
+                SetUserQueryAction(""),
+                TipSeverity.ERROR,
+                small=False,
+            )
+            warning.extend(
+                self.manager.generate_hint(
+                    "Check your Toggl exectutable path in the config.",
+                    DoNothingAction(),
+                    TipSeverity.INFO,
+                ),
+            )
+            return warning
+
         BASIC_TASKS = [
             QueryParameters(
                 START_IMG,
@@ -151,12 +170,12 @@ class TogglViewer:
                 "Projects",
                 "View & Edit projects.",
                 ExtensionCustomAction(
-                    partial(self.manager.list_projects, *args), keep_app_open=True
+                    partial(self.manager.list_projects, *args, **kwargs),
+                    keep_app_open=True,
                 ),
             ),
         ]
-        current_tracker = self.tcli.check_running()
-        if current_tracker is None:
+        if self.current_tracker is None:
             current = QueryParameters(
                 CONTINUE_IMG,
                 "Continue",
@@ -167,10 +186,10 @@ class TogglViewer:
         else:
             current = QueryParameters(
                 APP_IMG,
-                f"Currently Running: {current_tracker.description}",
-                f"Since: {current_tracker.start} @{current_tracker.project}",
+                f"Currently Running: {self.current_tracker.description}",
+                f"Since: {self.current_tracker.start} @{self.current_tracker.project}",
                 ExtensionCustomAction(
-                    partial(self.edit_tracker, current=current_tracker),
+                    partial(self.edit_tracker, current=self.current_tracker),
                     keep_app_open=True,
                 ),
             )
@@ -257,14 +276,20 @@ class TogglViewer:
 
     def edit_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = EDIT_IMG
-        tracker = kwargs.get("current")
-        if tracker is None:
-            return SetUserQueryAction("tgl ")
+
+        if self.current_tracker is None:
+            reset = self.manager.generate_hint(
+                "No active tracker is running.",
+                SetUserQueryAction("tgl "),
+                TipSeverity.ERROR,
+                small=False,
+            )
+            return reset
 
         params = [
             QueryParameters(
                 img,
-                tracker.description,
+                self.current_tracker.description,
                 "Edit the running tracker.",
                 ExtensionCustomAction(
                     partial(self.manager.edit_tracker, *args, **kwargs),
@@ -360,7 +385,7 @@ class TogglViewer:
         hint_messages = (
             "Set a project with the @ symbol",
             "Add tags with the # symbol.",
-            "Set start and end time with > | < respectively",
+            "Set start and end time with > and < respectively.",
         )
         hints = self.manager.generate_hint(hint_messages[:max_values])
         return hints
@@ -411,6 +436,7 @@ class TogglManager:
 
     def add_tracker(self, *args, **kwargs) -> bool:
         img = ADD_IMG
+
         msg = self.tcli.add_tracker(*args, **kwargs)
         noti = NotificationParameters(msg, img)
         self.show_notification(noti)
@@ -451,7 +477,7 @@ class TogglManager:
         self.show_notification(noti)
         return True
 
-    def total_trackers(self, *args) -> list[QueryParameters]:
+    def total_trackers(self, *args, **kwargs) -> list[QueryParameters]:
         img = REPORT_IMG
 
         data = self.tcli.sum_tracker()
@@ -557,7 +583,6 @@ class TogglManager:
             list_data = self.pcli.list_projects(refresh=refresh, **keyword_args)
 
         queries = []
-
         for i, data in enumerate(list_data, start=1):
             if self.max_results - count_offset == i:
                 break
@@ -596,19 +621,25 @@ class TogglManager:
 
     def generate_hint(
         self,
-        message: tuple[str, ...],
+        message: tuple[str, ...] | str,
         action: BaseAction = DoNothingAction(),
         level: TipSeverity = TipSeverity.INFO,
         small: bool = True,
     ) -> list[QueryParameters]:
-        IMG = TIP_IMAGES.get(level)
-        if not isinstance(IMG, Path):
+        img = TIP_IMAGES.get(level)
+
+        if not isinstance(img, Path):
             raise AttributeError("Level | Severity was not found.")
+
+        title = level.name.title()
+        if isinstance(message, str):
+            param = QueryParameters(img, title, message, action, small=small)
+            return [param]
 
         hints = []
 
         for desc in message:
-            param = QueryParameters(IMG, level.name.title(), desc, action, small=small)
+            param = QueryParameters(img, title, desc, action, small=small)
             hints.append(param)
 
         return hints
