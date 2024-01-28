@@ -101,6 +101,14 @@ class TogglCli(metaclass=ABCMeta):
         item_data.append(item[prev:].strip())
         return item_data
 
+    def format_id_str(self, text: str) -> tuple[str, int]:
+        name, item_id = text.split("(")
+
+        item_id = re.sub(r"[\)\(#]", "", item_id)
+        name = name.strip()
+
+        return name, int(item_id)
+
     def cache_data(self, data: list) -> None:
         log.debug(f"Caching new data to {self.cache_path}")
         data = data.copy()
@@ -265,14 +273,15 @@ class TrackerCli(TogglCli):
         return run
 
     def start_tracker(self, tracker: TogglTracker) -> str:
-        cmd = ["start", tracker.entry_id]
+        cmd = ["start", tracker.description]
         if tracker.tags is not None:
             cmd.append("--tags")
             tag_str = ",".join(tracker.tags)
             cmd.append(tag_str)
         if tracker.project is not None:
             cmd.append("--project")
-            cmd.append(str(tracker.project))
+            _, proj_id = self.format_id_str(tracker.project)
+            cmd.append(str(proj_id))
 
         return self.base_command(cmd)
 
