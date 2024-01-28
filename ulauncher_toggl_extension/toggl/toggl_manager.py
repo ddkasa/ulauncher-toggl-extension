@@ -140,7 +140,8 @@ class TogglViewer:
                 "List",
                 f"View the last {self.max_results} trackers.",
                 ExtensionCustomAction(
-                    partial(self.manager.list_trackers), keep_app_open=True
+                    partial(self.manager.list_trackers, *args, **kwargs),
+                    keep_app_open=True,
                 ),
             ),
             QueryParameters(
@@ -193,7 +194,7 @@ class TogglViewer:
         trackers = self.manager.create_list_actions(
             img=img,
             post_method=ExtensionCustomAction,
-            custom_method=partial(self.manager.continue_tracker),
+            custom_method=partial(self.manager.continue_tracker, *args, **kwargs),
             count_offset=-1,
             text_formatter="Continue {name} @{project}",
         )
@@ -325,9 +326,7 @@ class TogglViewer:
         )
         return [params]
 
-    def list_trackers(
-        self, *args, post_method: Optional[MethodType] = None, **kwargs
-    ) -> list[QueryParameters]:
+    def list_trackers(self, *args, **kwargs) -> list[QueryParameters]:
         img = BROWSER_IMG
         params = QueryParameters(
             img,
@@ -551,7 +550,7 @@ class TogglManager:
         keyword_args: dict = {},
     ) -> list[QueryParameters]:
         if data_type == "tracker":
-            list_data = self.tcli.list_trackers(refresh, **keyword_args)
+            list_data = self.tcli.list_trackers(refresh=refresh, **keyword_args)
         else:
             list_data = self.pcli.list_projects(refresh=refresh, **keyword_args)
 

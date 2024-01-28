@@ -253,7 +253,7 @@ class TrackerCli(TogglCli):
 
         if args and isinstance(args[0], TogglTracker):
             desc = args[0].description
-            cmd.append(desc)
+            cmd.append('"' + desc + '"')
         start = kwargs.get("start", False)
         if start:
             cmd.append("--start")
