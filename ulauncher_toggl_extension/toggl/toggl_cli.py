@@ -137,6 +137,9 @@ class TogglCli(metaclass=ABCMeta):
     def CACHE_LEN(self) -> timedelta:
         return timedelta()
 
+    def quote_text(self, text: str) -> str:
+        return '"' + text + '"'
+
 
 class TrackerCli(TogglCli):
     __slots__ = "latest_trackers"
@@ -168,7 +171,7 @@ class TrackerCli(TogglCli):
             "ls",
             "--fields",
             "+project,+id,+tags",
-            # BUG: Toggl CLI really slow when looking for projects
+            # OPTIMIZE: Toggl CLI really slow when looking for projects
         ]
         if start_time:
             cmd.append("--start")
@@ -220,8 +223,8 @@ class TrackerCli(TogglCli):
         return self.latest_trackers
 
     def check_running(self) -> TogglTracker | None:
-        # TODO: Optimise this to use the latest list tracker call instead
-        # for certain instances for more efficient usage
+        # OPTIMIZE: this to use the latest list tracker call instead for
+        # certain instances for more efficient usage.
 
         cmd = ["now"]
 
@@ -251,8 +254,8 @@ class TrackerCli(TogglCli):
         cmd = ["continue"]
 
         if args and isinstance(args[0], TogglTracker):
-            desc = args[0].description
-            cmd.append('"' + desc + '"')
+            cmd.append(self.quote_text(args[0].description))
+
         start = kwargs.get("start", False)
         if start:
             cmd.append("--start")
@@ -272,7 +275,8 @@ class TrackerCli(TogglCli):
         return run
 
     def start_tracker(self, tracker: TogglTracker) -> str:
-        cmd = ["start", tracker.description]
+        cmd = ["start", self.quote_text(tracker.description)]
+
         if tracker.tags is not None:
             cmd.append("--tags")
             tag_str = ",".join(tracker.tags)
@@ -287,16 +291,19 @@ class TrackerCli(TogglCli):
     def add_tracker(self, *args, **kwargs) -> str:
         start = kwargs.get("start", False)
         stop = kwargs.get("stop", False)
+
         if not start:
             return "Missing start date/time."
         if not stop:
             return "Missing stop time"
 
-        desc = args[2:3] or False
+        desc = args[2:3] or False  # pyright: ignore[reportAssignmentType]
         if not desc:
             return "No tracker description given."
 
-        cmd = ["add", start, stop, desc]
+        desc: str
+
+        cmd = ["add", start, stop, self.quote_text(desc)]
 
         tags = kwargs.get("tags", False)
         if tags:
@@ -324,7 +331,7 @@ class TrackerCli(TogglCli):
         description = kwargs.get("description")
         if description is not None:
             cmd.append("--description")
-            cmd.append(description)
+            cmd.append(self.quote_text(description))
 
         project = kwargs.get("project")
         if project is not None:
@@ -369,11 +376,13 @@ class TrackerCli(TogglCli):
         run = self.base_command(cmd).splitlines()
 
         days: list[tuple[str, str]] = []
+
         for i, item in enumerate(run):
             if i + 1 == self.max_results:
                 break
             if i == 0:
                 continue
+
             day = item[:12].strip()
             time = item[12:].strip()
             days.append((day, time))
