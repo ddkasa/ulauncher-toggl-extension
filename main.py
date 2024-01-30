@@ -30,6 +30,10 @@ class TogglExtension(Extension):
     def process_query(self, query: list[str]) -> list | Callable:
         tviewer = TogglViewer(self)
 
+        check = tviewer.pre_check_cli()
+        if isinstance(check, list):
+            return check
+
         if not self.latest_trackers:
             self.latest_trackers = tviewer.tcli.list_trackers()
 
@@ -71,6 +75,9 @@ class TogglExtension(Extension):
         if results is None:
             defaults = tviewer.default_options(*query)
             return self.generate_results(defaults)
+
+        if query and query[-1] == "@":
+            results.extend(tviewer.manager.list_projects(query, kwargs))
 
         return self.generate_results(results)
 
@@ -167,7 +174,6 @@ class ItemEnterEventListener(EventListener):
         data = event.get_data()
         execution = data()
         if not isinstance(execution, bool):
-            log.debug("Display a lot more options")
             results = extension.generate_results(execution)
             return RenderResultListAction(results)
         if not execution:

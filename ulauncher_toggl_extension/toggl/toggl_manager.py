@@ -103,7 +103,7 @@ class TogglViewer:
 
         self.current_tracker = self.tcli.check_running()
 
-    def default_options(self, *args, **kwargs) -> list[QueryParameters]:
+    def pre_check_cli(self) -> list | None:
         if not self.toggl_exec_path.exists():
             warning = self.manager.generate_hint(
                 "TogglCli is not properly configured.",
@@ -120,21 +120,13 @@ class TogglViewer:
             )
             return warning
 
+    def default_options(self, *args, **kwargs) -> list[QueryParameters]:
         BASIC_TASKS = [
             QueryParameters(
                 START_IMG,
                 "Start",
                 "Start a Toggl tracker",
                 SetUserQueryAction("tgl stt"),
-            ),
-            QueryParameters(
-                STOP_IMG,
-                "Stop",
-                "Stop the current Toggl tracker",
-                ExtensionCustomAction(
-                    partial(self.manager.stop_tracker, *args),
-                    keep_app_open=False,
-                ),
             ),
             QueryParameters(
                 START_IMG,
@@ -148,55 +140,37 @@ class TogglViewer:
                 "Delete a Toggl time tracker",
                 SetUserQueryAction("tgl rm"),
             ),
-            QueryParameters(
-                REPORT_IMG,
-                "Report",
-                "View a report of previous week of trackers.",
-                ExtensionCustomAction(
-                    partial(self.manager.total_trackers), keep_app_open=True
-                ),
-            ),
-            QueryParameters(
-                BROWSER_IMG,
-                "List",
-                f"View the last {self.max_results} trackers.",
-                ExtensionCustomAction(
-                    partial(self.manager.list_trackers, *args, **kwargs),
-                    keep_app_open=True,
-                ),
-            ),
-            QueryParameters(
-                APP_IMG,
-                "Projects",
-                "View & Edit projects.",
-                ExtensionCustomAction(
-                    partial(self.manager.list_projects, *args, **kwargs),
-                    keep_app_open=True,
-                ),
-            ),
+            self.total_trackers()[0],
+            self.list_trackers()[0],
+            self.get_projects()[0],
         ]
         if self.current_tracker is None:
-            current = QueryParameters(
-                CONTINUE_IMG,
-                "Continue",
-                "Continue the latest Toggl time tracker",
-                ExtensionCustomAction(partial(self.manager.continue_tracker)),
-                SetUserQueryAction("tgl continue"),
-            )
+            current = [
+                QueryParameters(
+                    CONTINUE_IMG,
+                    "Continue",
+                    "Continue the latest Toggl time tracker",
+                    ExtensionCustomAction(partial(self.manager.continue_tracker)),
+                    SetUserQueryAction("tgl continue"),
+                )
+            ]
         else:
-            current = QueryParameters(
-                APP_IMG,
-                f"Currently Running: {self.current_tracker.description}",
-                f"Since: {self.current_tracker.start} @{self.current_tracker.project}",
-                ExtensionCustomAction(
-                    partial(self.edit_tracker, current=self.current_tracker),
-                    keep_app_open=True,
+            current = [
+                QueryParameters(
+                    APP_IMG,
+                    f"Currently Running: {self.current_tracker.description}",
+                    f"Since: {self.current_tracker.start} @{self.current_tracker.project}",
+                    ExtensionCustomAction(
+                        partial(self.edit_tracker, current=self.current_tracker),
+                        keep_app_open=True,
+                    ),
                 ),
-            )
+                self.stop_tracker()[0],
+            ]
 
-        BASIC_TASKS.insert(0, current)
+        current.extend(BASIC_TASKS)
 
-        return BASIC_TASKS
+        return current
 
     def continue_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = CONTINUE_IMG
@@ -274,10 +248,8 @@ class TogglViewer:
 
         return base_param
 
-    def edit_tracker(self, *args, **kwargs) -> list[QueryParameters]:
-        img = EDIT_IMG
-
-        if self.current_tracker is None:
+    def check_current_tracker(self):
+        if not isinstance(self.current_tracker, TogglTracker):
             reset = self.manager.generate_hint(
                 "No active tracker is running.",
                 SetUserQueryAction("tgl "),
@@ -286,10 +258,17 @@ class TogglViewer:
             )
             return reset
 
+    def edit_tracker(self, *args, **kwargs) -> list[QueryParameters]:
+        img = EDIT_IMG
+
+        track = self.check_current_tracker()
+        if track is not None:
+            return track
+
         params = [
             QueryParameters(
                 img,
-                self.current_tracker.description,
+                self.current_tracker.description,  # pyright: ignore [reportOptionalMemberAccess]
                 "Edit the running tracker.",
                 ExtensionCustomAction(
                     partial(self.manager.edit_tracker, *args, **kwargs),
@@ -304,10 +283,13 @@ class TogglViewer:
 
     def stop_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = STOP_IMG
+        track = self.check_current_tracker()
+        if track is not None:
+            return track
         params = QueryParameters(
             img,
             "Stop",
-            "Stop the current tracker.",
+            f"Stop tracking {self.current_tracker.description}.",  # pyright: ignore [reportOptionalMemberAccess]
             ExtensionCustomAction(
                 partial(self.manager.stop_tracker, *args),
                 keep_app_open=False,
