@@ -114,6 +114,19 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
+name = "pygobject-stubs"
+version = "2.10.0"
+description = "Typing stubs for PyGObject"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "PyGObject-stubs-2.10.0.tar.gz", hash = "sha256:c1842f9bbb91873520376087008c829b060dad1b0ee5aa5b905f0d13ee79fe20"},
+]
+
+[package.extras]
+dev = ["PyGObject", "black", "codespell", "isort", "pre-commit", "ruff"]
+
+[[package]]
 name = "pylint"
 version = "3.0.3"
 description = "python code static checker"
@@ -182,4 +195,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.12"
-content-hash = "6d6d14688bb01cc4c835bb8cea6495a7bc36c5111c03be6f85eed60cf9498bb0"
+content-hash = "a6913b24296d73c4b09329332ea7e077d871cab517538418e7f7f3c07d094837"
