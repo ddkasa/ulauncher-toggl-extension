@@ -11,6 +11,7 @@ from ulauncher.api.shared.event import ItemEnterEvent, KeywordQueryEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 
+from ulauncher_toggl_extension.toggl.toggl_cli import TogglCli
 from ulauncher_toggl_extension.toggl.toggl_manager import QueryParameters, TogglViewer
 
 log = logging.getLogger(__name__)
@@ -86,7 +87,8 @@ class TogglExtension(Extension):
                 try:
                     item = int(item)
                 except ValueError:
-                    pass
+                    log.error("Failed to parse project: %s", item)
+                    continue
                 arguments["project"] = item
             elif item[0] == ">":
                 arguments["start"] = item[1:]
@@ -107,6 +109,7 @@ class TogglExtension(Extension):
                     description=item.description,
                     on_enter=item.on_enter,
                     on_alt_enter=item.on_alt_enter,
+                    highlightable=False,
                 )
             else:
                 action = ExtensionResultItem(
