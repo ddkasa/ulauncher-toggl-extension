@@ -26,7 +26,7 @@ class TogglTracker(NamedTuple):
     description: str
     entry_id: int
     stop: str
-    project: Optional[str] = None
+    project: Optional[str | int] = None
     start: Optional[str] = None
     duration: Optional[str] = None
     tags: Optional[list[str]] = None
@@ -282,6 +282,14 @@ class TrackerCli(TogglCli):
 
         return run
 
+    def add_project_parameter(self, cmd: list[str], project: int | str) -> None:
+        cmd.append("--project")
+        if isinstance(project, str) and "(" in project:
+            _, proj_id = self.format_id_str(project)
+        else:
+            proj_id = project
+        cmd.append(str(proj_id))
+
     def start_tracker(self, tracker: TogglTracker) -> str:
         cmd = ["start", self.quote_text(tracker.description)]
 
@@ -290,12 +298,7 @@ class TrackerCli(TogglCli):
             tag_str = ",".join(tracker.tags)
             cmd.append(tag_str)
         if tracker.project is not None:
-            cmd.append("--project")
-            if not isinstance(tracker.project, int) and "(" in tracker.project:
-                _, proj_id = self.format_id_str(tracker.project)
-            else:
-                proj_id = tracker.project
-            cmd.append(str(proj_id))
+            self.add_project_parameter(cmd, tracker.project)
 
         return self.base_command(cmd)
 
@@ -323,12 +326,7 @@ class TrackerCli(TogglCli):
 
         project = kwargs.get("project", False)
         if project:
-            cmd.append("--project")
-            if isinstance(project, str):
-                _, pid = TogglProjects.project_name_formatter(str(project))
-            else:
-                pid = project
-            cmd.append(str(pid))
+            self.add_project_parameter(cmd, project)
 
         try:
             return self.base_command(cmd)
@@ -336,7 +334,7 @@ class TrackerCli(TogglCli):
             log.error("Adding tracker with name %s was unsuccessful: %s", desc, p)
             return f"Adding tracker with name {desc} was unsuccessful."
 
-    def edit_tracker(self, *args, **kwargs) -> str | None:
+    def edit_tracker(self, *args, **kwargs) -> str:
         cmd = ["now"]
 
         description = kwargs.get("description")
@@ -344,23 +342,22 @@ class TrackerCli(TogglCli):
             cmd.append("--description")
             cmd.append(self.quote_text(description))
 
-        project = kwargs.get("project")
-        if project is not None:
-            cmd.append("--project")
-            cmd.append(project)
+        project = kwargs.get("project", False)
+        if project:
+            self.add_project_parameter(cmd, project)
 
-        start = kwargs.get("start")
-        if start is not None:
+        start = kwargs.get("start", False)
+        if start:
             cmd.append("--start")
             cmd.append(start)
 
-        tags = kwargs.get("tags")
-        if tags is not None:
+        tags = kwargs.get("tags", False)
+        if tags:
             cmd.append("--tags")
             cmd.append(tags)
 
         if len(cmd) == 1:
-            return
+            return "No parameters to edit specified!"
 
         try:
             return self.base_command(cmd)
