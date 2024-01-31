@@ -39,7 +39,7 @@ APP_IMG = Path("images/icon.svg")
 START_IMG = Path("images/start.svg")
 EDIT_IMG = Path("images/edit.svg")
 ADD_IMG = Path("images/add.svg")
-PROJECT_IMG = Path("images/project.svg")  # TODO: Needs to created.
+PROJECT_IMG = Path("images/project.svg")  # TODO: Needs to be created.
 STOP_IMG = Path("images/stop.svg")
 DELETE_IMG = Path("images/delete.svg")
 CONTINUE_IMG = Path("images/continue.svg")
@@ -131,7 +131,7 @@ class TogglViewer:
             QueryParameters(
                 START_IMG,
                 "Add",
-                "Add a toggl time tracker at a specified time.",
+                "Add a toggl time tracker.",
                 SetUserQueryAction("tgl add"),
             ),
             QueryParameters(
@@ -368,6 +368,7 @@ class TogglViewer:
             "Set a project with the @ symbol",
             "Add tags with the # symbol.",
             "Set start and end time with > and < respectively.",
+            "If using spaces in your trackers or projects use quotation marks.",
         )
         hints = self.manager.generate_hint(hint_messages[:max_values])
         return hints
@@ -498,7 +499,9 @@ class TogglManager:
             img, refresh="refresh" in args, keyword_args=kwargs
         )
 
-    def list_projects(self, *args, **kwargs) -> list[QueryParameters]:
+    def list_projects(
+        self, *args, post_method=DoNothingAction, **kwargs
+    ) -> list[QueryParameters]:
         img = APP_IMG
         data = self.create_list_actions(
             img,
@@ -506,6 +509,7 @@ class TogglManager:
             data_type="project",
             refresh="refresh" in args,
             keyword_args=kwargs,
+            post_method=post_method,
         )
         return data
 
@@ -569,7 +573,9 @@ class TogglManager:
             if self.max_results - count_offset == i:
                 break
 
-            if custom_method is not None:
+            if post_method == self.query_builder:
+                meth = post_method(data, keyword_args["query"])
+            elif custom_method is not None:
                 func = partial(custom_method, data)
                 meth = post_method(func, keep_app_open=keep_open)
             else:
@@ -586,6 +592,21 @@ class TogglManager:
             queries.append(param)
 
         return queries
+
+    def query_builder(
+        self, info: TogglTracker | TProject, existing_query: list[str]
+    ) -> SetUserQueryAction:
+        joined_query = " ".join(existing_query)
+        if isinstance(info, TogglTracker):
+            data = info.entry_id
+        elif isinstance(info, TProject):
+            data = info.project_id
+        else:
+            return SetUserQueryAction(joined_query)
+
+        new_query = f"{joined_query}{data}"
+
+        return SetUserQueryAction(new_query)
 
     def show_notification(
         self, data: NotificationParameters, on_close: Optional[Callable] = None

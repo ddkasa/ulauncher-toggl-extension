@@ -68,7 +68,7 @@ class TogglExtension(Extension):
 
         method = QUERY_MATCH.get(query[0], tviewer.default_options)
 
-        query.pop(0)
+        q = query.pop(0)
         kwargs = self.parse_query(query)
 
         results = method(*query, **kwargs)
@@ -77,7 +77,14 @@ class TogglExtension(Extension):
             return self.generate_results(defaults)
 
         if query and query[-1] == "@":
-            results.extend(tviewer.manager.list_projects(query, kwargs))
+            results = [results[0]]
+            q = ["tgl", q]
+            q.extend(query)
+            results.extend(
+                tviewer.manager.list_projects(
+                    query=q, post_method=tviewer.manager.query_builder, **kwargs
+                )
+            )
 
         return self.generate_results(results)
 
@@ -94,8 +101,7 @@ class TogglExtension(Extension):
                 try:
                     item = int(item)
                 except ValueError:
-                    log.error("Failed to parse project: %s", item)
-                    continue
+                    pass
                 arguments["project"] = item
             elif item[0] == ">":
                 arguments["start"] = item[1:]
@@ -138,7 +144,7 @@ class TogglExtension(Extension):
         loc = Path(self.preferences["toggl_exectuable_location"])
         if loc.exists():
             return loc
-        log.error("Toggl does not exist. Using default.")
+        log.error("TogglCli does not exist at provided Path. Using default.")
         return Path.home() / Path(".local/bin/toggl")
 
     @property
