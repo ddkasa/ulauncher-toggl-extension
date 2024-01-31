@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, NamedTuple, Optional
 
+from ulauncher_toggl_extension import toggl
+
 if TYPE_CHECKING:
     from main import TogglExtension
     from ulauncher_toggl_extension.toggl.toggl_manager import TogglManager
@@ -22,7 +24,7 @@ class TogglTracker(NamedTuple):
     """
 
     description: str
-    entry_id: str
+    entry_id: int
     stop: str
     project: Optional[str] = None
     start: Optional[str] = None
@@ -245,7 +247,13 @@ class TrackerCli(TogglCli):
 
         _, tags = lines[6].split(": ", maxsplit=1)
         tracker = TogglTracker(
-            desc, toggl_id, "running", project, start, duration, tags.split(",")
+            description=desc,
+            entry_id=int(toggl_id),
+            stop="running",
+            project=project,
+            start=start,
+            duration=duration,
+            tags=tags.split(","),
         )
 
         return tracker
@@ -283,7 +291,10 @@ class TrackerCli(TogglCli):
             cmd.append(tag_str)
         if tracker.project is not None:
             cmd.append("--project")
-            _, proj_id = self.format_id_str(tracker.project)
+            if not isinstance(tracker.project, int) and "(" in tracker.project:
+                _, proj_id = self.format_id_str(tracker.project)
+            else:
+                proj_id = tracker.project
             cmd.append(str(proj_id))
 
         return self.base_command(cmd)

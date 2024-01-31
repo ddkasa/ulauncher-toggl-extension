@@ -206,7 +206,7 @@ class TogglViewer:
                 "Start",
                 "Start a new tracker.",
                 ExtensionCustomAction(
-                    partial(self.manager.start_tracker),
+                    partial(self.manager.start_tracker, *args, **kwargs),
                     keep_app_open=False,
                 ),
             )
@@ -405,13 +405,25 @@ class TogglManager:
         self.show_notification(noti)
         return True
 
-    def start_tracker(self, *args) -> bool:
+    def start_tracker(self, *args, **kwargs) -> bool:
         img = START_IMG
 
-        if not args or not isinstance(args[0], TogglTracker):
+        if not args:
             return False
+        elif not isinstance(args[0], TogglTracker):
+            tracker = TogglTracker(
+                description=str(args[0]),
+                entry_id=0,
+                stop=kwargs.get("stop", ""),
+                project=kwargs.get("project"),
+                duration=kwargs.get("duration"),
+                tags=kwargs.get("tags"),
+            )
+            print(tracker)
+        else:
+            tracker = args[0]
 
-        cnt = self.tcli.start_tracker(args[0])
+        cnt = self.tcli.start_tracker(tracker)
         noti = NotificationParameters(cnt, img)
 
         self.show_notification(noti)
