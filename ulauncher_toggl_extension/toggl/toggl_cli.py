@@ -223,7 +223,7 @@ class TrackerCli(TogglCli):
             if cnt == self.max_results:
                 break
 
-        if refresh:
+        if refresh or not self.cache_path.exists():
             self.cache_data(self.latest_trackers)
 
         return self.latest_trackers
