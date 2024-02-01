@@ -32,17 +32,19 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-APP_IMG = Path("images/icon.svg")
-START_IMG = Path("images/start.svg")
-EDIT_IMG = Path("images/edit.svg")
-ADD_IMG = Path("images/add.svg")
-PROJECT_IMG = Path("images/project.svg")  # TODO: Needs to be created.
-STOP_IMG = Path("images/stop.svg")
-DELETE_IMG = Path("images/delete.svg")
-CONTINUE_IMG = Path("images/continue.svg")
-REPORT_IMG = Path("images/reports.svg")
-BROWSER_IMG = Path("images/browser.svg")
-BLANK_IMG = Path("images/blank.svg")
+SVG_PATH = Path("images/svg")
+
+APP_IMG = SVG_PATH / Path("icon.svg")
+START_IMG = SVG_PATH / Path("start.svg")
+EDIT_IMG = SVG_PATH / Path("edit.svg")
+ADD_IMG = SVG_PATH / Path("add.svg")
+PROJECT_IMG = SVG_PATH / Path("project.svg")  # TODO: Needs to be created.
+STOP_IMG = SVG_PATH / Path("stop.svg")
+DELETE_IMG = SVG_PATH / Path("delete.svg")
+CONTINUE_IMG = SVG_PATH / Path("continue.svg")
+REPORT_IMG = SVG_PATH / Path("reports.svg")
+BROWSER_IMG = SVG_PATH / Path("browser.svg")
+BLANK_IMG = SVG_PATH / Path("blank.svg")
 
 
 class TipSeverity(enum.Enum):
@@ -52,9 +54,9 @@ class TipSeverity(enum.Enum):
 
 
 TIP_IMAGES = {
-    TipSeverity.INFO: Path("images/tip.svg"),
-    TipSeverity.ERROR: Path("images/tip-error.svg"),
-    TipSeverity.WARNING: Path("images/tip-warning.svg"),
+    TipSeverity.INFO: SVG_PATH / Path("tip.svg"),
+    TipSeverity.ERROR: SVG_PATH / Path("tip-error.svg"),
+    TipSeverity.WARNING: SVG_PATH / Path("tip-warning.svg"),
 }
 
 

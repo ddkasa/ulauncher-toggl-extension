@@ -3,7 +3,7 @@
   "name": "Toggl Time Tracker",
   "description": "Toggl tracker extension for managing time management tasks.",
   "developer_name": "David Kasakaitis",
-  "icon": "images/icon.svg",
+  "icon": "images/svg/icon.svg",
   "options": {
     "query_debounce": 0.5
   },
