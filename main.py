@@ -11,7 +11,6 @@ from ulauncher.api.shared.event import ItemEnterEvent, KeywordQueryEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 
-from ulauncher_toggl_extension.toggl.toggl_cli import TogglCli
 from ulauncher_toggl_extension.toggl.toggl_manager import QueryParameters, TogglViewer
 
 log = logging.getLogger(__name__)
@@ -89,12 +88,10 @@ class TogglExtension(Extension):
         return self.generate_results(results)
 
     def parse_query(self, query: list[str]) -> dict[str, str]:
-        # TODO: Input sanitizing in order to throw away invalid arguments.
+        # TODO: Input sanitizing in order to throw away invalid arguments and prevent erorrs.
         arguments = {}
-        for i, item in enumerate(query):
-            if i == 0:
-                arguments["action"] = item
-            elif item[0] == "#":
+        for item in query:
+            if item[0] == "#":
                 arguments["tags"] = item[1:]
             elif item[0] == "@":
                 item = item[1:]
@@ -103,6 +100,8 @@ class TogglExtension(Extension):
                 except ValueError:
                     pass
                 arguments["project"] = item
+            elif item[0] == ">" and item[-1] == "<":
+                arguments["duration"] = item[1:-1]
             elif item[0] == ">":
                 arguments["start"] = item[1:]
             elif item[0] == "<":

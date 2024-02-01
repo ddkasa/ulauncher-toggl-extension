@@ -1,3 +1,4 @@
+import enum
 import json
 import logging
 import os
@@ -6,16 +7,21 @@ import subprocess as sp
 from abc import ABCMeta, abstractmethod
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, NamedTuple, Optional
-
-from ulauncher_toggl_extension import toggl
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 if TYPE_CHECKING:
-    from main import TogglExtension
-    from ulauncher_toggl_extension.toggl.toggl_manager import TogglManager
+    pass
+    # from main import TogglExtension
+    # from ulauncher_toggl_extension.toggl.toggl_manager import TogglManager
 
 
 log = logging.getLogger(__name__)
+
+
+class DateTimeType(enum.Enum):
+    START = enum.auto()
+    END = enum.auto()
+    DURATION = enum.auto()
 
 
 class TogglTracker(NamedTuple):
@@ -152,9 +158,7 @@ class TrackerCli(TogglCli):
         super().__init__(config_path, max_results, workspace_id)
         self.latest_trackers = []
 
-    def list_trackers(
-        self, *args, refresh: bool = False, **kwargs
-    ) -> list[TogglTracker]:
+    def list_trackers(self, *_, refresh: bool = False, **kwargs) -> list[TogglTracker]:
         start_time = kwargs.get("start", False)
         end_time = kwargs.get("stop", False)
         times = start_time or end_time
@@ -208,7 +212,7 @@ class TrackerCli(TogglCli):
             cnt += 1
             tracker = TogglTracker(
                 description=desc.strip(),
-                entry_id=toggl_id,
+                entry_id=int(toggl_id),
                 stop=stop.strip(),
                 project=project,
                 duration=dur,
@@ -225,9 +229,6 @@ class TrackerCli(TogglCli):
         return self.latest_trackers
 
     def check_running(self) -> TogglTracker | None:
-        # OPTIMIZE: this to use the latest list tracker call instead for
-        # certain instances for more efficient usage.
-
         cmd = ["now"]
 
         try:
@@ -258,6 +259,21 @@ class TrackerCli(TogglCli):
 
         return tracker
 
+    def datetime_parameter(
+        self, cmd: list[str], time: str, time_type: DateTimeType
+    ) -> None:
+        # TODO: Pre-check datetimes in the future to prevent broken calls.
+        FLAGS = {
+            DateTimeType.START: "--start",
+            DateTimeType.END: "--stop",
+            DateTimeType.DURATION: "--duration",
+        }
+        flag = FLAGS.get(time_type)
+        if flag is None:
+            return
+        cmd.append(flag)
+        cmd.append(time)
+
     def continue_tracker(self, *args, **kwargs) -> str:
         cmd = ["continue"]
 
@@ -266,8 +282,7 @@ class TrackerCli(TogglCli):
 
         start = kwargs.get("start", False)
         if start:
-            cmd.append("--start")
-            cmd.append(start)
+            self.datetime_parameter(cmd, start, DateTimeType.START)
 
         return self.base_command(cmd)
 
@@ -299,6 +314,8 @@ class TrackerCli(TogglCli):
             cmd.append(tag_str)
         if tracker.project is not None:
             self.add_project_parameter(cmd, tracker.project)
+        if tracker.start is not None:
+            self.datetime_parameter(cmd, tracker.start, DateTimeType.START)
 
         return self.base_command(cmd)
 
@@ -309,7 +326,7 @@ class TrackerCli(TogglCli):
         if not start:
             return "Missing start date/time."
         if not stop:
-            return "Missing stop time"
+            return "Missing stopping time."
 
         desc = args[2:3] or False  # pyright: ignore[reportAssignmentType]
         if not desc:
@@ -334,7 +351,7 @@ class TrackerCli(TogglCli):
             log.error("Adding tracker with name %s was unsuccessful: %s", desc, p)
             return f"Adding tracker with name {desc} was unsuccessful."
 
-    def edit_tracker(self, *args, **kwargs) -> str:
+    def edit_tracker(self, *_, **kwargs) -> str:
         cmd = ["now"]
 
         description = kwargs.get("description")
@@ -425,7 +442,7 @@ class TogglProjects(TogglCli):
         self.project_list = []
 
     def list_projects(
-        self, *args, active: bool = True, refresh: bool = False, **kwargs
+        self, active: bool = True, refresh: bool = False, **_
     ) -> list[TProject]:
         if not refresh and self.project_list:
             return self.project_list

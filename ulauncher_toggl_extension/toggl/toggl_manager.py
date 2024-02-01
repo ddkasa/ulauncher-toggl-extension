@@ -364,13 +364,14 @@ class TogglViewer:
         if not self.hints:
             return []
 
-        hint_messages = (
+        HINT_MESSAGES = (
             "Set a project with the @ symbol",
             "Add tags with the # symbol.",
-            "Set start and end time with > and < respectively.",
+            "Set the start and end time with > & < respectively and the duration with both.",
             "If using spaces in your trackers or projects use quotation marks.",
+            "Time formatting expects default TogglCli formatting.",
         )
-        hints = self.manager.generate_hint(hint_messages[:max_values])
+        hints = self.manager.generate_hint(HINT_MESSAGES[:max_values])
         return hints
 
 
@@ -419,7 +420,6 @@ class TogglManager:
                 duration=kwargs.get("duration"),
                 tags=kwargs.get("tags"),
             )
-            print(tracker)
         else:
             tracker = args[0]
 
