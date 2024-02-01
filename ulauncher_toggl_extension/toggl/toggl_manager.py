@@ -7,16 +7,12 @@ from types import MethodType
 from typing import TYPE_CHECKING, Callable, NamedTuple, Optional
 
 import gi
-
-gi.require_version("Notify", "0.7")
 from gi.repository import Notify
 from ulauncher.api.shared.action.BaseAction import BaseAction
 from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
-from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
-from ulauncher_toggl_extension import toggl
 from ulauncher_toggl_extension.toggl.toggl_cli import (
     TogglProjects,
     TogglTracker,
@@ -24,6 +20,7 @@ from ulauncher_toggl_extension.toggl.toggl_cli import (
     TrackerCli,
 )
 
+gi.require_version("Notify", "0.7")
 # TODO: Integrate this instead of cli + as soon 3.12v exists for the API
 ## from toggl import api, tuils
 
@@ -141,8 +138,8 @@ class TogglViewer:
                 SetUserQueryAction("tgl rm"),
             ),
             self.total_trackers()[0],
-            self.list_trackers()[0],
-            self.get_projects()[0],
+            self.list_trackers(*args, **kwargs)[0],
+            self.get_projects(*args, **kwargs)[0],
         ]
         if self.current_tracker is None:
             current = [
@@ -238,7 +235,7 @@ class TogglViewer:
                 "Add",
                 msg,
                 ExtensionCustomAction(
-                    partial(self.manager.add_tracker, *args),
+                    partial(self.manager.add_tracker, *args, **kwargs),
                     keep_app_open=True,
                 ),
             )
@@ -281,7 +278,7 @@ class TogglViewer:
 
         return params
 
-    def stop_tracker(self, *args, **kwargs) -> list[QueryParameters]:
+    def stop_tracker(self) -> list[QueryParameters]:
         img = STOP_IMG
         track = self.check_current_tracker()
         if track is not None:
@@ -291,7 +288,7 @@ class TogglViewer:
             "Stop",
             f"Stop tracking {self.current_tracker.description}.",  # pyright: ignore [reportOptionalMemberAccess]
             ExtensionCustomAction(
-                partial(self.manager.stop_tracker, *args),
+                partial(self.manager.stop_tracker),
                 keep_app_open=False,
             ),
         )
@@ -305,7 +302,7 @@ class TogglViewer:
                 "Delete",
                 "Delete tracker.",
                 ExtensionCustomAction(
-                    partial(self.manager.remove_tracker, *args),
+                    partial(self.manager.remove_tracker, *args, **kwargs),
                     keep_app_open=False,
                 ),
             )
@@ -322,7 +319,7 @@ class TogglViewer:
 
         return params
 
-    def total_trackers(self, *args, **kwargs) -> list[QueryParameters]:
+    def total_trackers(self) -> list[QueryParameters]:
         img = REPORT_IMG
 
         params = QueryParameters(
@@ -330,7 +327,8 @@ class TogglViewer:
             "Generate Report",
             "View a weekly total of your trackers.",
             ExtensionCustomAction(
-                partial(self.manager.total_trackers, *args), keep_app_open=True
+                partial(self.manager.total_trackers),
+                keep_app_open=True,
             ),
         )
         return [params]
@@ -450,7 +448,7 @@ class TogglManager:
 
         return True
 
-    def stop_tracker(self, *args) -> bool:
+    def stop_tracker(self) -> bool:
         img = STOP_IMG
         msg = self.tcli.stop_tracker()
 
@@ -472,7 +470,7 @@ class TogglManager:
         self.show_notification(noti)
         return True
 
-    def total_trackers(self, *args, **kwargs) -> list[QueryParameters]:
+    def total_trackers(self) -> list[QueryParameters]:
         img = REPORT_IMG
 
         data = self.tcli.sum_tracker()
