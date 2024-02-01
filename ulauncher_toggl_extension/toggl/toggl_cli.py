@@ -78,24 +78,24 @@ class TogglCli(metaclass=ABCMeta):
                 and any(x.isalpha() for x in current_word)
             ):
                 current_word = ""
-                count.append(index)
+                count.append(index + 1)
 
             elif right and current_word[-1] != " " and letter == " ":
                 current_word = ""
-                count.append(index)
+                count.append(index + 1)
 
             current_word += letter
 
         return count
 
     def format_line(
-        self, header_size: list[int], item: str, names: Optional[set] = None
+        self, header_size: list[int], item: str, duplicate_names: Optional[set] = None
     ) -> list[str] | None:
         prev = 0
         item_data = []
         for index in header_size:
             d = item[prev:index].strip()
-            if isinstance(names, set) and d in names:
+            if isinstance(duplicate_names, set) and d in duplicate_names:
                 return
             item_data.append(d)
             prev = index
