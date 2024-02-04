@@ -1,5 +1,6 @@
 import enum
 import logging
+import subprocess as sp
 from datetime import datetime, timedelta
 from functools import cache, partial
 from pathlib import Path
@@ -430,11 +431,17 @@ class TogglManager:
             tracker = args[0]
             tracker.start = None
 
-        cnt = self.tcli.start_tracker(tracker)
-        noti = NotificationParameters(cnt, img)
+        try:
+            cnt = self.tcli.start_tracker(tracker)
+            result = True
+        except sp.SubprocessError:
+            cnt = f"Failed to start {tracker.description}"
+            result = False
 
+        noti = NotificationParameters(cnt, img)
         self.show_notification(noti)
-        return True
+
+        return result
 
     def add_tracker(self, *args, **kwargs) -> bool:
         img = ADD_IMG

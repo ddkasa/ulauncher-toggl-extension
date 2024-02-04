@@ -54,14 +54,18 @@ class TogglCli(metaclass=ABCMeta):
         tcmd = " ".join(cmd)
         log.debug("Running subcommand: %s", tcmd)
 
-        run = sp.run(
-            tcmd,
-            text=True,
-            env=dict(os.environ),
-            shell=True,
-            stdout=sp.PIPE,
-            stderr=sp.PIPE,
-        )
+        try:
+            run = sp.run(
+                tcmd,
+                text=True,
+                env=dict(os.environ),
+                shell=True,
+                stdout=sp.PIPE,
+                stderr=sp.PIPE,
+            )
+        except sp.CalledProcessError as cpe:
+            log.error("'%s failed to run.'", tcmd)
+            raise cpe
 
         return str(run.stdout.strip())
 
