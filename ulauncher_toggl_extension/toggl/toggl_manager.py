@@ -407,6 +407,7 @@ class TogglManager:
         return True
 
     def start_tracker(self, *args, **kwargs) -> bool:
+        # TODO: To similar to continue in certain functionality, so it needs some adjustments.
         img = START_IMG
 
         if not args:
@@ -422,6 +423,7 @@ class TogglManager:
             )
         else:
             tracker = args[0]
+            tracker.start = None
 
         cnt = self.tcli.start_tracker(tracker)
         noti = NotificationParameters(cnt, img)
