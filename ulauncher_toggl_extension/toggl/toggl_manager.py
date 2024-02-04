@@ -70,12 +70,6 @@ class QueryParameters(NamedTuple):
     small: bool = False
 
 
-class NotificationParameters(NamedTuple):
-    body: str
-    icon: Path
-    title: str = "Toggl Extension"
-
-
 class TogglViewer:
     __slots__ = (
         "toggl_exec_path",
@@ -406,10 +400,9 @@ class TogglManager:
     def continue_tracker(self, *args, **kwargs) -> bool:
         img = CONTINUE_IMG
 
-        cnt = self.tcli.continue_tracker(*args, **kwargs)
-        noti = NotificationParameters(cnt, img)
+        msg = self.tcli.continue_tracker(*args, **kwargs)
 
-        self.show_notification(noti)
+        self.show_notification(msg, img)
         return True
 
     def start_tracker(self, *args, **kwargs) -> bool:
@@ -432,14 +425,13 @@ class TogglManager:
             tracker.start = None
 
         try:
-            cnt = self.tcli.start_tracker(tracker)
+            msg = self.tcli.start_tracker(tracker)
             result = True
         except sp.SubprocessError:
-            cnt = f"Failed to start {tracker.description}"
+            msg = f"Failed to start {tracker.description}"
             result = False
 
-        noti = NotificationParameters(cnt, img)
-        self.show_notification(noti)
+        self.show_notification(msg, img)
 
         return result
 
@@ -447,8 +439,7 @@ class TogglManager:
         img = ADD_IMG
 
         msg = self.tcli.add_tracker(*args, **kwargs)
-        noti = NotificationParameters(msg, img)
-        self.show_notification(noti)
+        self.show_notification(msg, img)
 
         return True
 
@@ -459,8 +450,7 @@ class TogglManager:
         if msg == "Tracker is current not running." or msg is None:
             return False
 
-        noti = NotificationParameters(msg, img)
-        self.show_notification(noti)
+        self.show_notification(msg, img)
 
         return True
 
@@ -468,8 +458,7 @@ class TogglManager:
         img = STOP_IMG
         msg = self.tcli.stop_tracker()
 
-        noti = NotificationParameters(str(msg), img)
-        self.show_notification(noti)
+        self.show_notification(msg, img)
         return True
 
     def remove_tracker(self, toggl_id: int | TogglTracker) -> bool:
@@ -480,10 +469,9 @@ class TogglManager:
 
         img = DELETE_IMG
 
-        cnt = self.tcli.rm_tracker(tracker=toggl_id)
-        noti = NotificationParameters(cnt, img)
+        msg = self.tcli.rm_tracker(tracker=toggl_id)
 
-        self.show_notification(noti)
+        self.show_notification(msg, img)
         return True
 
     def total_trackers(self) -> list[QueryParameters]:
@@ -635,15 +623,19 @@ class TogglManager:
         return SetUserQueryAction(new_query)
 
     def show_notification(
-        self, data: NotificationParameters, on_close: Optional[Callable] = None
+        self,
+        msg: str,
+        img: Path,
+        title: str = "Toggl Extension",
+        on_close: Optional[Callable] = None,
     ) -> None:
-        icon = str(Path(__file__).parents[2] / data.icon)
+        icon = str(Path(__file__).parents[2] / img)
         if not Notify.is_initted():
             Notify.init("TogglExtension")
         if self.notification is None:
-            self.notification = Notify.Notification.new(data.title, data.body, icon)
+            self.notification = Notify.Notification.new(title, msg, icon)
         else:
-            self.notification.update(data.title, data.body, icon)
+            self.notification.update(title, msg, icon)
         if on_close is not None:
             self.notification.connect("closed", on_close)
         self.notification.show()
