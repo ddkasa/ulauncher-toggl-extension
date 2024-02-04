@@ -5,9 +5,10 @@ import os
 import re
 import subprocess as sp
 from abc import ABCMeta, abstractmethod
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     pass
@@ -24,18 +25,15 @@ class DateTimeType(enum.Enum):
     DURATION = enum.auto()
 
 
-class TogglTracker(NamedTuple):
-    """Tuple for holding current tracker information while executing the
-    rest of the script.
-    """
-
-    description: str
-    entry_id: int
-    stop: str
-    project: Optional[str | int] = None
-    start: Optional[str] = None
-    duration: Optional[str] = None
-    tags: Optional[list[str]] = None
+@dataclass()
+class TogglTracker:
+    description: str = field()
+    entry_id: int = field()
+    stop: str = field()
+    project: Optional[str | int] = field(default=None)
+    start: Optional[str] = field(default=None)
+    duration: Optional[str] = field(default=None)
+    tags: Optional[list[str]] = field(default=None)
 
 
 class TogglCli(metaclass=ABCMeta):
@@ -329,10 +327,8 @@ class TrackerCli(TogglCli):
             return "Missing stopping time."
 
         desc = args[2:3] or False  # pyright: ignore[reportAssignmentType]
-        if not desc:
+        if not isinstance(desc, str):
             return "No tracker description given."
-
-        desc: str
 
         cmd = ["add", start, stop, self.quote_text(desc)]
 
@@ -423,12 +419,13 @@ class TrackerCli(TogglCli):
         return timedelta(days=1)
 
 
-class TProject(NamedTuple):
-    name: str
-    project_id: int
-    client: str
-    color: str
-    active: bool = True
+@dataclass
+class TProject:
+    name: str = field()
+    project_id: int = field()
+    client: str = field()
+    color: str = field()
+    active: bool = field(default=True)
 
 
 class TogglProjects(TogglCli):
@@ -519,7 +516,7 @@ class CustomSerializer(json.JSONEncoder):
             for item in obj:
                 if isinstance(item, (TProject, TogglTracker)):
                     name = type(item).__name__
-                    item = item._asdict()
+                    item = asdict(item)
                     item["data type"] = name
                 new_obj.append(item)
 
