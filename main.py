@@ -1,4 +1,5 @@
 import logging
+from functools import partial
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -63,6 +64,11 @@ class TogglExtension(Extension):
             "list": tviewer.list_trackers,
             "project": tviewer.get_projects,
             "projects": tviewer.get_projects,
+            "help": partial(
+                tviewer.generate_basic_hints,
+                max_values=self.max_results,
+                default_action=SetUserQueryAction("tgl "),
+            ),
         }
 
         method = QUERY_MATCH.get(query[0], tviewer.default_options)
@@ -133,7 +139,7 @@ class TogglExtension(Extension):
                 )
             results.append(action)
 
-            if i == self.preferences["max_search_results"]:
+            if i == self.max_results:
                 break
 
         return results

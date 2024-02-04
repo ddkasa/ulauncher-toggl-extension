@@ -360,7 +360,10 @@ class TogglViewer:
         return [data]
 
     @cache
-    def generate_basic_hints(self, max_values: int = 3) -> list[QueryParameters]:
+    def generate_basic_hints(
+        self, max_values: int = 3, default_action: BaseAction = DoNothingAction()
+    ) -> list[QueryParameters]:
+        # TODO: Explore more clear html formatting.
         if not self.hints:
             return []
 
@@ -371,7 +374,9 @@ class TogglViewer:
             "If using spaces in your trackers or projects use quotation marks.",
             "Time formatting expects default TogglCli formatting.",
         )
-        hints = self.manager.generate_hint(HINT_MESSAGES[:max_values])
+        hints = self.manager.generate_hint(
+            HINT_MESSAGES[:max_values], action=default_action
+        )
         return hints
 
 
