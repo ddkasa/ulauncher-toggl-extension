@@ -193,7 +193,6 @@ class TogglViewer:
 
     def start_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = START_IMG
-
         base_param = [
             QueryParameters(
                 img,
@@ -205,13 +204,14 @@ class TogglViewer:
                 ),
             )
         ]
-
+        fresh_query = ["tgl", "start"]
+        fresh_query.extend(args)
         trackers = self.manager.create_list_actions(
             img=img,
-            post_method=ExtensionCustomAction,
-            custom_method=partial(self.manager.start_tracker),
+            post_method=self.manager.query_builder,
             count_offset=-1,
             text_formatter="Start {name} @{project}",
+            query=fresh_query,
         )
 
         base_param.extend(trackers)
@@ -509,9 +509,7 @@ class TogglManager:
     def list_trackers(self, *args, **kwargs) -> list[QueryParameters]:
         img = REPORT_IMG
 
-        return self.create_list_actions(
-            img, refresh="refresh" in args, keyword_args=kwargs
-        )
+        return self.create_list_actions(img, refresh="refresh" in args, kwargs=kwargs)
 
     def list_projects(
         self, *args, post_method=DoNothingAction, **kwargs
@@ -522,8 +520,8 @@ class TogglManager:
             text_formatter="Client: {client}",
             data_type="project",
             refresh="refresh" in args,
-            keyword_args=kwargs,
             post_method=post_method,
+            **kwargs,
         )
         return data
 
@@ -575,12 +573,12 @@ class TogglManager:
         keep_open: bool = False,
         refresh: bool = False,
         data_type: str = "tracker",
-        keyword_args: dict = {},
+        **kwargs,
     ) -> list[QueryParameters]:
         if data_type == "tracker":
-            list_data = self.tcli.list_trackers(refresh=refresh, **keyword_args)
+            list_data = self.tcli.list_trackers(refresh=refresh, **kwargs)
         else:
-            list_data = self.pcli.list_projects(refresh=refresh, **keyword_args)
+            list_data = self.pcli.list_projects(refresh=refresh, **kwargs)
 
         queries = []
         for i, data in enumerate(list_data, start=1):
@@ -588,7 +586,7 @@ class TogglManager:
                 break
 
             if post_method == self.query_builder:
-                meth = post_method(data, keyword_args["query"])
+                meth = post_method(data, kwargs["query"])
             elif custom_method is not None:
                 func = partial(custom_method, data)
                 meth = post_method(func, keep_app_open=keep_open)
@@ -612,13 +610,28 @@ class TogglManager:
     ) -> SetUserQueryAction:
         joined_query = " ".join(existing_query)
         if isinstance(info, TogglTracker):
-            data = info.entry_id
+            if existing_query[1] == "start":
+                extra_query = ""
+                if info.description:
+                    extra_query += f' "{info.description}"'
+                if info.start:
+                    extra_query += f" >{info.start}"
+                if info.project:
+                    _, pid = TogglProjects.project_name_formatter(
+                        info.project  # pyright: ignore[reportArgumentType]
+                    )
+                    extra_query += f" @{pid}"
+                if info.tags:
+                    extra_query += f" #{','.join(info.tags)}"
+            else:
+                extra_query = str(info.entry_id)
+
         elif isinstance(info, TProject):
-            data = info.project_id
+            extra_query = info.project_id
         else:
             return SetUserQueryAction(joined_query)
 
-        new_query = f"{joined_query}{data}"
+        new_query = f"{joined_query}{extra_query}"
 
         return SetUserQueryAction(new_query)
 
