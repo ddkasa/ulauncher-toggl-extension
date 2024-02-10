@@ -11,6 +11,7 @@ from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 from ulauncher.api.shared.event import ItemEnterEvent, KeywordQueryEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
+from ulauncher.utils.fuzzy_search import get_score
 
 from ulauncher_toggl_extension.toggl.toggl_manager import QueryParameters, TogglViewer
 
@@ -20,7 +21,7 @@ log = logging.getLogger(__name__)
 class TogglExtension(Extension):
     __slots__ = "latest_trackers"
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
         self.subscribe(ItemEnterEvent, ItemEnterEventListener())
@@ -43,27 +44,19 @@ class TogglExtension(Extension):
 
         query.pop(0)
 
-        # TODO: Switch this to a fuzzy finder.
-
         QUERY_MATCH = {
             "start": tviewer.start_tracker,
-            "stt": tviewer.start_tracker,
             "add": tviewer.add_tracker,
             "continue": tviewer.continue_tracker,
-            "cnt": tviewer.continue_tracker,
             "stop": tviewer.stop_tracker,
-            "stp": tviewer.stop_tracker,
             "edit": tviewer.edit_tracker,
             "now": tviewer.edit_tracker,
             "delete": tviewer.remove_tracker,
             "remove": tviewer.remove_tracker,
-            "rm": tviewer.remove_tracker,
             "report": tviewer.total_trackers,
             "sum": tviewer.total_trackers,
-            "ls": tviewer.list_trackers,
             "list": tviewer.list_trackers,
             "project": tviewer.get_projects,
-            "projects": tviewer.get_projects,
             "help": partial(
                 tviewer.generate_basic_hints,
                 max_values=self.max_results,
@@ -71,13 +64,13 @@ class TogglExtension(Extension):
             ),
         }
 
-        method = QUERY_MATCH.get(query[0], tviewer.default_options)
+        method = QUERY_MATCH.get(query[0], partial(self.create_results, QUERY_MATCH))
 
         q = query.pop(0)
         kwargs = self.parse_query(query)
 
-        results = method(*query, **kwargs)
-        if results is None:
+        results = method(*query, query=q, **kwargs)
+        if not results:
             defaults = tviewer.default_options(*query)
             return self.generate_results(defaults)
 
@@ -92,6 +85,22 @@ class TogglExtension(Extension):
             )
 
         return self.generate_results(results)
+
+    def match_query(self, query: str, target: str, threshold: int = 50) -> bool:
+        return get_score(query, target) >= threshold
+
+    def create_results(self, match_dict: dict, query: str) -> list[QueryParameters]:
+        results = []
+        matched_results = set()
+        for trg, fn in match_dict.items():
+            if self.match_query(query, trg) and fn not in matched_results:
+                try:
+                    results.append(fn()[0])
+                except TypeError:
+                    continue
+                matched_results.add(fn)
+
+        return results
 
     def parse_query(self, query: list[str]) -> dict[str, str]:
         # TODO: Input sanitizing in order to throw away invalid arguments and prevent erorrs.

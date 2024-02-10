@@ -275,7 +275,8 @@ class TogglViewer:
 
         return params
 
-    def stop_tracker(self) -> list[QueryParameters]:
+    def stop_tracker(self, *args, **kwargs) -> list[QueryParameters]:
+        del args, kwargs
         img = STOP_IMG
         track = self.check_current_tracker()
         if track is not None:
