@@ -120,7 +120,7 @@ class TogglViewer:
                 START_IMG,
                 "Start",
                 "Start a Toggl tracker",
-                SetUserQueryAction("tgl stt"),
+                SetUserQueryAction("tgl start"),
             ),
             QueryParameters(
                 START_IMG,
@@ -132,7 +132,7 @@ class TogglViewer:
                 DELETE_IMG,
                 "Delete",
                 "Delete a Toggl time tracker",
-                SetUserQueryAction("tgl rm"),
+                SetUserQueryAction("tgl delete"),
             ),
             self.total_trackers()[0],
             self.list_trackers(*args, **kwargs)[0],
@@ -178,6 +178,7 @@ class TogglViewer:
                     partial(self.manager.continue_tracker, *args, **kwargs),
                     keep_app_open=False,
                 ),
+                SetUserQueryAction("tgl continue"),
             )
         ]
         trackers = self.manager.create_list_actions(
@@ -202,6 +203,7 @@ class TogglViewer:
                     partial(self.manager.start_tracker, *args, **kwargs),
                     keep_app_open=False,
                 ),
+                SetUserQueryAction("tgl start"),
             )
         ]
         fresh_query = ["tgl", "start"]
@@ -235,6 +237,7 @@ class TogglViewer:
                     partial(self.manager.add_tracker, *args, **kwargs),
                     keep_app_open=True,
                 ),
+                SetUserQueryAction("tgl add"),
             )
         ]
 
@@ -268,6 +271,7 @@ class TogglViewer:
                     partial(self.manager.edit_tracker, *args, **kwargs),
                     keep_app_open=True,
                 ),
+                SetUserQueryAction("tgl edit"),
             )
         ]
 
@@ -289,6 +293,7 @@ class TogglViewer:
                 partial(self.manager.stop_tracker),
                 keep_app_open=False,
             ),
+            SetUserQueryAction("tgl stop"),
         )
         return [params]
 
@@ -303,6 +308,7 @@ class TogglViewer:
                     partial(self.manager.remove_tracker, *args, **kwargs),
                     keep_app_open=False,
                 ),
+                SetUserQueryAction("tgl delete"),
             )
         ]
         trackers = self.manager.create_list_actions(
@@ -328,6 +334,7 @@ class TogglViewer:
                 partial(self.manager.total_trackers),
                 keep_app_open=True,
             ),
+            SetUserQueryAction("tgl report"),
         )
         return [params]
 
@@ -340,6 +347,7 @@ class TogglViewer:
             ExtensionCustomAction(
                 partial(self.manager.list_trackers, *args, **kwargs), keep_app_open=True
             ),
+            SetUserQueryAction("tgl list"),
         )
         return [params]
 
@@ -352,6 +360,7 @@ class TogglViewer:
             ExtensionCustomAction(
                 partial(self.manager.list_projects, *args, **kwargs), keep_app_open=True
             ),
+            SetUserQueryAction("tgl project"),
         )
         return [data]
 
