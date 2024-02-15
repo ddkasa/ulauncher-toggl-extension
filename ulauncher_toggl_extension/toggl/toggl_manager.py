@@ -255,17 +255,19 @@ class TogglViewer:
             )
             return reset
 
+        return self.current_tracker
+
     def edit_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = EDIT_IMG
 
         track = self.check_current_tracker()
-        if track is not None:
+        if not isinstance(track, TogglTracker):
             return track
 
         params = [
             QueryParameters(
                 img,
-                self.current_tracker.description,  # pyright: ignore [reportOptionalMemberAccess]
+                track.description,
                 "Edit the running tracker.",
                 ExtensionCustomAction(
                     partial(self.manager.edit_tracker, *args, **kwargs),
@@ -274,28 +276,48 @@ class TogglViewer:
                 SetUserQueryAction("tgl edit"),
             )
         ]
-
+        data = self.create_tracker_subinfo(track)
+        params.extend(self.manager.generate_hint(data))
         params.extend(self.generate_basic_hints())
 
         return params
+
+    def create_tracker_subinfo(self, track: TogglTracker) -> tuple:
+        data = [f"Started {track.start}"]
+        if isinstance(track.project, str):
+            data.append(f"{track.project}")
+
+        if track.tags and isinstance(track.tags, (str, list)):
+            if isinstance(track.tags, str):
+                data.append(f"{track.tags}")
+            else:
+                data.append(", ".join(track.tags))
+        return tuple(data)
 
     def stop_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         del args, kwargs
         img = STOP_IMG
         track = self.check_current_tracker()
-        if track is not None:
+        if not isinstance(track, TogglTracker):
             return track
-        params = QueryParameters(
-            img,
-            "Stop",
-            f"Stop tracking {self.current_tracker.description}.",  # pyright: ignore [reportOptionalMemberAccess]
-            ExtensionCustomAction(
-                partial(self.manager.stop_tracker),
-                keep_app_open=False,
-            ),
-            SetUserQueryAction("tgl stop"),
-        )
-        return [params]
+        params = [
+            QueryParameters(
+                img,
+                "Stop",
+                f"Stop tracking {track.description}.",
+                ExtensionCustomAction(
+                    partial(self.manager.stop_tracker),
+                    keep_app_open=False,
+                ),
+                SetUserQueryAction("tgl stop"),
+            )
+        ]
+
+        data = self.create_tracker_subinfo(track)
+        project = self.manager.generate_hint(data)
+        params.extend(project)
+
+        return params
 
     def remove_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         img = DELETE_IMG

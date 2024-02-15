@@ -250,13 +250,13 @@ class TrackerCli(TogglCli):
 
         _, tags = lines[6].split(": ", maxsplit=1)
         tracker = TogglTracker(
-            description=desc,
+            description=desc.strip(),
             entry_id=int(toggl_id),
             stop="running",
             project=project,
             start=start,
             duration=duration,
-            tags=tags.split(","),
+            tags=tags.split(",") if tags else None,
         )
 
         return tracker
