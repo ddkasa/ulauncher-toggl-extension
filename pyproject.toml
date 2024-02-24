@@ -9,8 +9,6 @@ readme = "README.md"
 python = "^3.12"
 
 [tool.poetry.group.dev.dependencies]
-pylint = "^3.0.3"
-pylint-venv = "^3.0.3"
 pytest = "^7.4.4"
 pygobject-stubs = "^2.10.0"
 
@@ -18,5 +16,9 @@ pygobject-stubs = "^2.10.0"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.pyright]
-reportMissingImports = false
+[tool.ruff]
+ignore = []
+
+[tool.mypy]
+ignore_missing_imports = true
+disable_error_code = ["attr-defined", "assignment"]
