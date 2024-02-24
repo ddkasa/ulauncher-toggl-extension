@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -17,16 +17,21 @@ from ulauncher.api.shared.event import (
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 from ulauncher.utils.fuzzy_search import get_score
+
 from ulauncher_toggl_extension.toggl.toggl_cli import TogglTracker
-
-
 from ulauncher_toggl_extension.toggl.toggl_manager import QueryParameters, TogglViewer
 
 log = logging.getLogger(__name__)
 
 
 class TogglExtension(Extension):
-    __slots__ = "latest_trackers"
+    __slots__ = (
+        "latest_trackers",
+        "_toggl_exec_path",
+        "_max_results",
+        "_toggl_workspace",
+        "_toggl_hints",
+    )
 
     def __init__(self) -> None:
         super().__init__()
@@ -36,6 +41,10 @@ class TogglExtension(Extension):
         self.subscribe(PreferencesEvent, PreferencesEventListener())
 
         self.latest_trackers: list[TogglTracker] = []
+        self._toggl_exec_path = Path.home() / Path(".local/bin/toggl")
+        self._max_results = 10
+        self._toggl_hints = True
+        self._toggl_workspace = None
 
     def process_query(self, query: list[str]) -> list | Callable:
         tviewer = TogglViewer(self)
@@ -95,10 +104,19 @@ class TogglExtension(Extension):
 
         return self.generate_results(results)
 
-    def match_query(self, query: str, target: str, threshold: int = 50) -> bool:
+    def match_query(
+        self,
+        query: str,
+        target: str,
+        threshold: int = 50,
+    ) -> bool:
         return get_score(query, target) >= threshold
 
-    def create_results(self, match_dict: dict, query: str) -> list[QueryParameters]:
+    def create_results(
+        self,
+        match_dict: dict,
+        query: str,
+    ) -> list[QueryParameters]:
         results = []
         matched_results = set()
         for trg, fn in match_dict.items():
@@ -134,9 +152,11 @@ class TogglExtension(Extension):
         return arguments
 
     def generate_results(
-        self, actions: Iterable[QueryParameters]
+        self,
+        actions: Iterable[QueryParameters],
     ) -> list[ExtensionResultItem]:
         results = []
+
         for i, item in enumerate(actions, start=1):
             if item.small:
                 action = ExtensionSmallResultItem(
@@ -155,6 +175,7 @@ class TogglExtension(Extension):
                     on_enter=item.on_enter,
                     on_alt_enter=item.on_alt_enter,
                 )
+
             results.append(action)
 
             if i == self.max_results:
@@ -164,34 +185,27 @@ class TogglExtension(Extension):
 
     @property
     def toggl_exec_path(self) -> Path:
-        loc = Path(self.preferences["toggl_exectuable_location"])
-        if loc.exists():
-            return loc
-        log.error("TogglCli does not exist at provided Path. Using default.")
-        return Path.home() / Path(".local/bin/toggl")
+        return self._toggl_exec_path
 
     @property
     def default_project(self) -> int | None:
-        try:
-            return int(self.preferences["project"])
-        except ValueError:
-            log.debug("Default project not setup!")
-            return None
+        return self._default_project
 
     @property
     def max_results(self) -> int:
-        try:
-            return int(self.preferences["max_search_results"])
-        except ValueError:
-            return 10
+        return self._max_results
 
     @property
     def toggled_hints(self) -> bool:
-        return self.preferences["hints"]
+        return self._toggled_hints
 
 
 class KeywordQueryEventListener(EventListener):
-    def on_event(self, event: KeywordQueryEvent, extension: TogglExtension):
+    def on_event(
+        self,
+        event: KeywordQueryEvent,
+        extension: TogglExtension,
+    ) -> None:
         query = event.get_query().split()
         processed_query = extension.process_query(query)
 
@@ -199,12 +213,18 @@ class KeywordQueryEventListener(EventListener):
 
 
 class ItemEnterEventListener(EventListener):
-    def on_event(self, event: ItemEnterEvent, extension: TogglExtension):
+    def on_event(
+        self,
+        event: ItemEnterEvent,
+        extension: TogglExtension,
+    ) -> None:
         data = event.get_data()
+
         execution = data()
         if not isinstance(execution, bool):
             results = extension.generate_results(execution)
             return RenderResultListAction(results)
+
         if not execution:
             return SetUserQueryAction("tgl ")
 
@@ -219,8 +239,43 @@ class PreferencesEventListener(EventListener):
         event: PreferencesEvent,
         extension: TogglExtension,
     ) -> None:
-        extension.preferences = event.preferences
-        super().on_event(event, extension)
+        extension._max_results = self.max_results(
+            event.preferences["max_search_results"]
+        )
+        extension._toggl_exec_path = self.toggl_exec_path(
+            event.preferences["toggl_exectuable_location"]
+        )
+        extension._default_project = self.default_project(event.preferences["project"])
+        extension._toggled_hints = bool(event.preferences["hints"])
+
+    def toggl_exec_path(self, path: str) -> Path:
+        loc = Path(path)
+        if loc.exists():
+            return loc
+        log.error("TogglCli does not exist at provided Path. Using default.")
+        return Path.home() / Path(".local/bin/toggl")
+
+    def default_project(self, project: Optional[str] = None) -> int | None:
+        # TODO: Need to integrate with program properly.
+        log.warning("Default project is not implemented.")
+
+        if project is not None:
+            try:
+                return int(project)
+            except ValueError:
+                pass
+
+        log.info("Default project is not setup.")
+        return None
+
+    def max_results(self, results: Optional[str] = None) -> int:
+        if results is not None:
+            try:
+                return int(results)
+            except ValueError:
+                pass
+        log.info("Max search results are not setup. Using default.")
+        return 10
 
 
 class PreferencesUpdateEventListener(EventListener):
@@ -229,9 +284,9 @@ class PreferencesUpdateEventListener(EventListener):
         event: PreferencesUpdateEvent,
         extension: TogglExtension,
     ) -> None:
-        p = extension.preferences.copy()
-        p[event.id] = event.new_value
-        extension.preferences = p
+        new_preferences = extension.preferences.copy()
+        new_preferences[event.id] = event.new_value
+        extension.preferences = new_preferences
 
 
 if __name__ == "__main__":
