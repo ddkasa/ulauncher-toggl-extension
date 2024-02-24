@@ -8,10 +8,17 @@ from ulauncher.api.client.Extension import Extension
 from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
-from ulauncher.api.shared.event import ItemEnterEvent, KeywordQueryEvent
+from ulauncher.api.shared.event import (
+    ItemEnterEvent,
+    KeywordQueryEvent,
+    PreferencesEvent,
+    PreferencesUpdateEvent,
+)
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 from ulauncher.utils.fuzzy_search import get_score
+from ulauncher_toggl_extension.toggl.toggl_cli import TogglTracker
+
 
 from ulauncher_toggl_extension.toggl.toggl_manager import QueryParameters, TogglViewer
 
@@ -25,8 +32,10 @@ class TogglExtension(Extension):
         super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
         self.subscribe(ItemEnterEvent, ItemEnterEventListener())
+        self.subscribe(PreferencesUpdateEvent, PreferencesUpdateEventListener())
+        self.subscribe(PreferencesEvent, PreferencesEventListener())
 
-        self.latest_trackers = []
+        self.latest_trackers: list[TogglTracker] = []
 
     def process_query(self, query: list[str]) -> list | Callable:
         tviewer = TogglViewer(self)
@@ -69,7 +78,7 @@ class TogglExtension(Extension):
         q = query.pop(0)
         kwargs = self.parse_query(query)
 
-        results = method(*query, query=q, **kwargs)
+        results = method(*query, query=q, **kwargs)  # type: ignore
         if not results:
             defaults = tviewer.default_options(*query)
             return self.generate_results(defaults)
@@ -111,7 +120,7 @@ class TogglExtension(Extension):
             elif item[0] == "@":
                 item = item[1:]
                 try:
-                    item = int(item)
+                    item = int(item)  # mypy: ignore [operator]
                 except ValueError:
                     pass
                 arguments["project"] = item
@@ -167,7 +176,7 @@ class TogglExtension(Extension):
             return int(self.preferences["project"])
         except ValueError:
             log.debug("Default project not setup!")
-            return
+            return None
 
     @property
     def max_results(self) -> int:
@@ -202,6 +211,27 @@ class ItemEnterEventListener(EventListener):
         log.info("Successfuly excecuted %s", data)
 
         return HideWindowAction()
+
+
+class PreferencesEventListener(EventListener):
+    def on_event(
+        self,
+        event: PreferencesEvent,
+        extension: TogglExtension,
+    ) -> None:
+        extension.preferences = event.preferences
+        super().on_event(event, extension)
+
+
+class PreferencesUpdateEventListener(EventListener):
+    def on_event(
+        self,
+        event: PreferencesUpdateEvent,
+        extension: TogglExtension,
+    ) -> None:
+        p = extension.preferences.copy()
+        p[event.id] = event.new_value
+        extension.preferences = p
 
 
 if __name__ == "__main__":
