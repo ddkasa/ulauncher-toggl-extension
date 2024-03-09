@@ -39,7 +39,7 @@ APP_IMG = SVG_PATH / Path("icon.svg")
 START_IMG = SVG_PATH / Path("start.svg")
 EDIT_IMG = SVG_PATH / Path("edit.svg")
 ADD_IMG = SVG_PATH / Path("add.svg")
-PROJECT_IMG = SVG_PATH / Path("project.svg")  # TODO: Needs to be created.
+# PROJECT_IMG = SVG_PATH / Path("project.svg")  # TODO: Needs to be created.
 STOP_IMG = SVG_PATH / Path("stop.svg")
 DELETE_IMG = SVG_PATH / Path("delete.svg")
 CONTINUE_IMG = SVG_PATH / Path("continue.svg")
@@ -114,6 +114,8 @@ class TogglViewer:
             )
             return warning
 
+        return None
+
     def default_options(self, *args, **kwargs) -> list[QueryParameters]:
         BASIC_TASKS = [
             QueryParameters(
@@ -144,7 +146,9 @@ class TogglViewer:
                     CONTINUE_IMG,
                     "Continue",
                     "Continue the latest Toggl time tracker",
-                    ExtensionCustomAction(partial(self.manager.continue_tracker)),
+                    ExtensionCustomAction(
+                        partial(self.manager.continue_tracker),
+                    ),
                     SetUserQueryAction("tgl continue"),
                 )
             ]
@@ -155,7 +159,10 @@ class TogglViewer:
                     f"Currently Running: {self.current_tracker.description}",
                     f"Since: {self.current_tracker.start} @{self.current_tracker.project}",
                     ExtensionCustomAction(
-                        partial(self.edit_tracker, current=self.current_tracker),
+                        partial(
+                            self.edit_tracker,
+                            current=self.current_tracker,
+                        ),
                         keep_app_open=True,
                     ),
                 ),
@@ -184,7 +191,11 @@ class TogglViewer:
         trackers = self.manager.create_list_actions(
             img=img,
             post_method=ExtensionCustomAction,
-            custom_method=partial(self.manager.continue_tracker, *args, **kwargs),
+            custom_method=partial(
+                self.manager.continue_tracker,
+                *args,
+                **kwargs,
+            ),
             count_offset=-1,
             text_formatter="Continue {name} @{project}",
         )
@@ -367,7 +378,8 @@ class TogglViewer:
             "List",
             f"View the last {self.max_results} trackers.",
             ExtensionCustomAction(
-                partial(self.manager.list_trackers, *args, **kwargs), keep_app_open=True
+                partial(self.manager.list_trackers, *args, **kwargs),
+                keep_app_open=True,
             ),
             SetUserQueryAction("tgl list"),
         )
@@ -380,7 +392,8 @@ class TogglViewer:
             "Projects",
             "View & Edit projects.",
             ExtensionCustomAction(
-                partial(self.manager.list_projects, *args, **kwargs), keep_app_open=True
+                partial(self.manager.list_projects, *args, **kwargs),
+                keep_app_open=True,
             ),
             SetUserQueryAction("tgl project"),
         )
@@ -388,7 +401,9 @@ class TogglViewer:
 
     @cache
     def generate_basic_hints(
-        self, max_values: int = 3, default_action: BaseAction = DoNothingAction()
+        self,
+        max_values: int = 3,
+        default_action: BaseAction = DoNothingAction(),
     ) -> list[QueryParameters]:
         # TODO: Explore more clear html formatting.
         if not self.hints:
@@ -418,14 +433,25 @@ class TogglManager:
     )
 
     def __init__(
-        self, config_path: Path, max_results: int, default_project: int | None
+        self,
+        config_path: Path,
+        max_results: int,
+        default_project: Optional[int] = None,
     ) -> None:
         self.exec_path = config_path
         self.max_results = max_results
         self.workspace_id = default_project
 
-        self.tcli = TrackerCli(self.exec_path, self.max_results, self.workspace_id)
-        self.pcli = TogglProjects(self.exec_path, self.max_results, self.workspace_id)
+        self.tcli = TrackerCli(
+            self.exec_path,
+            self.max_results,
+            self.workspace_id,
+        )
+        self.pcli = TogglProjects(
+            self.exec_path,
+            self.max_results,
+            self.workspace_id,
+        )
 
         self.notification = None
 
@@ -541,7 +567,11 @@ class TogglManager:
     def list_trackers(self, *args, **kwargs) -> list[QueryParameters]:
         img = REPORT_IMG
 
-        return self.create_list_actions(img, refresh="refresh" in args, kwargs=kwargs)
+        return self.create_list_actions(
+            img,
+            refresh="refresh" in args,
+            kwargs=kwargs,
+        )
 
     def list_projects(
         self, *args, post_method=DoNothingAction, **kwargs
@@ -558,7 +588,11 @@ class TogglManager:
         return data
 
     def tracker_builder(
-        self, img: Path, meth: MethodType, text_formatter: str, tracker: TogglTracker
+        self,
+        img: Path,
+        meth: MethodType,
+        text_formatter: str,
+        tracker: TogglTracker,
     ) -> QueryParameters | None:
         text = tracker.stop
         if tracker.stop != "running":
@@ -572,7 +606,7 @@ class TogglManager:
                 duration=tracker.duration,
             )
         else:
-            return
+            return None
 
         param = QueryParameters(
             img,
@@ -583,7 +617,11 @@ class TogglManager:
         return param
 
     def project_builder(
-        self, img: Path, meth: MethodType, text_formatter: str, project: TProject
+        self,
+        img: Path,
+        meth: MethodType,
+        text_formatter: str,
+        project: TProject,
     ) -> QueryParameters:
         text = text_formatter.format(
             name=project.name,
@@ -638,7 +676,9 @@ class TogglManager:
         return queries
 
     def query_builder(
-        self, info: TogglTracker | TProject, existing_query: list[str]
+        self,
+        info: TogglTracker | TProject,
+        existing_query: list[str],
     ) -> SetUserQueryAction:
         joined_query = " ".join(existing_query)
         if isinstance(info, TogglTracker):
@@ -650,16 +690,17 @@ class TogglManager:
                     extra_query += f" >{info.start}"
                 if info.project:
                     _, pid = TogglProjects.project_name_formatter(
-                        info.project  # pyright: ignore[reportArgumentType]
+                        info.project  # type: ignore
                     )
                     extra_query += f" @{pid}"
                 if info.tags:
+                    print(info.tags)
                     extra_query += f" #{','.join(info.tags)}"
             else:
                 extra_query = str(info.entry_id)
 
         elif isinstance(info, TProject):
-            extra_query = info.project_id
+            extra_query = info.project_id  # type: ignore
         else:
             return SetUserQueryAction(joined_query)
 

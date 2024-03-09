@@ -37,10 +37,18 @@ class TogglTracker:
 
 
 class TogglCli(metaclass=ABCMeta):
-    __slots__ = ("toggl_exec_path", "max_results", "workspace_id", "_cache_path")
+    __slots__ = (
+        "toggl_exec_path",
+        "max_results",
+        "workspace_id",
+        "_cache_path",
+    )
 
     def __init__(
-        self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
+        self,
+        config_path: Path,
+        max_results: int,
+        workspace_id: Optional[int] = None,
     ) -> None:
         self.toggl_exec_path = str(config_path)
         self.max_results = max_results
@@ -97,14 +105,17 @@ class TogglCli(metaclass=ABCMeta):
         return count
 
     def format_line(
-        self, header_size: list[int], item: str, duplicate_names: Optional[set] = None
+        self,
+        header_size: list[int],
+        item: str,
+        duplicate_names: Optional[set] = None,
     ) -> list[str] | None:
         prev = 0
         item_data = []
         for index in header_size:
             d = item[prev:index].strip()
             if isinstance(duplicate_names, set) and d in duplicate_names:
-                return
+                return None
             item_data.append(d)
             prev = index
         item_data.append(item[prev:].strip())
@@ -132,8 +143,11 @@ class TogglCli(metaclass=ABCMeta):
 
         date = data.pop(0)
         if datetime.now() - self.CACHE_LEN >= date:
-            log.info("%s: Cache out of date. Will request new data.", self.__str__)
-            return
+            log.info(
+                "%s: Cache out of date. Will request new data.",
+                self.__str__,
+            )
+            return None
 
         return data
 
@@ -155,12 +169,20 @@ class TrackerCli(TogglCli):
     __slots__ = "latest_trackers"
 
     def __init__(
-        self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
+        self,
+        config_path: Path,
+        max_results: int,
+        workspace_id: Optional[int] = None,
     ) -> None:
         super().__init__(config_path, max_results, workspace_id)
-        self.latest_trackers = []
+        self.latest_trackers: list[TogglTracker] = []
 
-    def list_trackers(self, *_, refresh: bool = False, **kwargs) -> list[TogglTracker]:
+    def list_trackers(
+        self,
+        *,
+        refresh: bool = False,
+        **kwargs,
+    ) -> list[TogglTracker]:
         start_time = kwargs.get("start", False)
         end_time = kwargs.get("stop", False)
         times = start_time or end_time
@@ -197,7 +219,7 @@ class TrackerCli(TogglCli):
 
         header_size = self.count_table(run[0])
         self.latest_trackers = []
-        checked_names = set()
+        checked_names: set[str] = set()
         cnt = 1
         for item in run:
             if cnt == 1:
@@ -236,10 +258,10 @@ class TrackerCli(TogglCli):
         try:
             run = self.base_command(cmd)
         except sp.CalledProcessError:
-            return
+            return None
 
         if run == "There is no time entry running!":
-            return
+            return None
 
         lines = run.splitlines()
 
@@ -299,7 +321,11 @@ class TrackerCli(TogglCli):
 
         return run
 
-    def add_project_parameter(self, cmd: list[str], project: int | str) -> None:
+    def add_project_parameter(
+        self,
+        cmd: list[str],
+        project: int | str,
+    ) -> None:
         cmd.append("--project")
         if isinstance(project, str) and "(" in project:
             _, proj_id = self.format_id_str(project)
@@ -310,7 +336,7 @@ class TrackerCli(TogglCli):
     def start_tracker(self, tracker: TogglTracker) -> str:
         cmd = ["start", self.quote_text(tracker.description)]
 
-        if tracker.tags is not None:
+        if tracker.tags:
             cmd.append("--tags")
             tag_str = ",".join(tracker.tags)
             cmd.append(tag_str)
@@ -330,7 +356,7 @@ class TrackerCli(TogglCli):
         if not stop:
             return "Missing stopping time."
 
-        desc = args[2:3] or False  # pyright: ignore[reportAssignmentType]
+        desc = args[2:3] or False
         if not isinstance(desc, str):
             return "No tracker description given."
 
@@ -347,11 +373,15 @@ class TrackerCli(TogglCli):
 
         try:
             return self.base_command(cmd)
-        except sp.CalledProcessError as p:
-            log.error("Adding tracker with name %s was unsuccessful: %s", desc, p)
+        except sp.CalledProcessError as error:
+            log.error(
+                "Adding tracker with name %s was unsuccessful: %s",
+                desc,
+                error,
+            )
             return f"Adding tracker with name {desc} was unsuccessful."
 
-    def edit_tracker(self, *_, **kwargs) -> str:
+    def edit_tracker(self, **kwargs) -> str:
         cmd = ["now"]
 
         description = kwargs.get("description")
@@ -433,14 +463,17 @@ class TProject:
 
 
 class TogglProjects(TogglCli):
-    __slots__ = "project_list"
+    __slots__ = ("project_list",)
 
     def __init__(
-        self, config_path: Path, max_results: int, workspace_id: Optional[int] = None
+        self,
+        config_path: Path,
+        max_results: int,
+        workspace_id: Optional[int] = None,
     ) -> None:
         super().__init__(config_path, max_results, workspace_id)
 
-        self.project_list = []
+        self.project_list: list[TProject] = []
 
     def list_projects(
         self, active: bool = True, refresh: bool = False, **_
@@ -459,7 +492,7 @@ class TogglProjects(TogglCli):
 
         run = self.base_command(cmd).splitlines()
         header_size = self.count_table(run[0])
-        checked_names = set()
+        checked_names: set[str] = set()
         cnt = 0
         for item in run:
             if cnt == 1:
@@ -484,7 +517,7 @@ class TogglProjects(TogglCli):
                 project_id=int(project_id),
                 client=client,
                 color=hex_color,
-                active=active_item,
+                active=active_item,  # type: ignore[arg-type]
             )
             self.project_list.append(tracker)
 
@@ -512,9 +545,7 @@ class TogglProjects(TogglCli):
 
 
 class CustomSerializer(json.JSONEncoder):
-    def encode(  # pyright: ignore [reportIncompatibleMethodOverride]
-        self, obj: Any
-    ) -> str:
+    def encode(self, obj: Any) -> str:
         if isinstance(obj, list):
             new_obj = []
             for item in obj:
@@ -527,19 +558,17 @@ class CustomSerializer(json.JSONEncoder):
             return super().encode(new_obj)
         return super().encode(obj)
 
-    def default(self, obj):  # pyright: ignore [reportIncompatibleMethodOverride]
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, datetime):
             return obj.isoformat()
         return super().default(obj)
 
 
 class CustomDeserializer(json.JSONDecoder):
-    def decode(  # pyright: ignore [reportIncompatibleMethodOverride]
-        self, obj, **kwargs
-    ) -> Any:
+    def decode(self, obj: Any, **kwargs) -> Any:  # type: ignore[override]
         obj = super().decode(obj, **kwargs)
 
-        decoded_obj = []
+        decoded_obj: list[Any] = []
         for item in obj:
             if isinstance(item, dict):
                 dt = item.get("data type")
