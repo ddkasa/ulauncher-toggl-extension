@@ -18,7 +18,11 @@ from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 from ulauncher.utils.fuzzy_search import get_score
 
-from ulauncher_toggl_extension.toggl.toggl_cli import TogglTracker
+from ulauncher_toggl_extension.toggl.toggl_cli import (
+    TogglTracker,
+    TrackerCli,
+    TogglProjects,
+)
 from ulauncher_toggl_extension.toggl.toggl_manager import QueryParameters, TogglViewer
 
 log = logging.getLogger(__name__)
@@ -26,7 +30,6 @@ log = logging.getLogger(__name__)
 
 class TogglExtension(Extension):
     __slots__ = (
-        "latest_trackers",
         "_toggl_exec_path",
         "_max_results",
         "_toggl_workspace",
@@ -40,11 +43,26 @@ class TogglExtension(Extension):
         self.subscribe(PreferencesUpdateEvent, PreferencesUpdateEventListener())
         self.subscribe(PreferencesEvent, PreferencesEventListener())
 
-        self.latest_trackers: list[TogglTracker] = []
         self._toggl_exec_path = Path.home() / Path(".local/bin/toggl")
         self._max_results = 10
         self._toggl_hints = True
         self._toggl_workspace = None
+
+        tcli = TrackerCli(
+            self._toggl_exec_path,
+            self._max_results,
+            self._toggl_workspace,
+        )
+        log.debug("Updating trackers")
+        tcli.list_trackers()
+
+        pcli = TogglProjects(
+            self._toggl_exec_path,
+            self._max_results,
+            self._toggl_workspace,
+        )
+        log.debug("Updating projects")
+        pcli.list_projects()
 
     def process_query(self, query: list[str]) -> list | Callable:
         tviewer = TogglViewer(self)
@@ -52,9 +70,6 @@ class TogglExtension(Extension):
         check = tviewer.pre_check_cli()
         if isinstance(check, list):
             return check
-
-        if not self.latest_trackers:
-            self.latest_trackers = tviewer.tcli.list_trackers()
 
         if len(query) == 1:
             defaults = tviewer.default_options(*query)
