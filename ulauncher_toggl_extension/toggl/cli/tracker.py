@@ -64,11 +64,7 @@ class TrackerCli(TogglCli):
         header_size = self.count_table(run[0])
         self.latest_trackers = []
         checked_names: set[str] = set()
-        cnt = 1
-        for item in run:
-            if cnt == 1:
-                cnt += 1
-                continue
+        for item in run[1:]:
             item_data = self.format_line(header_size, item, checked_names)
 
             if item_data is None:
@@ -77,7 +73,6 @@ class TrackerCli(TogglCli):
             desc, dur, start, stop, project, toggl_id, tags = item_data
 
             checked_names.add(desc)
-            cnt += 1
             tracker = TogglTracker(
                 description=desc.strip(),
                 entry_id=int(toggl_id),
@@ -88,8 +83,6 @@ class TrackerCli(TogglCli):
                 tags=tags.split(", "),
             )
             self.latest_trackers.append(tracker)
-            if cnt == self.max_results:
-                break
 
         if refresh or not self.cache_path.exists():
             self.cache_data(self.latest_trackers)

@@ -1,9 +1,9 @@
-from .meta import TogglCli, TProject
-from pathlib import Path
-from typing import Optional
 import logging
 from datetime import timedelta
+from pathlib import Path
+from typing import Optional
 
+from .meta import TogglCli, TProject
 
 log = logging.getLogger(__name__)
 
@@ -42,11 +42,7 @@ class TogglProjects(TogglCli):
         run = self.base_command(cmd).splitlines()
         header_size = self.count_table(run[0])
         checked_names: set[str] = set()
-        cnt = 0
-        for item in run:
-            if cnt == 1:
-                cnt += 1
-                continue
+        for item in run[1:]:
             item_data = self.format_line(header_size, item, checked_names)
 
             if item_data is None:
@@ -60,13 +56,13 @@ class TogglProjects(TogglCli):
                 continue
 
             checked_names.add(name)
-            cnt += 1
+
             tracker = TProject(
                 name=name,
                 project_id=int(project_id),
                 client=client,
                 color=hex_color,
-                active=active_item,  # type: ignore[arg-type]
+                active=active_item,
             )
             self.project_list.append(tracker)
 
@@ -80,6 +76,8 @@ class TogglProjects(TogglCli):
 
     @staticmethod
     def project_name_formatter(name: str) -> tuple[str, int]:
+        if not name:
+            return "", 0
         name, project_id = name.split("(#")
         name = name.strip()
         return name, int(project_id[:-1])
