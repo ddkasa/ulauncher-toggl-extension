@@ -10,6 +10,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional
 
+from ulauncher_toggl_extension.utils import sanitize_path
+
+from ulauncher_toggl_extension.toggl.images import (
+    CACHE_PATH,
+    SVG_CACHE,
+    CIRCULAR_SVG,
+)
+
+
 log = logging.getLogger(__name__)
 
 
@@ -38,6 +47,26 @@ class TProject:
     color: str = field()
     active: bool = field(default=True)
 
+    def __post_init__(self) -> None:
+        if self.color:
+            self.generate_color_svg()
+
+    def generate_color_svg(self) -> Path:
+        SVG_CACHE.mkdir(parents=True, exist_ok=True)
+        name = sanitize_path(self.name)
+        path = SVG_CACHE / Path(f"{name}.svg")
+
+        if path.exists():
+            return path
+
+        log.debug("Creating SVG colored circle %s at %s.", self.color, path)
+        svg = CIRCULAR_SVG.format(color=self.color)
+
+        with path.open("w", encoding="utf-8") as file:
+            file.write(svg)
+
+        return path
+
 
 class TogglCli(metaclass=ABCMeta):
     __slots__ = (
@@ -57,7 +86,7 @@ class TogglCli(metaclass=ABCMeta):
         self.max_results = max_results
         self.workspace_id = workspace_id
 
-        self._cache_path = Path(__file__).parents[3] / "cache"
+        self._cache_path = CACHE_PATH / "json"
         self._cache_path.mkdir(parents=True, exist_ok=True)
 
     def base_command(self, cmd: list[str]) -> str:

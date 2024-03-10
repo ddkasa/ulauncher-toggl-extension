@@ -4,6 +4,7 @@ from functools import partial
 from pathlib import Path
 from types import MethodType
 from typing import Callable, NamedTuple, Optional
+import logging
 
 from gi.repository import Notify
 from ulauncher.api.shared.action.BaseAction import BaseAction
@@ -28,7 +29,11 @@ from ulauncher_toggl_extension.toggl.images import (
     STOP_IMG,
     TIP_IMAGES,
     TipSeverity,
+    SVG_CACHE,
 )
+from ulauncher_toggl_extension.utils import sanitize_path
+
+log = logging.getLogger(__name__)
 
 
 class QueryParameters(NamedTuple):
@@ -225,6 +230,12 @@ class TogglManager:
             )
         else:
             return None
+
+        project_name, _ = TogglProjects.project_name_formatter(tracker.project)  # type: ignore[arg-type]
+        project_name = sanitize_path(project_name)
+        img_path = SVG_CACHE / Path(f"{project_name}.svg")
+        log.debug(img_path)
+        img = img_path if img_path.exists() else img
 
         param = QueryParameters(
             img,
