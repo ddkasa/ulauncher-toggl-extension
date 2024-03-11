@@ -1,4 +1,4 @@
-from .manager import TogglManager, QueryParameters
+from .manager import QueryParameters, TogglManager
 from .viewer import TogglViewer
 
 __all__ = (

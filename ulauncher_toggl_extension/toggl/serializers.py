@@ -1,9 +1,11 @@
-from datetime import datetime
-from typing import Any
+from __future__ import annotations
+
 import json
 from dataclasses import asdict
+from datetime import datetime
+from typing import Any
 
-from .dataclasses import TProject, TogglTracker
+from .dataclasses import TogglTracker, TProject
 
 
 class CustomSerializer(json.JSONEncoder):

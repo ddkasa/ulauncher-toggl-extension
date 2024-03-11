@@ -1,24 +1,24 @@
+from __future__ import annotations
+
+import logging
 import subprocess
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from functools import partial
 from pathlib import Path
-from types import MethodType
-from typing import Callable, NamedTuple, Optional
-import logging
+from typing import TYPE_CHECKING, Callable, NamedTuple, Optional
 
 from gi.repository import Notify
-from ulauncher.api.shared.action.BaseAction import BaseAction
 from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
-from ulauncher_toggl_extension.toggl.cli import (
-    TogglProjects,
-    TrackerCli,
-)
 from ulauncher_toggl_extension.toggl import (
     TogglTracker,
     TProject,
+)
+from ulauncher_toggl_extension.toggl.cli import (
+    TogglProjects,
+    TrackerCli,
 )
 from ulauncher_toggl_extension.toggl.images import (
     ADD_IMG,
@@ -32,6 +32,11 @@ from ulauncher_toggl_extension.toggl.images import (
     TIP_IMAGES,
     TipSeverity,
 )
+
+if TYPE_CHECKING:
+    from types import MethodType
+
+    from ulauncher.api.shared.action.BaseAction import BaseAction
 
 log = logging.getLogger(__name__)
 
@@ -90,7 +95,7 @@ class TogglManager:
     def start_tracker(self, *args, **kwargs) -> bool:
         if not args:
             return False
-        elif not isinstance(args[0], TogglTracker):
+        if not isinstance(args[0], TogglTracker):
             tracker = TogglTracker(
                 description=str(args[0]),
                 entry_id=0,
@@ -154,11 +159,11 @@ class TogglManager:
                 meth = DoNothingAction()
             else:
                 if day == "today":
-                    start = datetime.now()
+                    start = datetime.now(tz=UTC)
                 elif day == "yesterday":
-                    start = datetime.now() - timedelta(days=1)
+                    start = datetime.now(tz=UTC) - timedelta(days=1)
                 else:
-                    start = datetime.strptime(day, "%m/%d/%Y")
+                    start = datetime.strptime(day, "%m/%d/%Y").astimezone(UTC)
                 start -= timedelta(days=1)
                 end = start + timedelta(days=2)
 
@@ -184,9 +189,12 @@ class TogglManager:
         )
 
     def list_projects(
-        self, *args, post_method=DoNothingAction, **kwargs
+        self,
+        *args,
+        post_method=DoNothingAction,
+        **kwargs,
     ) -> list[QueryParameters]:
-        data = self.create_list_actions(
+        return self.create_list_actions(
             APP_IMG,
             text_formatter="Client: {client}",
             data_type="project",
@@ -194,7 +202,6 @@ class TogglManager:
             post_method=post_method,
             **kwargs,
         )
-        return data
 
     def tracker_builder(
         self,
@@ -217,13 +224,12 @@ class TogglManager:
         else:
             return None
 
-        param = QueryParameters(
+        return QueryParameters(
             tracker.find_color_svg(img),
             tracker.description,
             text,
             meth,
         )
-        return param
 
     def project_builder(
         self,
@@ -240,16 +246,16 @@ class TogglManager:
         )
 
         img = project.generate_color_svg()
-        param = QueryParameters(img, project.name, text, meth)
-        return param
+        return QueryParameters(img, project.name, text, meth)
 
-    def create_list_actions(
+    def create_list_actions(  # noqa: PLR0913
         self,
         img: Path,
         post_method=DoNothingAction,
         custom_method: Optional[partial] = None,
         count_offset: int = 0,
         text_formatter: str = "Stopped: {stop}",
+        *,
         keep_open: bool = False,
         refresh: bool = False,
         data_type: str = "tracker",
@@ -286,7 +292,6 @@ class TogglManager:
                     text_formatter,
                     data,  # type: ignore[arg-type]
                 )
-
             if param is None:
                 continue
 
@@ -317,7 +322,7 @@ class TogglManager:
                 extra_query = str(info.entry_id)
 
         elif isinstance(info, TProject):
-            extra_query = info.project_id  # type: ignore
+            extra_query = info.project_id
         else:
             return SetUserQueryAction(joined_query)
 
@@ -346,14 +351,17 @@ class TogglManager:
     def generate_hint(
         self,
         message: tuple[str, ...] | str,
-        action: BaseAction = DoNothingAction(),
+        *,
+        action: BaseAction = DoNothingAction,
         level: TipSeverity = TipSeverity.INFO,
         small: bool = True,
     ) -> list[QueryParameters]:
+        action = action()
         img = TIP_IMAGES.get(level)
 
         if not isinstance(img, Path):
-            raise AttributeError("Level | Severity was not found.")
+            msg = "Level | Severity was not found."
+            raise TypeError(msg)
 
         title = level.name.title()
         if isinstance(message, str):

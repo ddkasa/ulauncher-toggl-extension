@@ -1,6 +1,8 @@
+# ruff: noqa: E501
+
 import enum
-from typing import Final
 from pathlib import Path
+from typing import Final
 
 
 class TipSeverity(enum.Enum):
@@ -35,15 +37,14 @@ TIP_IMAGES = {
 }
 
 CIRCULAR_SVG: Final[str] = """<?xml version="1.0" encoding="utf-8"?>
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-	 width="512" height="512"  viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"> 
-    <radialGradient id="grad" cx="-24.3091" cy="672.2155" r="13.2297" gradientTransform="matrix(9.695638e-16 15.3688 15.4467 -9.180418e-16 -10127.5361 629.6019)" gradientUnits="userSpaceOnUse">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlinkwidth="512" height="512"  viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
+    <radialGradient id="grad" cx="256" cy="256" r="256" gradientUnits="userSpaceOnUse" width="512" height="512"  viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
         <stop  offset="0" style="stop-color:#412A4C"/>
         <stop  offset="4.280270e-03" style="stop-color:#412A4C"/>
         <stop  offset="1" style="stop-color:#2C1338"/>
 	</radialGradient>
     <rect x="52.7" y="52.7" rx="95" ry="95" width="406.6" height="406.6" fill="url(#grad)"/>
-    <circle cx="256" cy="256" r="151.5" fill="{color}" stroke="transparent"/> 
+    <circle cx="256" cy="256" r="151.5" fill="{color}" stroke="transparent"/>
 </svg>
 """
 

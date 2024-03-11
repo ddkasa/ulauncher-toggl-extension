@@ -1,18 +1,22 @@
+from __future__ import annotations
+
 import json
 import logging
 import os
 import re
 import subprocess as sp
 from abc import ABCMeta, abstractmethod
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Optional
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, Optional
 
 from ulauncher_toggl_extension.toggl.images import CACHE_PATH
 from ulauncher_toggl_extension.toggl.serializers import (
     CustomDeserializer,
     CustomSerializer,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -47,25 +51,25 @@ class TogglCli(metaclass=ABCMeta):
             run = sp.run(
                 tcmd,
                 text=True,
+                shell=True,  # noqa: S602
                 env=dict(os.environ),
-                shell=True,
-                stdout=sp.PIPE,
-                stderr=sp.PIPE,
+                capture_output=True,
+                check=False,
             )
-        except sp.CalledProcessError as cpe:
-            log.error("'%s failed to run.'", tcmd)
-            raise cpe
+        except sp.CalledProcessError:
+            log.exception("'%s failed to run.'", tcmd)
+            raise
 
         return str(run.stdout.strip())
 
     def count_table(self, header: str) -> list[int]:
-        RIGHT_ALIGNED = {"start", "stop", "duration"}
+        right_aligned = {"start", "stop", "duration"}
 
         count = []
         current_word = ""
 
         for index, letter in enumerate(header):
-            right = current_word.strip().lower() in RIGHT_ALIGNED
+            right = current_word.strip().lower() in right_aligned
 
             if (
                 not right
@@ -73,11 +77,7 @@ class TogglCli(metaclass=ABCMeta):
                 and current_word[-1] == " "
                 and letter != " "
                 and any(x.isalpha() for x in current_word)
-            ):
-                current_word = ""
-                count.append(index + 1)
-
-            elif right and current_word[-1] != " " and letter == " ":
+            ) or (right and current_word[-1] != " " and letter == " "):
                 current_word = ""
                 count.append(index + 1)
 
@@ -111,19 +111,19 @@ class TogglCli(metaclass=ABCMeta):
         return name, int(item_id)
 
     def cache_data(self, data: list) -> None:
-        log.debug(f"Caching new data to {self.cache_path}")
+        log.debug("Caching new data to %s", self.cache_path)
         data = data.copy()
-        data.insert(0, datetime.now())
+        data.insert(0, datetime.now(tz=UTC))
         with self.cache_path.open("w", encoding="utf-8") as file:
             file.write(json.dumps(data, cls=CustomSerializer))
 
     def load_data(self) -> list | None:
-        log.debug(f"Loading cached data from {self.cache_path}")
+        log.debug("Loading cached data from %s", self.cache_path)
         with self.cache_path.open("r", encoding="utf-8") as file:
             data = json.loads(file.read(), cls=CustomDeserializer)
 
         date = data.pop(0)
-        if datetime.now() - self.CACHE_LEN >= date:
+        if datetime.now(tz=UTC) - self.cache_len >= date:
             log.info(
                 "%s: Cache out of date. Will request new data.",
                 self.__str__,
@@ -139,7 +139,7 @@ class TogglCli(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def CACHE_LEN(self) -> timedelta:
+    def cache_len(self) -> timedelta:
         return timedelta()
 
     def quote_text(self, text: str) -> str:

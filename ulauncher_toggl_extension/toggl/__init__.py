@@ -1,4 +1,4 @@
-from .dataclasses import TProject, TogglTracker
+from .dataclasses import TogglTracker, TProject
 
 __all__ = (
     "TogglTracker",

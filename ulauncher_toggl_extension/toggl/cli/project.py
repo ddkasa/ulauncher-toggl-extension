@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from datetime import timedelta
 from pathlib import Path
@@ -25,6 +27,7 @@ class TogglProjects(TogglCli):
 
     def list_projects(
         self,
+        *,
         active: bool = True,
         refresh: bool = False,
         **_,
@@ -52,7 +55,7 @@ class TogglProjects(TogglCli):
 
             name, client, active_item, project_id, hex_color = item_data
 
-            active_item_bool = True if active_item == "True" else False
+            active_item_bool = active_item == "True"
 
             if not active_item and active:
                 continue
@@ -89,5 +92,5 @@ class TogglProjects(TogglCli):
         return super().cache_path / Path("project_history.json")
 
     @property
-    def CACHE_LEN(self) -> timedelta:
+    def cache_len(self) -> timedelta:
         return timedelta(weeks=2)

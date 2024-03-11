@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import contextlib
 import logging
 from functools import partial
 from pathlib import Path
@@ -22,7 +25,7 @@ from ulauncher_toggl_extension.toggl.cli import (
     TogglProjects,
     TrackerCli,
 )
-from ulauncher_toggl_extension.toggl.manager import TogglViewer, QueryParameters
+from ulauncher_toggl_extension.toggl.manager import QueryParameters, TogglViewer
 
 from .preferences import (
     PreferencesEventListener,
@@ -38,6 +41,7 @@ class TogglExtension(Extension):
         "_max_results",
         "_toggl_workspace",
         "_toggl_hints",
+        "_default_project",
     )
 
     def __init__(self) -> None:
@@ -63,6 +67,7 @@ class TogglExtension(Extension):
         self._max_results = 10
         self._toggl_hints = True
         self._toggl_workspace = None
+        self._default_project = None
 
         # OPTIMIZE: Possibly turn these cache functiosn into async methods.
         tcli = TrackerCli(
@@ -94,7 +99,7 @@ class TogglExtension(Extension):
 
         query.pop(0)
 
-        QUERY_MATCH = {
+        query_match = {
             "start": tviewer.start_tracker,
             "add": tviewer.add_tracker,
             "continue": tviewer.continue_tracker,
@@ -115,11 +120,11 @@ class TogglExtension(Extension):
         }
 
         q = query.pop(0)
-        method = QUERY_MATCH.get(
+        method = query_match.get(
             q,
             partial(
                 self.create_results,
-                match_dict=QUERY_MATCH,
+                match_dict=query_match,
             ),
         )
 
@@ -139,7 +144,7 @@ class TogglExtension(Extension):
                     query=q,
                     post_method=tviewer.manager.query_builder,
                     **kwargs,
-                )
+                ),
             )
 
         return self.generate_results(results)
@@ -171,17 +176,15 @@ class TogglExtension(Extension):
         return results
 
     def parse_query(self, query: list[str]) -> dict[str, str]:
-        # TODO: Input sanitizing in order to throw away invalid arguments and prevent erorrs.
+        # TODO: Input sanitizing in order to throw away invalid arguments.
         arguments = {}
         for item in query:
             if item[0] == "#":
                 arguments["tags"] = item[1:]
             elif item[0] == "@":
                 item = item[1:]
-                try:
+                with contextlib.suppress(ValueError):
                     item = int(item)  # mypy: ignore [operator]
-                except ValueError:
-                    pass
                 arguments["project"] = item
             elif item[0] == ">" and item[-1] == "<":
                 arguments["duration"] = item[1:-1]
@@ -228,17 +231,33 @@ class TogglExtension(Extension):
     def toggl_exec_path(self) -> Path:
         return self._toggl_exec_path
 
+    @toggl_exec_path.setter
+    def toggl_exec_path(self, path: Path) -> None:
+        self._toggl_exec_path = path
+
     @property
     def default_project(self) -> int | None:
         return self._default_project
+
+    @default_project.setter
+    def default_project(self, project: int | None) -> None:
+        self._default_project = project
 
     @property
     def max_results(self) -> int:
         return self._max_results
 
+    @max_results.setter
+    def max_results(self, results: int) -> None:
+        self._max_results = results
+
     @property
     def toggled_hints(self) -> bool:
-        return self._toggled_hints
+        return self._toggl_hints
+
+    @toggled_hints.setter
+    def toggled_hints(self, hints: bool) -> None:
+        self._toggl_hints = hints
 
 
 class KeywordQueryEventListener(EventListener):

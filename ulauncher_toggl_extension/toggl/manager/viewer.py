@@ -1,29 +1,31 @@
-from typing import TYPE_CHECKING
-from functools import partial, cache
+from __future__ import annotations
 
-from ulauncher.api.shared.action.BaseAction import BaseAction
+from functools import cache, partial
+from typing import TYPE_CHECKING
+
 from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
-from ulauncher_toggl_extension.toggl.cli import TrackerCli
 from ulauncher_toggl_extension.toggl import TogglTracker
-
+from ulauncher_toggl_extension.toggl.cli import TrackerCli
 from ulauncher_toggl_extension.toggl.images import (
+    ADD_IMG,
+    APP_IMG,
+    BROWSER_IMG,
     CONTINUE_IMG,
-    START_IMG,
     DELETE_IMG,
     EDIT_IMG,
-    ADD_IMG,
     REPORT_IMG,
-    APP_IMG,
+    START_IMG,
     STOP_IMG,
-    BROWSER_IMG,
 )
 
-from .manager import TipSeverity, TogglManager, QueryParameters
+from .manager import QueryParameters, TipSeverity, TogglManager
 
 if TYPE_CHECKING:
+    from ulauncher.api.shared.action.BaseAction import BaseAction
+
     from ulauncher_toggl_extension.extension import TogglExtension
 
 
@@ -39,17 +41,21 @@ class TogglViewer:
         "current_tracker",
     )
 
-    def __init__(self, ext: "TogglExtension") -> None:
+    def __init__(self, ext: TogglExtension) -> None:
         self.toggl_exec_path = ext.toggl_exec_path
         self.max_results = ext.max_results
         self.default_project = ext.default_project
         self.hints = ext.toggled_hints
 
         self.tcli = TrackerCli(
-            self.toggl_exec_path, self.max_results, self.default_project
+            self.toggl_exec_path,
+            self.max_results,
+            self.default_project,
         )
         self.manager = TogglManager(
-            self.toggl_exec_path, self.max_results, self.default_project
+            self.toggl_exec_path,
+            self.max_results,
+            self.default_project,
         )
 
         self.current_tracker = self.tcli.check_running()
@@ -74,7 +80,7 @@ class TogglViewer:
         return None
 
     def default_options(self, *args, **kwargs) -> list[QueryParameters]:
-        BASIC_TASKS = [
+        basic_tasks = [
             QueryParameters(
                 START_IMG,
                 "Start",
@@ -107,14 +113,15 @@ class TogglViewer:
                         partial(self.manager.continue_tracker),
                     ),
                     SetUserQueryAction("tgl continue"),
-                )
+                ),
             ]
         else:
             current = [
                 QueryParameters(
                     self.current_tracker.find_color_svg(APP_IMG),
                     f"Currently Running: {self.current_tracker.description}",
-                    f"Since: {self.current_tracker.start} @{self.current_tracker.project[0]}",
+                    f"Since: {self.current_tracker.start}\
+                      @{self.current_tracker.project[0]}",
                     ExtensionCustomAction(
                         partial(
                             self.edit_tracker,
@@ -126,7 +133,7 @@ class TogglViewer:
                 self.stop_tracker()[0],
             ]
 
-        current.extend(BASIC_TASKS)
+        current.extend(basic_tasks)
 
         return current
 
@@ -143,7 +150,7 @@ class TogglViewer:
                     keep_app_open=False,
                 ),
                 SetUserQueryAction("tgl continue"),
-            )
+            ),
         ]
         trackers = self.manager.create_list_actions(
             img=img,
@@ -172,7 +179,7 @@ class TogglViewer:
                     keep_app_open=False,
                 ),
                 SetUserQueryAction("tgl start"),
-            )
+            ),
         ]
         fresh_query = ["tgl", "start"]
         fresh_query.extend(args)
@@ -205,7 +212,7 @@ class TogglViewer:
                     keep_app_open=True,
                 ),
                 SetUserQueryAction("tgl add"),
-            )
+            ),
         ]
 
         base_param.extend(self.generate_basic_hints())
@@ -214,13 +221,12 @@ class TogglViewer:
 
     def check_current_tracker(self):
         if not isinstance(self.current_tracker, TogglTracker):
-            reset = self.manager.generate_hint(
+            return self.manager.generate_hint(
                 "No active tracker is running.",
                 SetUserQueryAction("tgl "),
                 TipSeverity.ERROR,
                 small=False,
             )
-            return reset
 
         return self.current_tracker
 
@@ -239,7 +245,7 @@ class TogglViewer:
                     keep_app_open=True,
                 ),
                 SetUserQueryAction("tgl edit"),
-            )
+            ),
         ]
         data = self.create_tracker_subinfo(track)
         params.extend(self.manager.generate_hint(data))
@@ -275,7 +281,7 @@ class TogglViewer:
                     keep_app_open=False,
                 ),
                 SetUserQueryAction("tgl stop"),
-            )
+            ),
         ]
 
         data = self.create_tracker_subinfo(track)
@@ -295,7 +301,7 @@ class TogglViewer:
                     keep_app_open=False,
                 ),
                 SetUserQueryAction("tgl delete"),
-            )
+            ),
         ]
         trackers = self.manager.create_list_actions(
             img=DELETE_IMG,
@@ -349,26 +355,29 @@ class TogglViewer:
         )
         return [data]
 
-    @cache
+    @cache  # noqa: B019
     def generate_basic_hints(
         self,
         *,
         max_values: int = 3,
-        default_action: BaseAction = DoNothingAction(),
-        **kwargs,
+        default_action: BaseAction = DoNothingAction,
+        **_,
     ) -> list[QueryParameters]:
         # TODO: Explore more clear html formatting.
         if not self.hints:
             return []
 
-        HINT_MESSAGES = (
+        default_action = default_action()
+
+        hint_messages = (
             "Set a project with the @ symbol",
             "Add tags with the # symbol.",
-            "Set the start and end time with > & < respectively and the duration with both.",
+            "Set the start and end time with > & < \
+            respectively and the duration with both.",
             "If using spaces in your trackers or projects use quotation marks.",
             "Time formatting expects default TogglCli formatting.",
         )
-        hints = self.manager.generate_hint(
-            HINT_MESSAGES[:max_values], action=default_action
+        return self.manager.generate_hint(
+            hint_messages[:max_values],
+            action=default_action,
         )
-        return hints

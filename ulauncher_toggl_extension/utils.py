@@ -1,16 +1,20 @@
+from __future__ import annotations
+
 import subprocess
 import sys
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def ensure_import(package):
     try:
         return __import__(package)
     except ImportError:
-        subprocess.call([sys.executable, "-m", "pip", "install", "--user", package])
+        subprocess.call([sys.executable, "-m", "pip", "install", "--user", package])  # noqa: S603
     return __import__(package)
 
 
 def sanitize_path(path: str | Path) -> str:
-    path = str(path).replace(" ", "-")
-    return path
+    return str(path).replace(" ", "-")

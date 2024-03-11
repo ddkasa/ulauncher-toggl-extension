@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 import logging
 import subprocess as sp
@@ -67,7 +69,7 @@ class TrackerCli(TogglCli):
         try:
             run = self.base_command(cmd).splitlines()
         except sp.CalledProcessError:
-            log.error("Failed to retrieve tracker list. Returning last cache.")
+            log.exception("Failed to retrieve tracker list. Returning last cache.")
             return self.latest_trackers
 
         header_size = self.count_table(run[0])
@@ -125,7 +127,7 @@ class TrackerCli(TogglCli):
         _, start = lines[4].split(": ", maxsplit=1)
 
         _, tags = lines[6].split(": ", maxsplit=1)
-        tracker = TogglTracker(
+        return TogglTracker(
             description=desc.strip(),
             entry_id=int(toggl_id),
             stop="running",
@@ -135,8 +137,6 @@ class TrackerCli(TogglCli):
             tags=tags.split(",") if tags else None,
         )
 
-        return tracker
-
     def datetime_parameter(
         self,
         cmd: list[str],
@@ -144,12 +144,12 @@ class TrackerCli(TogglCli):
         time_type: DateTimeType,
     ) -> None:
         # TODO: Pre-check datetimes in the future to prevent broken calls.
-        FLAGS = {
+        flags = {
             DateTimeType.START: "--start",
             DateTimeType.END: "--stop",
             DateTimeType.DURATION: "--duration",
         }
-        flag = FLAGS.get(time_type)
+        flag = flags.get(time_type)
         if flag is None:
             return
         cmd.append(flag)
@@ -172,8 +172,8 @@ class TrackerCli(TogglCli):
 
         try:
             run = self.base_command(cmd)
-        except sp.CalledProcessError as t:
-            log.error("Stopping tracker unsucessful: %s", t)
+        except sp.CalledProcessError:
+            log.exception("Stopping tracker unsucessful: %s")
             run = "Toggl tracker not running!"
 
         return run
@@ -231,10 +231,10 @@ class TrackerCli(TogglCli):
         try:
             return self.base_command(cmd)
         except sp.CalledProcessError as error:
-            log.error(
+            log.exception(
                 "Adding tracker with name %s was unsuccessful: %s",
                 desc,
-                error,
+                error,  # noqa: TRY401
             )
             return f"Adding tracker with name {desc} was unsuccessful."
 
@@ -265,8 +265,8 @@ class TrackerCli(TogglCli):
 
         try:
             return self.base_command(cmd)
-        except sp.CalledProcessError as t:
-            log.error("Tracker deletion error: %s", t)
+        except sp.CalledProcessError:
+            log.exception("Tracker deletion error: %s")
             return "Tracker is current not running."
 
     def rm_tracker(self, tracker: int) -> str:
@@ -274,8 +274,8 @@ class TrackerCli(TogglCli):
 
         try:
             return self.base_command(cmd)
-        except sp.CalledProcessError as t:
-            log.error("Tracker deletion error: %s", t)
+        except sp.CalledProcessError:
+            log.exception("Tracker deletion error: %s")
             return "Tracker with id {tracker} does not exist!"
 
     def tracker_now(self) -> str:
@@ -306,5 +306,5 @@ class TrackerCli(TogglCli):
         return super().cache_path / Path("tracker_history.json")
 
     @property
-    def CACHE_LEN(self) -> timedelta:
+    def cache_len(self) -> timedelta:
         return timedelta(days=1)
