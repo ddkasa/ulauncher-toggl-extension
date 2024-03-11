@@ -4,7 +4,7 @@ import contextlib
 import logging
 from functools import partial
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable
 
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -36,6 +36,17 @@ log = logging.getLogger(__name__)
 
 
 class TogglExtension(Extension):
+    """Main extension clas housing most of querying funtionality.
+
+    Methods:
+        process_query: Processes query and returns results to be displayed
+            inside the launcher.
+        parse_query: Parses query into a dictionary of arguments useable by the
+            rest of the extension.
+        generate_results: Converts results from TogglCli into ULauncher items.
+
+    """
+
     __slots__ = (
         "_toggl_exec_path",
         "_max_results",
@@ -87,6 +98,19 @@ class TogglExtension(Extension):
         pcli.list_projects()
 
     def process_query(self, query: list[str]) -> list | Callable:
+        """Main method that handles querying for functionality.
+
+        Could be refactored to be more readable as needed if more functions are
+        being added.
+
+        Args:
+            query (list[str]): List of query terms to parse.
+
+        Returns:
+            query (list[str]) | Callable: List or oneq uery terms to display.
+        """
+        # HACK: Some query handling is still a mess as some function have
+        # different signatures.
         tviewer = TogglViewer(self)
 
         check = tviewer.pre_check_cli()
@@ -112,7 +136,7 @@ class TogglExtension(Extension):
             "report": tviewer.total_trackers,
             "sum": tviewer.total_trackers,
             "list": tviewer.list_trackers,
-            "project": tviewer.get_projects,
+            "project": tviewer.list_projects,
             "help": partial(
                 tviewer.generate_basic_hints,
                 max_values=self.max_results,
@@ -124,7 +148,7 @@ class TogglExtension(Extension):
         method = query_match.get(
             q,
             partial(
-                self.create_results,
+                self.match_results,
                 match_dict=query_match,
             ),
         )
@@ -150,24 +174,37 @@ class TogglExtension(Extension):
 
         return self.generate_results(results)
 
+    @staticmethod
     def match_query(
-        self,
         query: str,
         target: str,
         threshold: int = 50,
     ) -> bool:
         return get_score(query, target) >= threshold
 
-    def create_results(
+    def match_results(
         self,
         *_,
-        match_dict: dict,
+        match_dict: dict[str, Callable],
         query: str,
     ) -> list[QueryParameters]:
+        """Fuzzy matches query terms against a dictionary of functions using
+        the `match_query` method.
+
+        Will ignore any other parameters supplied with *_ parameters.
+
+        Args:
+            match_dict(dict): Dictionary of functions to match against.
+            query (str): Query term to match against.
+
+        Returns:
+            list: List of possible matches that are produced by matched
+                functions.
+        """
         results = []
         matched_results = set()
         for trg, fn in match_dict.items():
-            if self.match_query(query, trg) and fn not in matched_results:
+            if TogglExtension.match_query(query, trg) and fn not in matched_results:
                 try:
                     results.append(fn()[0])
                 except TypeError:
@@ -176,7 +213,16 @@ class TogglExtension(Extension):
 
         return results
 
-    def parse_query(self, query: list[str]) -> dict[str, str]:
+    def parse_query(self, query: list[str]) -> dict[str, Any]:
+        """Parses query into a dictionary of arguments useable by the rest of
+        the extension.
+
+        Args:
+            query (list[str]): List of query terms to parse.
+
+        Returns:
+            dict: Dictionary of query terms and values usea
+        """
         # TODO: Input sanitizing in order to throw away invalid arguments.
         arguments = {}
         for item in query:
@@ -200,7 +246,18 @@ class TogglExtension(Extension):
         self,
         actions: Iterable[QueryParameters],
     ) -> list[ExtensionResultItem]:
+        """Generates results from pre defined parameters.
+
+        Args:
+            actions: Iterable[QueryParameters]: Items to generate results from.
+
+        Returns:
+            list[ExtensionResultItem]: List of results to display in the launcher.
+        """
         results = []
+
+        # OPTIMIZE: Process actions here to make testing eaiser in the rest of
+        # of the modules.
 
         for i, item in enumerate(actions, start=1):
             if item.small:
