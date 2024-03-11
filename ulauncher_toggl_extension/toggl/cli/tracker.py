@@ -91,7 +91,7 @@ class TrackerCli(TogglCli):
                 project=project,
                 duration=dur,
                 start=start,
-                tags=tags.split(", "),
+                tags=tags,  # type: ignore[arg-type]
             )
             self.latest_trackers.append(tracker)
 
