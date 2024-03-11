@@ -79,17 +79,15 @@ class TogglManager:
         self.notification = None
 
     def continue_tracker(self, *args, **kwargs) -> bool:
-        img = CONTINUE_IMG
+        try:
+            msg = self.tcli.continue_tracker(*args, **kwargs)
+        except subprocess.SubprocessError:
+            return False
 
-        msg = self.tcli.continue_tracker(*args, **kwargs)
-
-        self.show_notification(msg, img)
+        self.show_notification(msg, CONTINUE_IMG)
         return True
 
     def start_tracker(self, *args, **kwargs) -> bool:
-        # TODO: To similar to continue in certain functionality, so it needs some adjustments.
-        img = START_IMG
-
         if not args:
             return False
         elif not isinstance(args[0], TogglTracker):
@@ -97,7 +95,7 @@ class TogglManager:
                 description=str(args[0]),
                 entry_id=0,
                 stop=kwargs.get("stop", ""),
-                project=kwargs.get("project"),
+                project=kwargs.get("project", ""),
                 duration=kwargs.get("duration"),
                 tags=kwargs.get("tags"),
             )
@@ -112,34 +110,29 @@ class TogglManager:
             msg = f"Failed to start {tracker.description}"
             result = False
 
-        self.show_notification(msg, img)
+        self.show_notification(msg, START_IMG)
 
         return result
 
     def add_tracker(self, *args, **kwargs) -> bool:
-        img = ADD_IMG
-
         msg = self.tcli.add_tracker(*args, **kwargs)
-        self.show_notification(msg, img)
+        self.show_notification(msg, ADD_IMG)
 
         return True
 
     def edit_tracker(self, *args, **kwargs) -> bool:
-        img = EDIT_IMG
-
         msg = self.tcli.edit_tracker(*args, **kwargs)
         if msg == "Tracker is current not running." or msg is None:
             return False
 
-        self.show_notification(msg, img)
+        self.show_notification(msg, EDIT_IMG)
 
         return True
 
     def stop_tracker(self) -> bool:
-        img = STOP_IMG
         msg = self.tcli.stop_tracker()
 
-        self.show_notification(msg, img)
+        self.show_notification(msg, STOP_IMG)
         return True
 
     def remove_tracker(self, toggl_id: int | TogglTracker) -> bool:
@@ -148,16 +141,12 @@ class TogglManager:
         elif not isinstance(toggl_id, int):
             return False
 
-        img = DELETE_IMG
-
         msg = self.tcli.rm_tracker(tracker=toggl_id)
 
-        self.show_notification(msg, img)
+        self.show_notification(msg, DELETE_IMG)
         return True
 
     def total_trackers(self) -> list[QueryParameters]:
-        img = REPORT_IMG
-
         data = self.tcli.sum_tracker()
         queries = []
         for day, time in data:
@@ -181,17 +170,15 @@ class TogglManager:
                     ),
                     keep_app_open=True,
                 )
-            param = QueryParameters(img, day, time, meth)
+            param = QueryParameters(REPORT_IMG, day, time, meth)
 
             queries.append(param)
 
         return queries
 
     def list_trackers(self, *args, **kwargs) -> list[QueryParameters]:
-        img = REPORT_IMG
-
         return self.create_list_actions(
-            img,
+            REPORT_IMG,
             refresh="refresh" in args,
             kwargs=kwargs,
         )
@@ -199,9 +186,8 @@ class TogglManager:
     def list_projects(
         self, *args, post_method=DoNothingAction, **kwargs
     ) -> list[QueryParameters]:
-        img = APP_IMG
         data = self.create_list_actions(
-            img,
+            APP_IMG,
             text_formatter="Client: {client}",
             data_type="project",
             refresh="refresh" in args,
@@ -231,10 +217,8 @@ class TogglManager:
         else:
             return None
 
-        img = tracker.find_color_svg(img)
-
         param = QueryParameters(
-            img,
+            tracker.find_color_svg(img),
             tracker.description,
             text,
             meth,
@@ -326,8 +310,9 @@ class TogglManager:
                 if info.project:
                     pid: int = info.project[1]
                     extra_query += f" @{pid}"
-                if info.tags:
-                    extra_query += f" #{','.join(info.tags)}"
+                if info.tags and info.tags[0]:
+                    tags = ",".join(info.tags) if len(info.tags) > 1 else info.tags[0]
+                    extra_query += f" #{','.join(tags)}"
             else:
                 extra_query = str(info.entry_id)
 

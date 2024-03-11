@@ -189,7 +189,6 @@ class TogglViewer:
         return base_param
 
     def add_tracker(self, *args, **kwargs) -> list[QueryParameters]:
-        img = ADD_IMG
         msg = "Add a new tracker"
         if args:
             msg += f" with description {args[0]}."
@@ -198,7 +197,7 @@ class TogglViewer:
 
         base_param = [
             QueryParameters(
-                img,
+                ADD_IMG,
                 "Add",
                 msg,
                 ExtensionCustomAction(
@@ -230,11 +229,9 @@ class TogglViewer:
         if not isinstance(track, TogglTracker):
             return track
 
-        img = track.find_color_svg(EDIT_IMG)
-
         params = [
             QueryParameters(
-                img,
+                track.find_color_svg(EDIT_IMG),
                 track.description,
                 "Edit the running tracker.",
                 ExtensionCustomAction(
@@ -288,10 +285,9 @@ class TogglViewer:
         return params
 
     def remove_tracker(self, *args, **kwargs) -> list[QueryParameters]:
-        img = DELETE_IMG
         params = [
             QueryParameters(
-                img,
+                DELETE_IMG,
                 "Delete",
                 "Delete tracker.",
                 ExtensionCustomAction(
@@ -302,7 +298,7 @@ class TogglViewer:
             )
         ]
         trackers = self.manager.create_list_actions(
-            img=img,
+            img=DELETE_IMG,
             post_method=ExtensionCustomAction,
             custom_method=partial(self.manager.remove_tracker),
             count_offset=-1,
@@ -314,10 +310,8 @@ class TogglViewer:
         return params
 
     def total_trackers(self) -> list[QueryParameters]:
-        img = REPORT_IMG
-
         params = QueryParameters(
-            img,
+            REPORT_IMG,
             "Generate Report",
             "View a weekly total of your trackers.",
             ExtensionCustomAction(
@@ -329,9 +323,8 @@ class TogglViewer:
         return [params]
 
     def list_trackers(self, *args, **kwargs) -> list[QueryParameters]:
-        img = BROWSER_IMG
         params = QueryParameters(
-            img,
+            BROWSER_IMG,
             "List",
             f"View the last {self.max_results} trackers.",
             ExtensionCustomAction(
@@ -343,10 +336,9 @@ class TogglViewer:
         return [params]
 
     def get_projects(self, *args, **kwargs) -> list[QueryParameters]:
-        img = APP_IMG
         # TODO: Implement more project actions
         data = QueryParameters(
-            img,
+            APP_IMG,
             "Projects",
             "View all your projects.",
             ExtensionCustomAction(

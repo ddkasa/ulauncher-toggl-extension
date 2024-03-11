@@ -246,16 +246,16 @@ class TrackerCli(TogglCli):
             cmd.append("--description")
             cmd.append(self.quote_text(description))
 
-        project = kwargs.get("project", False)
+        project = kwargs.get("project")
         if project:
             self.add_project_parameter(cmd, project)
 
-        start = kwargs.get("start", False)
+        start = kwargs.get("start")
         if start:
             cmd.append("--start")
             cmd.append(start)
 
-        tags = kwargs.get("tags", False)
+        tags = kwargs.get("tags")
         if tags:
             cmd.append("--tags")
             cmd.append(tags)
