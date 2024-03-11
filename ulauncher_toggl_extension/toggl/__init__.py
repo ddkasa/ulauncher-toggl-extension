@@ -1,12 +1,6 @@
-from .cli import TogglCli, TogglProjects, TogglTracker, TrackerCli
-from .manager import QueryParameters, TogglManager, TogglViewer
+from .dataclasses import TProject, TogglTracker
 
 __all__ = (
-    "TogglCli",
-    "TogglManager",
-    "TogglViewer",
-    "QueryParameters",
-    "TogglProjects",
     "TogglTracker",
-    "TrackerCli",
+    "TProject",
 )

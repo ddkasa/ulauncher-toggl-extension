@@ -1,71 +1,20 @@
-import enum
 import json
 import logging
 import os
 import re
 import subprocess as sp
 from abc import ABCMeta, abstractmethod
-from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
-from ulauncher_toggl_extension.utils import sanitize_path
-
-from ulauncher_toggl_extension.toggl.images import (
-    CACHE_PATH,
-    SVG_CACHE,
-    CIRCULAR_SVG,
+from ulauncher_toggl_extension.toggl.images import CACHE_PATH
+from ulauncher_toggl_extension.toggl.serializers import (
+    CustomDeserializer,
+    CustomSerializer,
 )
 
-
 log = logging.getLogger(__name__)
-
-
-class DateTimeType(enum.Enum):
-    START = enum.auto()
-    END = enum.auto()
-    DURATION = enum.auto()
-
-
-@dataclass()
-class TogglTracker:
-    description: str = field()
-    entry_id: int = field()
-    stop: str = field()
-    project: Optional[str | int] = field(default=None)
-    start: Optional[str] = field(default=None)
-    duration: Optional[str] = field(default=None)
-    tags: Optional[list[str]] = field(default=None)
-
-
-@dataclass
-class TProject:
-    name: str = field()
-    project_id: int = field()
-    client: str = field()
-    color: str = field()
-    active: bool = field(default=True)
-
-    def __post_init__(self) -> None:
-        if self.color:
-            self.generate_color_svg()
-
-    def generate_color_svg(self) -> Path:
-        SVG_CACHE.mkdir(parents=True, exist_ok=True)
-        name = sanitize_path(self.name)
-        path = SVG_CACHE / Path(f"{name}.svg")
-
-        if path.exists():
-            return path
-
-        log.debug("Creating SVG colored circle %s at %s.", self.color, path)
-        svg = CIRCULAR_SVG.format(color=self.color)
-
-        with path.open("w", encoding="utf-8") as file:
-            file.write(svg)
-
-        return path
 
 
 class TogglCli(metaclass=ABCMeta):
@@ -195,48 +144,3 @@ class TogglCli(metaclass=ABCMeta):
 
     def quote_text(self, text: str) -> str:
         return '"' + text + '"'
-
-
-class CustomSerializer(json.JSONEncoder):
-    def encode(self, obj: Any) -> str:
-        if isinstance(obj, list):
-            new_obj = []
-            for item in obj:
-                if isinstance(item, (TProject, TogglTracker)):
-                    name = type(item).__name__
-                    item = asdict(item)
-                    item["data type"] = name
-                new_obj.append(item)
-
-            return super().encode(new_obj)
-        return super().encode(obj)
-
-    def default(self, obj: Any) -> Any:
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        return super().default(obj)
-
-
-class CustomDeserializer(json.JSONDecoder):
-    def decode(self, obj: Any, **kwargs) -> Any:  # type: ignore[override]
-        obj = super().decode(obj, **kwargs)
-
-        decoded_obj: list[Any] = []
-        for item in obj:
-            if isinstance(item, dict):
-                dt = item.get("data type")
-                if dt is not None:
-                    item.pop("data type")
-                    if dt == "TProject":
-                        item = TProject(**item)
-                    elif dt == "TogglTracker":
-                        item = TogglTracker(**item)
-
-            elif isinstance(item, str):
-                item = datetime.fromisoformat(item)
-                decoded_obj.insert(0, item)
-                continue
-
-            decoded_obj.append(item)
-
-        return decoded_obj

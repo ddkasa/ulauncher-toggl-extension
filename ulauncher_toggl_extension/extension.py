@@ -18,13 +18,11 @@ from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 from ulauncher.utils.fuzzy_search import get_score
 
-from ulauncher_toggl_extension.toggl import (
+from ulauncher_toggl_extension.toggl.cli import (
     TogglProjects,
     TrackerCli,
-    QueryParameters,
-    TogglViewer,
 )
-
+from ulauncher_toggl_extension.toggl.manager import TogglViewer, QueryParameters
 
 from .preferences import (
     PreferencesEventListener,
@@ -127,7 +125,7 @@ class TogglExtension(Extension):
         q = query.pop(0)
         kwargs = self.parse_query(query)
 
-        results = method(*query, query=q, **kwargs)  # type: ignore
+        results = method(*query, query=q, **kwargs)  # type: ignore[operator]
         if not results:
             defaults = tviewer.default_options(*query)
             return self.generate_results(defaults)

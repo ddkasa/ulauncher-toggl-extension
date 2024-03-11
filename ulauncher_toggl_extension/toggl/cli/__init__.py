@@ -1,5 +1,5 @@
-from .meta import TogglCli, TogglTracker, DateTimeType, TProject
-from .tracker import TrackerCli
+from .meta import TogglCli
+from .tracker import TrackerCli, DateTimeType
 from .project import TogglProjects
 
 # TODO: Integrate this instead of cli + as soon 3.12v exists for the API
@@ -11,8 +11,6 @@ from .project import TogglProjects
 __all__ = (
     "TogglCli",
     "TrackerCli",
-    "TogglTracker",
     "DateTimeType",
     "TogglProjects",
-    "TProject",
 )

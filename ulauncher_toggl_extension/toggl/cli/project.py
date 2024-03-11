@@ -3,7 +3,9 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
-from .meta import TogglCli, TProject
+from ulauncher_toggl_extension.toggl.dataclasses import TProject
+
+from .meta import TogglCli
 
 log = logging.getLogger(__name__)
 

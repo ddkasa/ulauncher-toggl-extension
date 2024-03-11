@@ -1,4 +1,6 @@
-from .meta import TogglCli, TogglTracker, DateTimeType
+from .meta import TogglCli
+import enum
+
 from pathlib import Path
 from typing import Optional
 import logging
@@ -6,7 +8,16 @@ import subprocess as sp
 from datetime import timedelta
 
 
+from ulauncher_toggl_extension.toggl.dataclasses import TogglTracker
+
+
 log = logging.getLogger(__name__)
+
+
+class DateTimeType(enum.Enum):
+    START = enum.auto()
+    END = enum.auto()
+    DURATION = enum.auto()
 
 
 class TrackerCli(TogglCli):

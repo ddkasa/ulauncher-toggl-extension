@@ -14,9 +14,11 @@ from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
 from ulauncher_toggl_extension.toggl.cli import (
     TogglProjects,
+    TrackerCli,
+)
+from ulauncher_toggl_extension.toggl import (
     TogglTracker,
     TProject,
-    TrackerCli,
 )
 from ulauncher_toggl_extension.toggl.images import (
     ADD_IMG,
@@ -234,7 +236,6 @@ class TogglManager:
         project_name, _ = TogglProjects.project_name_formatter(tracker.project)  # type: ignore[arg-type]
         project_name = sanitize_path(project_name)
         img_path = SVG_CACHE / Path(f"{project_name}.svg")
-        log.debug(img_path)
         img = img_path if img_path.exists() else img
 
         param = QueryParameters(
@@ -333,7 +334,6 @@ class TogglManager:
                     )
                     extra_query += f" @{pid}"
                 if info.tags:
-                    print(info.tags)
                     extra_query += f" #{','.join(info.tags)}"
             else:
                 extra_query = str(info.entry_id)

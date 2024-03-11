@@ -1,13 +1,14 @@
 from typing import TYPE_CHECKING
 from functools import partial, cache
 
-
 from ulauncher.api.shared.action.BaseAction import BaseAction
 from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 
-from ulauncher_toggl_extension.toggl.cli import TrackerCli, TogglTracker
+from ulauncher_toggl_extension.toggl.cli import TrackerCli
+from ulauncher_toggl_extension.toggl import TogglTracker
+
 from ulauncher_toggl_extension.toggl.images import (
     CONTINUE_IMG,
     START_IMG,
@@ -155,7 +156,7 @@ class TogglViewer:
             count_offset=-1,
             text_formatter="Continue {name} @{project}",
         )
-        base_param.extend(trackers)  # type: ignore
+        base_param.extend(trackers)
 
         return base_param
 
@@ -343,10 +344,11 @@ class TogglViewer:
 
     def get_projects(self, *args, **kwargs) -> list[QueryParameters]:
         img = APP_IMG
+        # TODO: Implement more project actions
         data = QueryParameters(
             img,
             "Projects",
-            "View & Edit projects.",
+            "View all your projects.",
             ExtensionCustomAction(
                 partial(self.manager.list_projects, *args, **kwargs),
                 keep_app_open=True,
@@ -358,8 +360,10 @@ class TogglViewer:
     @cache
     def generate_basic_hints(
         self,
+        *,
         max_values: int = 3,
         default_action: BaseAction = DoNothingAction(),
+        **kwargs,
     ) -> list[QueryParameters]:
         # TODO: Explore more clear html formatting.
         if not self.hints:
