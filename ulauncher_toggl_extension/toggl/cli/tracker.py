@@ -1,15 +1,13 @@
-from .meta import TogglCli
 import enum
-
-from pathlib import Path
-from typing import Optional
 import logging
 import subprocess as sp
 from datetime import timedelta
-
+from pathlib import Path
+from typing import Optional
 
 from ulauncher_toggl_extension.toggl.dataclasses import TogglTracker
 
+from .meta import TogglCli
 
 log = logging.getLogger(__name__)
 
@@ -112,10 +110,18 @@ class TrackerCli(TogglCli):
             return None
 
         lines = run.splitlines()
+        try:
+            desc, toggl_id = lines[0].split("#")
+        except KeyError:
+            desc, toggl_id = "", 0
 
-        desc, toggl_id = lines[0].split("#")
         _, duration = lines[2].split(": ", maxsplit=1)
-        _, project = lines[3].split(": ", maxsplit=1)
+
+        try:
+            _, project = lines[3].split(": ", maxsplit=1)
+        except IndexError:
+            project = ""
+
         _, start = lines[4].split(": ", maxsplit=1)
 
         _, tags = lines[6].split(": ", maxsplit=1)

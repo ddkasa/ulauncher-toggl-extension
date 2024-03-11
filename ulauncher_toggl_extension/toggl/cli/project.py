@@ -52,7 +52,7 @@ class TogglProjects(TogglCli):
 
             name, client, active_item, project_id, hex_color = item_data
 
-            active_item = True if active_item == "True" else False
+            active_item_bool = True if active_item == "True" else False
 
             if not active_item and active:
                 continue
@@ -64,7 +64,7 @@ class TogglProjects(TogglCli):
                 project_id=int(project_id),
                 client=client,
                 color=hex_color,
-                active=active_item,
+                active=active_item_bool,
             )
             self.project_list.append(tracker)
 
