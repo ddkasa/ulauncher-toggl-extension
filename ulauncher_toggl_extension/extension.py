@@ -104,6 +104,7 @@ class TogglExtension(Extension):
             "add": tviewer.add_tracker,
             "continue": tviewer.continue_tracker,
             "stop": tviewer.stop_tracker,
+            "end": tviewer.stop_tracker,
             "edit": tviewer.edit_tracker,
             "now": tviewer.edit_tracker,
             "delete": tviewer.remove_tracker,
