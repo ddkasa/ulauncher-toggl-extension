@@ -114,15 +114,15 @@ class TogglExtension(Extension):
             ),
         }
 
+        q = query.pop(0)
         method = QUERY_MATCH.get(
-            query[0],
+            q,
             partial(
                 self.create_results,
-                QUERY_MATCH,
+                match_dict=QUERY_MATCH,
             ),
         )
 
-        q = query.pop(0)
         kwargs = self.parse_query(query)
 
         results = method(*query, query=q, **kwargs)  # type: ignore[operator]
@@ -154,6 +154,7 @@ class TogglExtension(Extension):
 
     def create_results(
         self,
+        *_,
         match_dict: dict,
         query: str,
     ) -> list[QueryParameters]:
