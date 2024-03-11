@@ -31,9 +31,7 @@ from ulauncher_toggl_extension.toggl.images import (
     STOP_IMG,
     TIP_IMAGES,
     TipSeverity,
-    SVG_CACHE,
 )
-from ulauncher_toggl_extension.utils import sanitize_path
 
 log = logging.getLogger(__name__)
 
@@ -225,7 +223,7 @@ class TogglManager:
                 stop=tracker.stop,
                 tid=tracker.entry_id,
                 name=tracker.description,
-                project=tracker.project,
+                project=tracker.project[0],  # type: ignore[index]
                 tags=tracker.tags,
                 start=tracker.start,
                 duration=tracker.duration,
@@ -233,10 +231,7 @@ class TogglManager:
         else:
             return None
 
-        project_name, _ = TogglProjects.project_name_formatter(tracker.project)  # type: ignore[arg-type]
-        project_name = sanitize_path(project_name)
-        img_path = SVG_CACHE / Path(f"{project_name}.svg")
-        img = img_path if img_path.exists() else img
+        img = tracker.find_color_svg(img)
 
         param = QueryParameters(
             img,
@@ -248,7 +243,6 @@ class TogglManager:
 
     def project_builder(
         self,
-        img: Path,
         meth: MethodType,
         text_formatter: str,
         project: TProject,
@@ -260,6 +254,8 @@ class TogglManager:
             color=project.color,
             active=project.active,
         )
+
+        img = project.generate_color_svg()
         param = QueryParameters(img, project.name, text, meth)
         return param
 
@@ -302,7 +298,6 @@ class TogglManager:
                 )
             else:
                 param = self.project_builder(
-                    img,
                     meth,
                     text_formatter,
                     data,  # type: ignore[arg-type]
@@ -329,9 +324,7 @@ class TogglManager:
                 if info.start:
                     extra_query += f" >{info.start}"
                 if info.project:
-                    _, pid = TogglProjects.project_name_formatter(
-                        info.project  # type: ignore
-                    )
+                    pid: int = info.project[1]
                     extra_query += f" @{pid}"
                 if info.tags:
                     extra_query += f" #{','.join(info.tags)}"

@@ -112,9 +112,9 @@ class TogglViewer:
         else:
             current = [
                 QueryParameters(
-                    APP_IMG,
+                    self.current_tracker.find_color_svg(APP_IMG),
                     f"Currently Running: {self.current_tracker.description}",
-                    f"Since: {self.current_tracker.start} @{self.current_tracker.project}",
+                    f"Since: {self.current_tracker.start} @{self.current_tracker.project[0]}",
                     ExtensionCustomAction(
                         partial(
                             self.edit_tracker,
@@ -226,11 +226,11 @@ class TogglViewer:
         return self.current_tracker
 
     def edit_tracker(self, *args, **kwargs) -> list[QueryParameters]:
-        img = EDIT_IMG
-
         track = self.check_current_tracker()
         if not isinstance(track, TogglTracker):
             return track
+
+        img = track.find_color_svg(EDIT_IMG)
 
         params = [
             QueryParameters(
@@ -264,13 +264,13 @@ class TogglViewer:
 
     def stop_tracker(self, *args, **kwargs) -> list[QueryParameters]:
         del args, kwargs
-        img = STOP_IMG
         track = self.check_current_tracker()
         if not isinstance(track, TogglTracker):
             return track
+
         params = [
             QueryParameters(
-                img,
+                STOP_IMG,
                 "Stop",
                 f"Stop tracking {track.description}.",
                 ExtensionCustomAction(
