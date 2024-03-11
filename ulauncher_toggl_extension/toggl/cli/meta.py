@@ -143,4 +143,4 @@ class TogglCli(metaclass=ABCMeta):
         return timedelta()
 
     def quote_text(self, text: str) -> str:
-        return '"' + text + '"'
+        return '"' + text.strip('"') + '"'
