@@ -51,10 +51,31 @@ class QueryParameters(NamedTuple):
 
 
 class TogglManager:
+    """Manages interactions between extension and the cli and handles most of
+    the logic between different states of the extension.
+
+    Attributes:
+        tcli: Toggl CLi instance which runs the TogglCli commands.
+        pcli: Toggl Projects instance which runs any commands related to
+            projects.
+        notification: Notification instance used for displaying notifications
+            and stored there when intialized.
+
+    Methods:
+       continue, add, start, stop, delete, report, edit: Executes through given
+           cli command and returns a result.
+       total_trackers: Displays a weekly total of tracker time.
+       tracker | project builder: Creates description text and query parameters
+           based on the given tracker.
+       query_builder: Creates query parameters if the action is a
+           SetUserQueryAction.
+       notification_builder: Sends a notification to the system framework.
+    """
+
     __slots__ = (
         "exec_path",
         "max_results",
-        "worksubprocessace_id",
+        "default_project",
         "tcli",
         "pcli",
         "notification",
@@ -68,17 +89,17 @@ class TogglManager:
     ) -> None:
         self.exec_path = config_path
         self.max_results = max_results
-        self.worksubprocessace_id = default_project
+        self.default_project = default_project
 
         self.tcli = TrackerCli(
             self.exec_path,
             self.max_results,
-            self.worksubprocessace_id,
+            self.default_project,
         )
         self.pcli = TogglProjects(
             self.exec_path,
             self.max_results,
-            self.worksubprocessace_id,
+            self.default_project,
         )
 
         self.notification = None
@@ -351,12 +372,11 @@ class TogglManager:
     def generate_hint(
         self,
         message: tuple[str, ...] | str,
-        *,
-        action: BaseAction = DoNothingAction,
+        action: BaseAction = DoNothingAction(),  # noqa: B008
         level: TipSeverity = TipSeverity.INFO,
+        *,
         small: bool = True,
     ) -> list[QueryParameters]:
-        action = action()
         img = TIP_IMAGES.get(level)
 
         if not isinstance(img, Path):

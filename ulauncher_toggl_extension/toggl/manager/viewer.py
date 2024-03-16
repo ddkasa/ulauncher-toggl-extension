@@ -30,8 +30,28 @@ if TYPE_CHECKING:
 
 
 class TogglViewer:
+    """Class that creates a bridge between the extension, TogglCli & Manager.
+
+    Mostly deals with displaying information in the ULauncher UI.
+
+    Args:
+        ext(TogglExtension): Extension instance which provides user
+            preferences.
+
+    Methods:
+        pre_check_cli: Checks if TogglCli exists at provided path and returns
+            error message if it doesn't. Might refactor to user perferences.
+        default_options: Returns default options for the base extension query.
+        continue, add, start, stop, delete, report, edit: Displays or executes
+            relevant actions.
+        check_current_tracker: Checks if there is a running Toggl tracker and
+            displays information relevant to it.
+        generate_basic_hints: Generates hints for the base extension query.
+        list_trackers | list_projects: Lists the latest trackers or projects
+            in the cli.
+    """
+
     __slots__ = (
-        "toggl_exec_path",
         "max_results",
         "default_project",
         "tcli",
@@ -39,43 +59,45 @@ class TogglViewer:
         "extension",
         "hints",
         "current_tracker",
+        "toggl_exec_path",
     )
 
-    def __init__(self, ext: TogglExtension) -> None:
-        self.toggl_exec_path = ext.toggl_exec_path
-        self.max_results = ext.max_results
-        self.default_project = ext.default_project
-        self.hints = ext.toggled_hints
+    def __init__(self, extension: TogglExtension) -> None:
+        self.toggl_exec_path = extension.toggl_exec_path
+        self.max_results = extension.max_results
+        self.default_project = extension.default_project
+        self.hints = extension.toggled_hints
 
         self.tcli = TrackerCli(
-            self.toggl_exec_path,
-            self.max_results,
-            self.default_project,
+            extension.toggl_exec_path,
+            extension.max_results,
+            extension.default_project,
         )
         self.manager = TogglManager(
-            self.toggl_exec_path,
-            self.max_results,
-            self.default_project,
+            extension.toggl_exec_path,
+            extension.max_results,
+            extension.default_project,
         )
 
         self.current_tracker = self.tcli.check_running()
 
     def pre_check_cli(self) -> list | None:
+        # TODO: Refactor cli into preferences at some other point.
         if not self.toggl_exec_path.exists():
-            warning = self.manager.generate_hint(
+            ext_warning = self.manager.generate_hint(
                 "TogglCli is not properly configured.",
                 SetUserQueryAction(""),
                 TipSeverity.ERROR,
                 small=False,
             )
-            warning.extend(
+            ext_warning.extend(
                 self.manager.generate_hint(
                     "Check your Toggl exectutable path in the config.",
                     DoNothingAction(),
                     TipSeverity.INFO,
                 ),
             )
-            return warning
+            return ext_warning
 
         return None
 
@@ -101,7 +123,7 @@ class TogglViewer:
             ),
             self.total_trackers()[0],
             self.list_trackers(*args, **kwargs)[0],
-            self.get_projects(*args, **kwargs)[0],
+            self.list_projects(*args, **kwargs)[0],
         ]
         if self.current_tracker is None:
             current = [
@@ -219,7 +241,7 @@ class TogglViewer:
 
         return base_param
 
-    def check_current_tracker(self):
+    def check_current_tracker(self) -> TogglTracker | list[QueryParameters]:
         if not isinstance(self.current_tracker, TogglTracker):
             return self.manager.generate_hint(
                 "No active tracker is running.",
@@ -230,7 +252,11 @@ class TogglViewer:
 
         return self.current_tracker
 
-    def edit_tracker(self, *args, **kwargs) -> list[QueryParameters]:
+    def edit_tracker(
+        self,
+        *args,
+        **kwargs,
+    ) -> list[QueryParameters] | TogglTracker:
         track = self.check_current_tracker()
         if not isinstance(track, TogglTracker):
             return track
@@ -258,14 +284,19 @@ class TogglViewer:
         if isinstance(track.project, str):
             data.append(f"{track.project}")
 
-        if track.tags and isinstance(track.tags, (str, list)):
-            if isinstance(track.tags, str):
+        if track.tags:
+            if len(track.tags) == 1 or isinstance(track.tags, str):
                 data.append(f"{track.tags}")
             else:
                 data.append(", ".join(track.tags))
+
         return tuple(data)
 
-    def stop_tracker(self, *args, **kwargs) -> list[QueryParameters]:
+    def stop_tracker(
+        self,
+        *args,
+        **kwargs,
+    ) -> list[QueryParameters]:
         del args, kwargs
         track = self.check_current_tracker()
         if not isinstance(track, TogglTracker):
@@ -341,7 +372,7 @@ class TogglViewer:
         )
         return [params]
 
-    def get_projects(self, *args, **kwargs) -> list[QueryParameters]:
+    def list_projects(self, *args, **kwargs) -> list[QueryParameters]:
         # TODO: Implement more project actions
         data = QueryParameters(
             APP_IMG,
