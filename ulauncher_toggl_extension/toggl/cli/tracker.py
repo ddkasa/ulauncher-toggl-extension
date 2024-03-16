@@ -21,6 +21,22 @@ class DateTimeType(enum.Enum):
 
 
 class TrackerCli(TogglCli):
+    """Toggl tracker Cli which runs a bunch of toggl cli commands and
+    processes the data.
+
+    Holds a bunch of methods for sending commands and processing specific
+        arguments.
+
+    Noteable Methods:
+        check_running(str): Checks if a tracker is currently running and
+            process it into a TogglTracker object if one is running.
+        continue, start, stop, delete, add, edit, now: Sends the appropriate
+            TogglCli command to toggle the tracker while processing
+    """
+
+    # TODO: Needs a refactor to make the method signatures cleaner and more
+    # uniform.
+
     __slots__ = ("latest_trackers",)
 
     def __init__(
@@ -32,12 +48,20 @@ class TrackerCli(TogglCli):
         super().__init__(config_path, max_results, workspace_id)
         self.latest_trackers: list[TogglTracker] = []
 
-    def list_trackers(
+    def fetch_objects(
         self,
         *,
         refresh: bool = False,
         **kwargs,
     ) -> list[TogglTracker]:
+        """Fetches trackers from toggl and stores in a dataclass.
+
+        Args:
+            kwargs: start and stop times to filter the results by.
+
+        Returns:
+            list[TogglTracker]: List of trackers pulled from Toggl or cache.
+        """
         start_time = kwargs.get("start", False)
         end_time = kwargs.get("stop", False)
         times = start_time or end_time
@@ -101,10 +125,9 @@ class TrackerCli(TogglCli):
         return self.latest_trackers
 
     def check_running(self) -> TogglTracker | None:
-        cmd = ["now"]
-
+        # TODO: Refactor this method into cleaner flow.
         try:
-            run = self.base_command(cmd)
+            run = self.tracker_now()
         except sp.CalledProcessError:
             return None
 
@@ -134,7 +157,7 @@ class TrackerCli(TogglCli):
             project=project,
             start=start,
             duration=duration,
-            tags=tags.split(",") if tags else None,
+            tags=tags,  # type: ignore[arg-type]
         )
 
     def datetime_parameter(
@@ -184,8 +207,8 @@ class TrackerCli(TogglCli):
         project: int | str,
     ) -> None:
         cmd.append("--project")
-        if isinstance(project, str) and "(" in project:
-            _, proj_id = self.format_id_str(project)
+        if isinstance(project, tuple):
+            _, proj_id = project
         else:
             proj_id = project
         cmd.append(str(proj_id))
@@ -269,7 +292,7 @@ class TrackerCli(TogglCli):
             log.exception("Tracker deletion error: %s")
             return "Tracker is current not running."
 
-    def rm_tracker(self, tracker: int) -> str:
+    def delete_tracker(self, tracker: int) -> str:
         cmd = ["rm", str(tracker)]
 
         try:
@@ -283,6 +306,7 @@ class TrackerCli(TogglCli):
         return self.base_command(cmd)
 
     def sum_tracker(self) -> list[tuple[str, str]]:
+        """Returns basic total summation of all tracked time trackers."""
         cmd = ["sum", "-st"]
 
         run = self.base_command(cmd).splitlines()
