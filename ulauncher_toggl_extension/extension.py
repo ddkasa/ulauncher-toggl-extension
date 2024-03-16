@@ -87,7 +87,7 @@ class TogglExtension(Extension):
             self._toggl_workspace,
         )
         log.debug("Updating trackers")
-        tcli.list_trackers()
+        tcli.fetch_objects()
 
         pcli = TogglProjects(
             self._toggl_exec_path,
@@ -95,7 +95,7 @@ class TogglExtension(Extension):
             self._toggl_workspace,
         )
         log.debug("Updating projects")
-        pcli.list_projects()
+        pcli.fetch_objects()
 
     def process_query(self, query: list[str]) -> list | Callable:
         """Main method that handles querying for functionality.

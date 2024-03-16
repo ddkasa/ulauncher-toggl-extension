@@ -3,11 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 import subprocess as sp
 from abc import ABCMeta, abstractmethod
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from ulauncher_toggl_extension.toggl.images import CACHE_PATH
 from ulauncher_toggl_extension.toggl.serializers import (
@@ -22,6 +21,27 @@ log = logging.getLogger(__name__)
 
 
 class TogglCli(metaclass=ABCMeta):
+    """Meta object that sets up the command line framework for interacting with
+    Toggl Cli.
+
+    Methods:
+        base_command(list[str]): Formats and runs the provided cli command
+            with subprocess. Most child classes will override this method.
+        count_table(str): Counts and formats cli tables returning the indexes
+            in a tuple.
+        format_line(tuple[int], str): Formats cli lines using the provided
+            indexes created by count_table and return the values of a row.
+        cache_data or load-data: Caches or loads data from cache while handling
+            saving new cache.
+
+    Abstract Methods:
+        fetch_objects: Returns a list of objects and process them into a list.
+
+    Abstract Attributes:
+        cache_path: Returns the path to the cache directory.
+        cache_len: Returns the cache expiration data.
+    """
+
     __slots__ = (
         "toggl_exec_path",
         "max_results",
@@ -41,6 +61,20 @@ class TogglCli(metaclass=ABCMeta):
 
         self._cache_path = CACHE_PATH / "json"
         self._cache_path.mkdir(parents=True, exist_ok=True)
+
+    @abstractmethod
+    def fetch_objects(self, *, refresh: bool = False) -> list[Any]:
+        """Abstract method that returns a list of objects and process them
+        into a list.
+
+        Args:
+            refresh (bool): Whether to refresh or load the cache.
+                Loads new cache if True. Defaults to False.
+
+        Returns:
+            list[Any]: Returns a list of objects.
+        """
+        return []
 
     def base_command(self, cmd: list[str]) -> str:
         cmd.insert(0, self.toggl_exec_path)
@@ -62,7 +96,7 @@ class TogglCli(metaclass=ABCMeta):
 
         return str(run.stdout.strip())
 
-    def count_table(self, header: str) -> list[int]:
+    def count_table(self, header: str) -> tuple[int, ...]:
         right_aligned = {"start", "stop", "duration"}
 
         count = []
@@ -83,11 +117,11 @@ class TogglCli(metaclass=ABCMeta):
 
             current_word += letter
 
-        return count
+        return tuple(count)
 
     def format_line(
         self,
-        header_size: list[int],
+        header_size: tuple[int, ...],
         item: str,
         duplicate_names: Optional[set] = None,
     ) -> list[str] | None:
@@ -101,14 +135,6 @@ class TogglCli(metaclass=ABCMeta):
             prev = index
         item_data.append(item[prev:].strip())
         return item_data
-
-    def format_id_str(self, text: str) -> tuple[str, int]:
-        name, item_id = text.split("(")
-
-        item_id = re.sub(r"[\)\(#]", "", item_id)
-        name = name.strip()
-
-        return name, int(item_id)
 
     def cache_data(self, data: list) -> None:
         log.debug("Caching new data to %s", self.cache_path)

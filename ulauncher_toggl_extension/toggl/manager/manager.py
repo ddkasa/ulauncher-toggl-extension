@@ -262,9 +262,9 @@ class TogglManager:
         **kwargs,
     ) -> list[QueryParameters]:
         if data_type == "tracker":
-            list_data = self.tcli.list_trackers(refresh=refresh, **kwargs)
+            list_data = self.tcli.fetch_objects(refresh=refresh, **kwargs)
         else:
-            list_data = self.pcli.list_projects(refresh=refresh, **kwargs)
+            list_data = self.pcli.fetch_objects(refresh=refresh, **kwargs)
 
         queries = []
         for i, data in enumerate(list_data, start=1):
