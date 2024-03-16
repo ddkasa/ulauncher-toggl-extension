@@ -16,8 +16,6 @@ pygobject-stubs = "^2.10.0"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.ruff]
-ignore = []
 
 [tool.ruff.lint]
 select = [
