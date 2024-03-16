@@ -1,3 +1,23 @@
+"""JSON serializer and deserializer objects for handling custom data structures.
+
+This does not implement handling bad json data so that needs to be sorted in
+code.
+
+Examples:
+    >>> from ulauncher_toggl_extension.toggl.dataclasses import TogglTracker
+    >>> tracker = TogglTracker(
+    ...     description="Description 1",
+    ...     entry_id=1,
+    ...     stop="2021-01-01 00:00:00",
+    ...     project="Project 1",
+    ...     start="2021-01-01 00:00:00",
+    ...     duration="00:00:00",
+    ...     tags=["Tag 1", "Tag 2"],
+    ...     )
+    >>> serialized = json.dumps(tracker, cls=CustomSerializer)
+    >>> decoded = json.loads(serialized, cls=CustomDeserializer)
+"""
+
 from __future__ import annotations
 
 import json
