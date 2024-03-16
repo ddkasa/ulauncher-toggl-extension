@@ -1,3 +1,12 @@
+"""Project fetcher and initilizer
+
+
+Examples:
+    >>> from ulauncher_toggl_extension.toggl.cli.project import TogglProjects
+    >>> projects = TogglProjects(config_path, max_results, workspace_id)
+    >>> latest_projects = projects.fetch_objects(refresh=True)
+"""
+
 from __future__ import annotations
 
 import logging
@@ -13,6 +22,13 @@ log = logging.getLogger(__name__)
 
 
 class TogglProjects(TogglCli):
+    """Project object that fetches and modifies objects on behalf of the
+    extension.
+
+    Attributes:
+        project_list: List of projects pulled from Toggl or cache.
+    """
+
     __slots__ = ("project_list",)
 
     def __init__(
@@ -25,13 +41,22 @@ class TogglProjects(TogglCli):
 
         self.project_list: list[TProject] = []
 
-    def list_projects(
+    def fetch_objects(
         self,
         *,
         active: bool = True,
         refresh: bool = False,
         **_,
     ) -> list[TProject]:
+        """Fetches projects from toggl and implements them in the project_list.
+
+        Args:
+            active (bool): Whether to fetch only active projects.
+                Defaults to True.
+
+        Returns:
+            list[TProject]: List of projects pulled from Toggl or cache.
+        """
         if not refresh and self.project_list:
             return self.project_list
 
@@ -78,14 +103,6 @@ class TogglProjects(TogglCli):
     def base_command(self, cmd: list[str]) -> str:
         cmd.insert(0, "projects")
         return super().base_command(cmd)
-
-    @staticmethod
-    def project_name_formatter(name: str) -> tuple[str, int]:
-        if not name:
-            return "", 0
-        name, project_id = name.split("(#")
-        name = name.strip()
-        return name, int(project_id[:-1])
 
     @property
     def cache_path(self) -> Path:
