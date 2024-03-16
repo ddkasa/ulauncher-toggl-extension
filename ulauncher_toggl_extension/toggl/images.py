@@ -1,3 +1,10 @@
+"""Image paths for all SVG and some constant storage paths.
+
+Examples:
+    >>> from ulauncher_toggl_extension.toggl.images import CIRCULAR_SVG
+    >>> new_img = CIRCULAR_SVG.format(color="#000000")
+"""
+
 # ruff: noqa: E501
 
 import enum
