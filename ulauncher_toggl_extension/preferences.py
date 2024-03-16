@@ -18,6 +18,19 @@ log = logging.getLogger(__name__)
 
 
 class PreferencesEventListener(EventListener):
+    """Event listener for preferences.
+
+    Will validate and provide defaults if incorrect or missing values are
+    provided.
+
+    Methods:
+        on_event: Updates extension preferences and checks for changes.
+        toggl_exec_path: Checks if TogglCli exists at provided path.
+        default_project: Checks if default project exists.
+        max_results: Checks if max search results are set.
+
+    """
+
     def on_event(
         self,
         event: PreferencesEvent,
@@ -42,7 +55,7 @@ class PreferencesEventListener(EventListener):
         return Path.home() / Path(".local/bin/toggl")
 
     def default_project(self, project: Optional[str] = None) -> int | None:
-        # TODO: Need to integrate with program properly.
+        # TODO: Need to integrate with extension properly.
         log.warning("Default project is not implemented.")
 
         if project is not None:
