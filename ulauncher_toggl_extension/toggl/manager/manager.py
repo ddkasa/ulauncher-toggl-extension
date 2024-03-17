@@ -338,7 +338,7 @@ class TogglManager:
                     extra_query += f" @{pid}"
                 if info.tags and info.tags[0]:
                     tags = ",".join(info.tags) if len(info.tags) > 1 else info.tags[0]
-                    extra_query += f" #{','.join(tags)}"
+                    extra_query += f" #{tags}"
             else:
                 extra_query = str(info.entry_id)
 
