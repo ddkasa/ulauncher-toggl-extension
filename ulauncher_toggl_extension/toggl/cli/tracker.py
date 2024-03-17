@@ -314,11 +314,9 @@ class TrackerCli(TogglCli):
 
         days: list[tuple[str, str]] = []
 
-        for i, item in enumerate(run):
+        for i, item in enumerate(run[1:]):
             if i + 1 == self.max_results:
                 break
-            if i == 0:
-                continue
 
             day = item[:12].strip()
             time = item[12:].strip()
