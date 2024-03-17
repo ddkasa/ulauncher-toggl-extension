@@ -167,6 +167,3 @@ class TogglCli(metaclass=ABCMeta):
     @abstractmethod
     def cache_len(self) -> timedelta:
         return timedelta()
-
-    def quote_text(self, text: str) -> str:
-        return '"' + text.strip('"') + '"'

@@ -1,5 +1,8 @@
+# ruff: noqa: T201
+
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from typing import TYPE_CHECKING
@@ -18,3 +21,13 @@ def ensure_import(package):
 
 def sanitize_path(path: str | Path) -> str:
     return str(path).replace(" ", "-")
+
+
+def quote_text(text: str) -> str:
+    text = re.sub(r'"', "", text)
+    return '"' + text.strip() + '"'
+
+
+if __name__ == "__main__":
+    print(quote_text("test"))
+    print(quote_text('"test"'))
