@@ -218,11 +218,9 @@ class TogglViewer:
         return base_param
 
     def add_tracker(self, *args, **kwargs) -> list[QueryParameters]:
-        msg = "Add a new tracker"
-        if args:
-            msg += f" with description {args[0]}."
-        else:
-            msg += "."
+        msg = "Add a new tracker{0}."
+        desc = kwargs.get("description", "")
+        msg = msg.format(f" with description {desc}" if desc else "")
 
         base_param = [
             QueryParameters(

@@ -228,7 +228,7 @@ class TrackerCli(TogglCli):
 
         return self.base_command(cmd)
 
-    def add_tracker(self, *args, **kwargs) -> str:
+    def add_tracker(self, *_, **kwargs) -> str:
         start = kwargs.get("start", False)
         stop = kwargs.get("stop", False)
 
@@ -237,11 +237,11 @@ class TrackerCli(TogglCli):
         if not stop:
             return "Missing stopping time."
 
-        desc = args[2:3] or False
+        desc = kwargs.get("description")
         if not isinstance(desc, str):
             return "No tracker description given."
 
-        cmd = ["add", start, stop, self.quote_text(desc)]
+        cmd = ["add", start, stop, quote_text(desc)]
 
         tags = kwargs.get("tags", False)
         if tags:
