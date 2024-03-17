@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import re
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Callable, Iterable
 
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -41,8 +42,6 @@ class TogglExtension(Extension):
     Methods:
         process_query: Processes query and returns results to be displayed
             inside the launcher.
-        parse_query: Parses query into a dictionary of arguments useable by the
-            rest of the extension.
         generate_results: Converts results from TogglCli into ULauncher items.
 
     """
@@ -97,7 +96,7 @@ class TogglExtension(Extension):
         log.debug("Updating projects")
         pcli.fetch_objects()
 
-    def process_query(self, query: list[str]) -> list | Callable:
+    def process_query(self, query: list[str], **kwargs) -> list | Callable:
         """Main method that handles querying for functionality.
 
         Could be refactored to be more readable as needed if more functions are
@@ -111,17 +110,16 @@ class TogglExtension(Extension):
         """
         # HACK: Some query handling is still a mess as some function have
         # different signatures.
+
         tviewer = TogglViewer(self)
 
         check = tviewer.pre_check_cli()
         if isinstance(check, list):
             return check
 
-        if len(query) == 1:
+        if not query:
             defaults = tviewer.default_options(*query)
             return self.generate_results(defaults)
-
-        query.pop(0)
 
         query_match = {
             "start": tviewer.start_tracker,
@@ -152,8 +150,6 @@ class TogglExtension(Extension):
                 match_dict=query_match,
             ),
         )
-
-        kwargs = self.parse_query(query)
 
         results = method(*query, query=q, **kwargs)  # type: ignore[operator]
         if not results:
@@ -187,6 +183,7 @@ class TogglExtension(Extension):
         *_,
         match_dict: dict[str, Callable],
         query: str,
+        **__,
     ) -> list[QueryParameters]:
         """Fuzzy matches query terms against a dictionary of functions using
         the `match_query` method.
@@ -212,35 +209,6 @@ class TogglExtension(Extension):
                 matched_results.add(fn)
 
         return results
-
-    def parse_query(self, query: list[str]) -> dict[str, Any]:
-        """Parses query into a dictionary of arguments useable by the rest of
-        the extension.
-
-        Args:
-            query (list[str]): List of query terms to parse.
-
-        Returns:
-            dict: Dictionary of query terms and values usea
-        """
-        # TODO: Input sanitizing in order to throw away invalid arguments.
-        arguments = {}
-        for item in query:
-            if item[0] == "#":
-                arguments["tags"] = item[1:]
-            elif item[0] == "@":
-                item = item[1:]
-                with contextlib.suppress(ValueError):
-                    item = int(item)  # mypy: ignore [operator]
-                arguments["project"] = item
-            elif item[0] == ">" and item[-1] == "<":
-                arguments["duration"] = item[1:-1]
-            elif item[0] == ">":
-                arguments["start"] = item[1:]
-            elif item[0] == "<":
-                arguments["stop"] = item[1:]
-
-        return arguments
 
     def generate_results(
         self,
@@ -319,15 +287,70 @@ class TogglExtension(Extension):
 
 
 class KeywordQueryEventListener(EventListener):
+    """Event listener for keyword query events.
+
+    Args:
+        parse_query: Parses query into a dictionary of arguments useable by the
+            rest of the extension.
+    """
+
     def on_event(
         self,
         event: KeywordQueryEvent,
         extension: TogglExtension,
     ) -> None:
-        query = event.get_query().split()
-        processed_query = extension.process_query(query)
+        args = event.get_argument()
+        if args:
+            query = args.split(" ")
+            arguments = self.parse_query(args, query)
+            log.debug("Query Action: %s", query[0])
+            log.debug("Arguments: %s", arguments)
+        else:
+            query = []
+            arguments = {}
+
+        processed_query = extension.process_query(query, **arguments)
 
         return RenderResultListAction(processed_query)
+
+    def parse_query(self, query: str, args: list[str]) -> dict[str, str]:
+        """Parses query into a dictionary of arguments useable by the rest of
+        the extension.
+
+        Args:
+            query (list[str]): List of query terms to parse.
+
+        Returns:
+            dict: Dictionary of query terms and values usea
+        """
+
+        # TODO: Input sanitizing in order to throw away invalid arguments.
+
+        arguments = {}
+        desc_patt = r'(?P<desc>(?<=")[\w \-]+(?="))'
+        desc = re.search(desc_patt, query)
+        if desc:
+            arguments["description"] = desc.group("desc")
+        for i, item in enumerate(args[1:]):
+            if item[0] == "#":
+                arguments["tags"] = item[1:].split(",")
+            elif item[0] == "@":
+                item = item[1:]
+                with contextlib.suppress(ValueError):
+                    item = int(item)  # mypy: ignore [operator]
+                arguments["project"] = item
+            elif item[0] == ">" and item[-1] == "<":
+                arguments["duration"] = item[1:-1]
+            elif item[0] == ">":
+                arguments["start"] = item[1:]
+                if i + 1 < len(query) and query[i + 1] in {"AM", "PM"}:
+                    arguments["start"] += " " + query[i + 1]
+            elif item[0] == "<":
+                arguments["stop"] = item[1:]
+                if i + 1 < len(query) and query[i + 1] in {"AM", "PM"}:
+                    arguments["stop"] += " " + query[i + 1]
+
+        return arguments
 
 
 class ItemEnterEventListener(EventListener):
