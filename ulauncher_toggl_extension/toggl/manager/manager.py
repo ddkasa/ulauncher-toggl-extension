@@ -147,8 +147,8 @@ class TogglManager:
 
         return True
 
-    def edit_tracker(self, *args, **kwargs) -> bool:
-        msg = self.tcli.edit_tracker(*args, **kwargs)
+    def edit_tracker(self, *_, **kwargs) -> bool:
+        msg = self.tcli.edit_tracker(**kwargs)
         if msg == "Tracker is current not running." or msg is None:
             return False
 

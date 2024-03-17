@@ -266,9 +266,9 @@ class TrackerCli(TogglCli):
         cmd = ["now"]
 
         description = kwargs.get("description")
-        if description is not None:
+        if description:
             cmd.append("--description")
-            cmd.append(self.quote_text(description))
+            cmd.append(quote_text(description))
 
         project = kwargs.get("project")
         if project:
