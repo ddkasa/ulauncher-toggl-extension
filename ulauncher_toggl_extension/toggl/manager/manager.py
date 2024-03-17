@@ -118,9 +118,10 @@ class TogglManager:
             return False
         if not isinstance(args[0], TogglTracker):
             tracker = TogglTracker(
-                description=str(args[0]),
+                description=kwargs.get("description", ""),
                 entry_id=0,
                 stop=kwargs.get("stop", ""),
+                start=kwargs.get("start", ""),
                 project=kwargs.get("project", ""),
                 duration=kwargs.get("duration"),
                 tags=kwargs.get("tags"),

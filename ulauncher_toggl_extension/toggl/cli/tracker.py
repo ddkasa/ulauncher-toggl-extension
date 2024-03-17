@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from ulauncher_toggl_extension.toggl.dataclasses import TogglTracker
+from ulauncher_toggl_extension.utils import quote_text
 
 from .meta import TogglCli
 
@@ -214,15 +215,15 @@ class TrackerCli(TogglCli):
         cmd.append(str(proj_id))
 
     def start_tracker(self, tracker: TogglTracker) -> str:
-        cmd = ["start", self.quote_text(tracker.description)]
+        cmd = ["start", quote_text(tracker.description)]
 
         if tracker.tags:
             cmd.append("--tags")
             tag_str = ",".join(tracker.tags)
             cmd.append(tag_str)
-        if tracker.project is not None:
+        if tracker.project:
             self.add_project_parameter(cmd, tracker.project)
-        if tracker.start is not None:
+        if tracker.start:
             self.datetime_parameter(cmd, tracker.start, DateTimeType.START)
 
         return self.base_command(cmd)
