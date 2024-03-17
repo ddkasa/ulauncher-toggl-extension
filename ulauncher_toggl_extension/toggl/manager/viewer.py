@@ -82,7 +82,7 @@ class TogglViewer:
         self.current_tracker = self.tcli.check_running()
 
     def pre_check_cli(self) -> list | None:
-        # TODO: Refactor cli into preferences at some other point.
+        # TODO: Refactor pre check into preferences at some other point.
         if not self.toggl_exec_path.exists():
             ext_warning = self.manager.generate_hint(
                 "TogglCli is not properly configured.",
@@ -138,12 +138,17 @@ class TogglViewer:
                 ),
             ]
         else:
+            proj = self.current_tracker.project
+            proj = proj[0] if proj else ""
+            desc = f"Since: {self.current_tracker.start}"
+            if proj:
+                desc += f" @{proj}"
+            # TODO: Refactor into a custom method/function for reusability.
             current = [
                 QueryParameters(
                     self.current_tracker.find_color_svg(APP_IMG),
                     f"Currently Running: {self.current_tracker.description}",
-                    f"Since: {self.current_tracker.start}\
-                      @{self.current_tracker.project[0]}",
+                    desc,
                     ExtensionCustomAction(
                         partial(
                             self.edit_tracker,
