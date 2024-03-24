@@ -131,7 +131,8 @@ class TogglManager:
             tracker.start = None
 
         try:
-            msg = self.tcli.start_tracker(tracker)
+            self.tcli.start_tracker(tracker)
+            msg = f"Started '{tracker.description}'"
             result = True
         except subprocess.SubprocessError:
             msg = f"Failed to start {tracker.description}"
