@@ -285,8 +285,12 @@ class TogglManager:
         **kwargs,
     ) -> list[QueryParameters]:
         if data_type == "tracker":
+            if refresh:
+                self.show_notification("Refreshing Trackers...", APP_IMG)
             list_data = self.tcli.fetch_objects(refresh=refresh, **kwargs)
         else:
+            if refresh:
+                self.show_notification("Refreshing Projects...", APP_IMG)
             list_data = self.pcli.fetch_objects(refresh=refresh, **kwargs)
 
         queries = []
