@@ -393,7 +393,7 @@ class TogglViewer:
     def generate_basic_hints(
         self,
         *,
-        max_values: int = 3,
+        max_values: int = 5,
         default_action: BaseAction = DoNothingAction,
         **_,
     ) -> list[QueryParameters]:
@@ -404,11 +404,12 @@ class TogglViewer:
         default_action = default_action()
 
         hint_messages = (
+            "Set the description with surrounding quotes.",
             "Set a project with the @ symbol",
             "Add tags with the # symbol.",
-            "Set the start and end time with > & < \
-            respectively and the duration with both.",
-            "If using spaces in your trackers or projects use quotation marks.",
+            "Set the start time with '<'",
+            "Set the end time with '>'",
+            "Set the duation with '>' and '<'",
             "Time formatting expects default TogglCli formatting.",
         )
         return self.manager.generate_hint(
