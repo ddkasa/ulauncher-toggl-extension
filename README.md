@@ -21,17 +21,19 @@
 ## Usage
 
 - Invoked in Ulauncher with the `tgl` prefix by default.
+- Check out the [usage guide](docs/guide.md) for more details.
 
 ### Supports
 
-1. Continue tracker.
-2. Stop running tracker.
+1. Continuing a tracker.
+2. Stopping a tracker.
 3. Editing the current tracker.
-4. Start a new tracker.
-5. Deleting a tracker.
-6. Generating weekly reports.
-7. Listing the latest trackers.
-8. Listing your projects.
+4. Starting a new tracker.
+5. Adding a new tracker.
+6. Deleting a tracker.
+7. Viewing quick weekly reports.
+8. Listing the latest trackers.
+9. Listing your projects.
 
 # License
 
