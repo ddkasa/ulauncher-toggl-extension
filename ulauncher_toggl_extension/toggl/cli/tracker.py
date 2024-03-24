@@ -205,7 +205,7 @@ class TrackerCli(TogglCli):
     def add_project_parameter(
         self,
         cmd: list[str],
-        project: int | str,
+        project: int | str | tuple,
     ) -> None:
         cmd.append("--project")
         if isinstance(project, tuple):
@@ -219,8 +219,7 @@ class TrackerCli(TogglCli):
 
         if tracker.tags:
             cmd.append("--tags")
-            tag_str = ",".join(tracker.tags)
-            cmd.append(tag_str)
+            cmd.append(",".join(tracker.tags))
         if tracker.project:
             self.add_project_parameter(cmd, tracker.project)
         if tracker.start:
@@ -282,7 +281,7 @@ class TrackerCli(TogglCli):
         tags = kwargs.get("tags")
         if tags:
             cmd.append("--tags")
-            cmd.append(tags)
+            cmd.append(",".join(tags))
 
         if len(cmd) == 1:
             return "No parameters to edit specified!"
