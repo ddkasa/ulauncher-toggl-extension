@@ -359,7 +359,7 @@ class TogglManager:
         title: str = "Toggl Extension",
         on_close: Optional[Callable] = None,
     ) -> None:
-        icon = str(Path(__file__).parents[2] / img)
+        icon = str(Path(__file__).parents[3] / img)
         if not Notify.is_initted():
             Notify.init("TogglExtension")
         if self.notification is None:
