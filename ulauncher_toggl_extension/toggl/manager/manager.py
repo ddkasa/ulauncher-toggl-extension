@@ -204,16 +204,16 @@ class TogglManager:
 
         return queries
 
-    def list_trackers(self, *args, **kwargs) -> list[QueryParameters]:
+    def list_trackers(self, *_, **kwargs) -> list[QueryParameters]:
         return self.create_list_actions(
             REPORT_IMG,
-            refresh="refresh" in args,
-            kwargs=kwargs,
+            data_type="tracker",
+            **kwargs,
         )
 
     def list_projects(
         self,
-        *args,
+        *_,
         post_method=DoNothingAction,
         **kwargs,
     ) -> list[QueryParameters]:
@@ -221,7 +221,6 @@ class TogglManager:
             APP_IMG,
             text_formatter="Client: {client}",
             data_type="project",
-            refresh="refresh" in args,
             post_method=post_method,
             **kwargs,
         )

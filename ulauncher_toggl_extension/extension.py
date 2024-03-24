@@ -148,6 +148,7 @@ class TogglExtension(Extension):
             partial(
                 self.match_results,
                 match_dict=query_match,
+                **kwargs,
             ),
         )
 
@@ -180,10 +181,10 @@ class TogglExtension(Extension):
 
     def match_results(
         self,
-        *_,
+        *args,
         match_dict: dict[str, Callable],
         query: str,
-        **__,
+        **kwargs,
     ) -> list[QueryParameters]:
         """Fuzzy matches query terms against a dictionary of functions using
         the `match_query` method.
@@ -192,6 +193,7 @@ class TogglExtension(Extension):
 
         Args:
             match_dict(dict): Dictionary of functions to match against.
+                Will only display the first result of each viwer method.
             query (str): Query term to match against.
 
         Returns:
@@ -201,9 +203,9 @@ class TogglExtension(Extension):
         results = []
         matched_results = set()
         for trg, fn in match_dict.items():
-            if TogglExtension.match_query(query, trg) and fn not in matched_results:
+            if fn not in matched_results and TogglExtension.match_query(query, trg):
                 try:
-                    results.append(fn()[0])
+                    results.append(fn(*args, **kwargs)[0])
                 except TypeError:
                     continue
                 matched_results.add(fn)
@@ -313,7 +315,7 @@ class KeywordQueryEventListener(EventListener):
 
         return RenderResultListAction(processed_query)
 
-    def parse_query(self, query: str, args: list[str]) -> dict[str, str]:
+    def parse_query(self, query: str, args: list[str]) -> dict[str, str]:  # noqa: C901
         """Parses query into a dictionary of arguments useable by the rest of
         the extension.
 
@@ -328,6 +330,7 @@ class KeywordQueryEventListener(EventListener):
 
         arguments = {}
         desc_patt = r'(?P<desc>(?<=")[\w \-]+(?="))'
+        # OPTIMIZE: Might be able to find a size fits all regex in the future.
         desc = re.search(desc_patt, query)
         if desc:
             arguments["description"] = desc.group("desc")
@@ -349,6 +352,8 @@ class KeywordQueryEventListener(EventListener):
                 arguments["stop"] = item[1:]
                 if i + 1 < len(query) and query[i + 1] in {"AM", "PM"}:
                     arguments["stop"] += " " + query[i + 1]
+            elif item == "refresh":
+                arguments["refresh"] = True
 
         return arguments
 
