@@ -10,6 +10,7 @@ Examples:
 from __future__ import annotations
 
 import logging
+import subprocess as sp
 from datetime import timedelta
 from pathlib import Path
 from typing import Optional
@@ -68,8 +69,12 @@ class TogglProjects(TogglCli):
         self.project_list = []
 
         cmd = ["ls", "-f", "+hex_color,+active"]
+        try:
+            run = self.base_command(cmd).splitlines()
+        except sp.CalledProcessError:
+            log.exception("Failed to retrieve project list.")
+            return self.project_list
 
-        run = self.base_command(cmd).splitlines()
         header_size = self.count_table(run[0])
         checked_names: set[str] = set()
         for item in run[1:]:
