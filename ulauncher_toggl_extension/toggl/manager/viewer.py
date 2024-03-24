@@ -295,12 +295,7 @@ class TogglViewer:
 
         return tuple(data)
 
-    def stop_tracker(
-        self,
-        *args,
-        **kwargs,
-    ) -> list[QueryParameters]:
-        del args, kwargs
+    def stop_tracker(self, *_, **__) -> list[QueryParameters]:
         track = self.check_current_tracker()
         if not isinstance(track, TogglTracker):
             return track
@@ -349,7 +344,7 @@ class TogglViewer:
 
         return params
 
-    def total_trackers(self) -> list[QueryParameters]:
+    def total_trackers(self, *_, **__) -> list[QueryParameters]:
         params = QueryParameters(
             REPORT_IMG,
             "Generate Report",
