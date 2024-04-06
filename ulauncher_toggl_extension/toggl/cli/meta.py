@@ -77,9 +77,17 @@ class TogglCli(metaclass=ABCMeta):
         return []
 
     def base_command(self, cmd: list[str]) -> str:
+        """Formats and runs the provided cli command with subprocess.
+
+        Args:
+            cmd (list[str]): The cli command to run in a list.
+
+        Returns:
+            str: The output of the cli command unformatted.
+        """
         cmd.insert(0, self.toggl_exec_path)
         tcmd = " ".join(cmd)
-        log.debug("Running subcommand: %s", tcmd)
+        log.info("Running subcommand: %s", tcmd)
 
         try:
             run = sp.run(

@@ -1,3 +1,16 @@
+"""Utility module with a bunch of functions used throughout the extension.
+
+Functions:
+    ensure_import: Installs the package if its missing and imports it.
+    quote_text: Small function to surround text with double quotes.
+    show_notification: Hooks into the system framework to display a notification.
+
+Examples:
+    >>> from ulauncher_toggl_extension.utils import show_notification
+    >>> show_notification("test", "test.png")
+"""
+
+
 # ruff: noqa: T201
 
 from __future__ import annotations
