@@ -5,10 +5,10 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import Callable, Optional
 
-if TYPE_CHECKING:
-    from pathlib import Path
+from gi.repository import Notify
 
 
 def ensure_import(package):
@@ -26,6 +26,21 @@ def sanitize_path(path: str | Path) -> str:
 def quote_text(text: str) -> str:
     text = re.sub(r'"', "", text)
     return '"' + text.strip() + '"'
+
+
+def show_notification(
+    msg: str,
+    img: Path,
+    title: str = "Toggl Extension",
+    on_close: Optional[Callable] = None,
+) -> None:
+    icon = str(Path(__file__).parents[1] / img)
+    if not Notify.is_initted():
+        Notify.init("TogglExtension")
+    notification = Notify.Notification.new(title, msg, icon)
+    if on_close is not None:
+        notification.connect("closed", on_close)
+    notification.show()
 
 
 if __name__ == "__main__":

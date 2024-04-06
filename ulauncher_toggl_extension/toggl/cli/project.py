@@ -16,6 +16,8 @@ from pathlib import Path
 from typing import Optional
 
 from ulauncher_toggl_extension.toggl.dataclasses import TProject
+from ulauncher_toggl_extension.toggl.images import APP_IMG
+from ulauncher_toggl_extension.utils import show_notification
 
 from .meta import TogglCli
 
@@ -65,6 +67,11 @@ class TogglProjects(TogglCli):
             data = self.load_data()
             if isinstance(data, list):
                 return data
+
+            refresh = True
+
+        show_notification("Refreshing Toggl Project List...", APP_IMG)
+        log.info("Refreshing Toggl Project List...")
 
         self.project_list = []
 

@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Optional
 
 from ulauncher_toggl_extension.toggl.dataclasses import TogglTracker
-from ulauncher_toggl_extension.utils import quote_text
+from ulauncher_toggl_extension.toggl.images import APP_IMG
+from ulauncher_toggl_extension.utils import quote_text, show_notification
 
 from .meta import TogglCli
 
@@ -76,7 +77,9 @@ class TrackerCli(TogglCli):
                 return data
             refresh = True
 
-        log.info("Refreshing Toggl tracker list.")
+        show_notification("Refreshing Toggl Tracker List...", APP_IMG)
+        log.info("Refreshing Toggl Tracker List...")
+
         cmd = [
             "ls",
             "--fields",

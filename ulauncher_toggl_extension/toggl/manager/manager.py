@@ -5,9 +5,8 @@ import subprocess
 from datetime import UTC, datetime, timedelta
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
-from gi.repository import Notify
 from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
@@ -32,6 +31,7 @@ from ulauncher_toggl_extension.toggl.images import (
     TIP_IMAGES,
     TipSeverity,
 )
+from ulauncher_toggl_extension.utils import show_notification
 
 if TYPE_CHECKING:
     from types import MethodType
@@ -78,7 +78,6 @@ class TogglManager:
         "default_project",
         "tcli",
         "pcli",
-        "notification",
     )
 
     def __init__(
@@ -102,15 +101,13 @@ class TogglManager:
             self.default_project,
         )
 
-        self.notification = None
-
     def continue_tracker(self, *args, **kwargs) -> bool:
         try:
             msg = self.tcli.continue_tracker(*args, **kwargs)
         except subprocess.SubprocessError:
             return False
 
-        self.show_notification(msg, CONTINUE_IMG)
+        show_notification(msg, CONTINUE_IMG)
         return True
 
     def start_tracker(self, *args, **kwargs) -> bool:
@@ -138,13 +135,13 @@ class TogglManager:
             msg = f"Failed to start {tracker.description}"
             result = False
 
-        self.show_notification(msg, START_IMG)
+        show_notification(msg, START_IMG)
 
         return result
 
     def add_tracker(self, *args, **kwargs) -> bool:
         msg = self.tcli.add_tracker(*args, **kwargs)
-        self.show_notification(msg, ADD_IMG)
+        show_notification(msg, ADD_IMG)
 
         return True
 
@@ -153,14 +150,14 @@ class TogglManager:
         if msg == "Tracker is current not running." or msg is None:
             return False
 
-        self.show_notification(msg, EDIT_IMG)
+        show_notification(msg, EDIT_IMG)
 
         return True
 
     def stop_tracker(self) -> bool:
         msg = self.tcli.stop_tracker()
 
-        self.show_notification(msg, STOP_IMG)
+        show_notification(msg, STOP_IMG)
         return True
 
     def remove_tracker(self, toggl_id: int | TogglTracker) -> bool:
@@ -171,7 +168,7 @@ class TogglManager:
 
         msg = self.tcli.rm_tracker(tracker=toggl_id)
 
-        self.show_notification(msg, DELETE_IMG)
+        show_notification(msg, DELETE_IMG)
         return True
 
     def total_trackers(self) -> list[QueryParameters]:
@@ -284,12 +281,8 @@ class TogglManager:
         **kwargs,
     ) -> list[QueryParameters]:
         if data_type == "tracker":
-            if refresh:
-                self.show_notification("Refreshing Trackers...", APP_IMG)
             list_data = self.tcli.fetch_objects(refresh=refresh, **kwargs)
         else:
-            if refresh:
-                self.show_notification("Refreshing Projects...", APP_IMG)
             list_data = self.pcli.fetch_objects(refresh=refresh, **kwargs)
 
         queries = []
@@ -355,24 +348,6 @@ class TogglManager:
         new_query = f"{joined_query}{extra_query}"
 
         return SetUserQueryAction(new_query)
-
-    def show_notification(
-        self,
-        msg: str,
-        img: Path,
-        title: str = "Toggl Extension",
-        on_close: Optional[Callable] = None,
-    ) -> None:
-        icon = str(Path(__file__).parents[3] / img)
-        if not Notify.is_initted():
-            Notify.init("TogglExtension")
-        if self.notification is None:
-            self.notification = Notify.Notification.new(title, msg, icon)
-        else:
-            self.notification.update(title, msg, icon)
-        if on_close is not None:
-            self.notification.connect("closed", on_close)
-        self.notification.show()
 
     def generate_hint(
         self,
