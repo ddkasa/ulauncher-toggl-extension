@@ -18,7 +18,7 @@
 
 1. **Continue**
 - Description: Continue the last tracker or a tracker selected from the provided list.
-- Aliases: continue
+- Aliases: continue, cnt, cont
 - Optional Arguments: *Start Time, Tracker ID*
 2. **Start**
 - Description: Start a new tracker.
@@ -38,7 +38,7 @@
 - Required Arguments: *Start Time, Stop Time, Description*
 6. **Delete**
 - Description: Delete the selected tracker selected from a provided list.
-- Aliases: delete, remove
+- Aliases: delete, remove, del
 7. **Report**
 - Description: Generates a total report of all trackers within the last days.
 - Aliases: report, sum
