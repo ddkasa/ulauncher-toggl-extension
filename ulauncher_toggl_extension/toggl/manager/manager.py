@@ -357,6 +357,24 @@ class TogglManager:
         *,
         small: bool = True,
     ) -> list[QueryParameters]:
+        """Generates hints based on provided messages with various severities.
+
+        Args:
+            message (str | tuple[str, ...]): The message to be displayed.
+            action (BaseAction, optional): The action to be performed.
+                Defaults to DoNothingAction.
+            level (TipSeverity, optional): The severity of the message.
+                Defaults to INFO.
+            small: (bool, optional): Whether the hint should be a small slot.
+                Defaults to True.
+
+        Returns:
+            list[QueryParameters]: A list of QueryParameters objects to be used
+                for display.
+
+        Raises:
+            TypeError: If an image is missing or an invalid level is provided.
+        """
         img = TIP_IMAGES.get(level)
 
         if not isinstance(img, Path):
