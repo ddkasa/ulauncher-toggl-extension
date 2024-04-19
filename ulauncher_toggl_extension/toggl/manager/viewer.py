@@ -94,7 +94,7 @@ class TogglViewer:
                 self.manager.generate_hint(
                     "Check your Toggl exectutable path in the config.",
                     DoNothingAction(),
-                    TipSeverity.INFO,
+                    TipSeverity.HINT,
                 ),
             )
             return ext_warning
@@ -412,4 +412,5 @@ class TogglViewer:
         return self.manager.generate_hint(
             hint_messages[:max_values],
             action=default_action,
+            level=TipSeverity.HINT,
         )

@@ -16,6 +16,7 @@ class TipSeverity(enum.Enum):
     INFO = enum.auto()
     WARNING = enum.auto()
     ERROR = enum.auto()
+    HINT = enum.auto()
 
 
 CACHE_PATH = Path(__file__).parents[2] / "cache"
@@ -38,6 +39,7 @@ BROWSER_IMG = SVG_PATH / Path("browser.svg")
 BLANK_IMG = SVG_PATH / Path("blank.svg")
 
 TIP_IMAGES = {
+    TipSeverity.HINT: SVG_PATH / Path("tip.svg"),
     TipSeverity.INFO: SVG_PATH / Path("tip.svg"),
     TipSeverity.ERROR: SVG_PATH / Path("tip-error.svg"),
     TipSeverity.WARNING: SVG_PATH / Path("tip-warning.svg"),
