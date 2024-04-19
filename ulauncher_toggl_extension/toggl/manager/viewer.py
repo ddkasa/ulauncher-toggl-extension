@@ -285,13 +285,15 @@ class TogglViewer:
     def create_tracker_subinfo(self, track: TogglTracker) -> tuple:
         data = [f"Started {track.start}"]
         if isinstance(track.project, str):
-            data.append(f"{track.project}")
+            data.append(f"@{track.project}")
+        elif isinstance(track.project, tuple):
+            data.append(f"@{track.project[0]}")
 
         if track.tags:
-            if len(track.tags) == 1 or isinstance(track.tags, str):
-                data.append(f"{track.tags}")
+            if len(track.tags) == 1 and track.tags[0]:
+                data.append(f"#{track.tags[0]}")
             else:
-                data.append(", ".join(track.tags))
+                data.append("#" + ", ".join(track.tags))
 
         return tuple(data)
 
