@@ -166,7 +166,7 @@ class TogglManager:
         elif not isinstance(toggl_id, int):
             return False
 
-        msg = self.tcli.rm_tracker(tracker=toggl_id)
+        msg = self.tcli.delete_tracker(tracker=toggl_id)
 
         show_notification(msg, DELETE_IMG)
         return True
@@ -235,7 +235,7 @@ class TogglManager:
                 stop=tracker.stop,
                 tid=tracker.entry_id,
                 name=tracker.description,
-                project=tracker.project[0],  # type: ignore[index]
+                project=tracker.project,
                 tags=tracker.tags,
                 start=tracker.start,
                 duration=tracker.duration,

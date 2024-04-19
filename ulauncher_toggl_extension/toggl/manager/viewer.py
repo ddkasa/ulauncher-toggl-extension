@@ -391,14 +391,12 @@ class TogglViewer:
         self,
         *,
         max_values: int = 5,
-        default_action: BaseAction = DoNothingAction,
+        default_action: BaseAction = DoNothingAction(),  # noqa: B008
         **_,
     ) -> list[QueryParameters]:
         # TODO: Explore more clear html formatting.
         if not self.hints:
             return []
-
-        default_action = default_action()
 
         hint_messages = (
             "Set the description with surrounding quotes.",
