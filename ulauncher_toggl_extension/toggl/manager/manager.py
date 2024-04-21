@@ -231,11 +231,16 @@ class TogglManager:
     ) -> QueryParameters | None:
         text = tracker.stop
         if tracker.stop != "running":
+            if isinstance(tracker.project, tuple):
+                project = tracker.project[0]
+            else:
+                project = tracker.project
+
             text = text_formatter.format(
                 stop=tracker.stop,
                 tid=tracker.entry_id,
                 name=tracker.description,
-                project=tracker.project,
+                project=project,
                 tags=tracker.tags,
                 start=tracker.start,
                 duration=tracker.duration,
