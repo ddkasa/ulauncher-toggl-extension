@@ -75,7 +75,7 @@ class TogglProjects(TogglCli):
 
         self.project_list = []
 
-        cmd = ["ls", "-f", "+hex_color,+active"]
+        cmd = ["ls", "-f", "+color,+active"]
         try:
             run = self.base_command(cmd).splitlines()
         except sp.CalledProcessError:
