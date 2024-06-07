@@ -290,9 +290,9 @@ class TogglManager:
         else:
             list_data = self.pcli.fetch_objects(refresh=refresh, **kwargs)
 
-        queries = []
-        for i, data in enumerate(list_data, start=1):
-            if self.max_results - count_offset == i:
+        queries: list[QueryParameters] = []
+        for data in list_data:
+            if self.max_results - count_offset == len(queries):
                 break
 
             if post_method == self.query_builder:
@@ -311,6 +311,8 @@ class TogglManager:
                     data,
                 )
             else:
+                if not data.active:
+                    continue
                 param = self.project_builder(
                     meth,
                     text_formatter,
