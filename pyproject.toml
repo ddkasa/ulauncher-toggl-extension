@@ -19,6 +19,7 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.ruff.lint]
+preview = true
 select = [
   "F",
   "E",

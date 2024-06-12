@@ -1,6 +1,7 @@
 # env
 .venv
-.envrc
+.envrc*
+.direnv
 
 # compliation
 __pycache__
