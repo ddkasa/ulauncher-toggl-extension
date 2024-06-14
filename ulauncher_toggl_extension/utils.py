@@ -17,20 +17,37 @@ from __future__ import annotations
 
 import importlib
 import logging
-import re
 import subprocess  # noqa: S404
 import sys
 from pathlib import Path
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
-from gi.repository import Notify
+import gi
+
+gi.require_version("Notify", "0.7")
+
+from gi.repository import Notify  # noqa: E402
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 log = logging.getLogger(__name__)
 
 
-def ensure_import(package, package_name):
+def _ensure_import(package: str, version: Optional[str] = None) -> ModuleType:
+    module = importlib.import_module(package)
+    if version is not None and module.__version__ != version:
+        raise ModuleNotFoundError
+    return module
+
+
+def ensure_import(
+    package: str,
+    package_name: str,
+    version: Optional[str] = None,
+) -> ModuleType:
     try:
-        return importlib.import_module(package)
+        return _ensure_import(package, version)
     except ModuleNotFoundError:
         log.info("Package %s is missing. Installing...", package_name)
         subprocess.call(
@@ -40,20 +57,10 @@ def ensure_import(package, package_name):
                 "pip",
                 "install",
                 "--upgrade",
-                "--user",
-                package_name,
+                f"{package_name}=={version}" if version else package_name,
             ],
         )
-    return importlib.import_module(package)
-
-
-def sanitize_path(path: str | Path) -> str:
-    return str(path).replace(" ", "-")
-
-
-def quote_text(text: str) -> str:
-    text = re.sub(r'"', "", text)
-    return '"' + text.strip() + '"'
+        return importlib.import_module(package)
 
 
 def show_notification(
@@ -72,5 +79,4 @@ def show_notification(
 
 
 if __name__ == "__main__":
-    print(quote_text("test"))
-    print(quote_text('"test"'))
+    pass
