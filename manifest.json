@@ -1,7 +1,7 @@
 {
   "required_api_version": "2",
   "name": "Toggl Time Tracker",
-  "description": "Toggl tracker extension for managing time management tasks.",
+  "description": "Toggl tracker extension for time management tasks.",
   "developer_name": "David Kasakaitis",
   "icon": "images/svg/icon.svg",
   "options": {
@@ -9,30 +9,28 @@
   },
   "preferences": [
     {
-      "id": "toggl_keyword",
+      "id": "keyword",
       "type": "keyword",
-      "name": "Extension",
+      "name": "Extension Keyword",
       "description": "Keyword for triggering the toggl extension",
       "default_value": "tgl"
     },
     {
-      "id": "project",
+      "id": "workspace",
       "type": "input",
-      "name": "Default Project",
-      "description": "ID of the default project you want to use."
+      "name": "Default Workspace",
+      "description": "ID of the default workspace you want to use."
     },
     {
-      "id": "toggl_exectuable_location",
+      "id": "cache",
       "type": "input",
-      "name": "Toggl Exectutable",
-      "description": "Absolute path to your toggl executable.",
-      "default_value": "~/.local/bin/toggl"
+      "name": "Cache Location",
+      "description": "Absolute path to cache location. Defaults to extension location."
     },
     {
       "id": "max_search_results",
       "type": "select",
       "name": "Maximum number of results.",
-      "description": "Set to -1 for no limit.(Not Implemented)",
       "default_value": 10,
       "options": [
         -1,
@@ -57,6 +55,12 @@
         true,
         false
       ]
+    },
+    {
+        "id": "api_token",
+        "type": "input",
+        "name": "API Token",
+        "description": "Toggl API token. Will default to environment variable or .togglrc file if not set."
     }
   ]
 }

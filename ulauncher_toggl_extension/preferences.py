@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+from httpx import BasicAuth
+from toggl_api import JSONCache, UserEndpoint
+from toggl_api.config import AuthenticationError, generate_authentication, use_togglrc
 from ulauncher.api.client.EventListener import EventListener
+
+from ulauncher_toggl_extension.images import TIP_IMAGES, TipSeverity
+from ulauncher_toggl_extension.utils import show_notification
 
 if TYPE_CHECKING:
     from ulauncher.api.shared.event import (
@@ -24,11 +31,10 @@ class PreferencesEventListener(EventListener):
     provided.
 
     Methods:
+        authentication: Generates and verifies authentication credentials.
         on_event: Updates extension preferences and checks for changes.
-        toggl_exec_path: Checks if TogglCli exists at provided path.
-        default_project: Checks if default project exists.
+        workspace_id: Sets up the workspace id.
         max_results: Checks if max search results are set.
-
     """
 
     def on_event(
@@ -36,38 +42,80 @@ class PreferencesEventListener(EventListener):
         event: PreferencesEvent,
         extension: TogglExtension,
     ) -> None:
+        extension.prefix = event.preferences.get("toggl_keyword", "tgl")
+        extension.cache_path = event.preferences["cache"] or Path("cache")
         extension.max_results = self.max_results(
             event.preferences["max_search_results"],
         )
-        extension.toggl_exec_path = self.toggl_exec_path(
-            event.preferences["toggl_exectuable_location"],
+        wid = self.workspace(event.preferences["workspace"])
+
+        extension.workspace_id = wid
+
+        extension.hints = event.preferences["hints"] == "true"
+
+        extension.auth = self.authentication(
+            wid,
+            extension.cache_path,
+            event.preferences["api_token"],
         )
-        extension.default_project = self.default_project(
-            event.preferences["project"],
-        )
-        extension.toggl_hints = bool(event.preferences["hints"])
 
-    def toggl_exec_path(self, path: str) -> Path:
-        loc = Path(path)
-        if loc.exists():
-            return loc
-        log.error("TogglCli does not exist at provided Path. Using default.")
-        return Path.home() / Path(".local/bin/toggl")
+    @staticmethod
+    def authentication(
+        workspace: int,
+        cache: Path,
+        api_key: Optional[str] = None,
+    ) -> BasicAuth:
+        """Method checking for authentication and verifying its validity.
 
-    def default_project(self, project: Optional[str] = None) -> int | None:
-        # TODO: Need to integrate with extension properly.
-        log.warning("Default project is not implemented.")
+        Checks preferences -> environment variables -> .togglrc file.
 
-        if project is not None:
+        Raises:
+            AuthenticationError: If authentication fails or is missing.
+
+        Returns:
+            BasicAuth: BasicAuth object that is used with httpx client.
+        """
+        if api_key:
+            auth = BasicAuth(api_key, "api_token")
+        else:
             try:
-                return int(project)
+                auth = generate_authentication()
+            except AuthenticationError:
+                try:
+                    auth = use_togglrc()
+                except AuthenticationError:
+                    log.exception("Authentication is missing.")
+                    raise
+
+        endpoint = UserEndpoint(
+            workspace_id=workspace,
+            auth=auth,
+            cache=JSONCache(cache, timedelta(0)),
+        )
+        if not endpoint.check_authentication():
+            err = (
+                "Authentication failed with provided details."
+                "Check your config or the Toggl API might be down."
+            )
+            show_notification(err, TIP_IMAGES[TipSeverity.ERROR])
+            raise AuthenticationError(err)
+
+        return auth
+
+    @staticmethod
+    def workspace(workspace_id: Optional[str] = None) -> int:
+        if workspace_id is not None:
+            try:
+                return int(workspace_id)
             except ValueError:
-                pass
+                log.exception("Workspace ID is not an integer. %s")
 
-        log.info("Default project is not setup.")
-        return None
+        err = "Workspace ID is not setup correctly!"
+        show_notification(err, TIP_IMAGES[TipSeverity.ERROR])
+        raise ValueError(err)
 
-    def max_results(self, results: Optional[str] = None) -> int:
+    @staticmethod
+    def max_results(results: Optional[str] = None) -> int:
         if results is not None:
             try:
                 return int(results)
@@ -78,7 +126,7 @@ class PreferencesEventListener(EventListener):
 
 
 class PreferencesUpdateEventListener(EventListener):
-    def on_event(
+    def on_event(  # noqa: PLR6301
         self,
         event: PreferencesUpdateEvent,
         extension: TogglExtension,
