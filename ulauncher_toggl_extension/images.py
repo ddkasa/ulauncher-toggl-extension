@@ -19,11 +19,6 @@ class TipSeverity(enum.Enum):
     HINT = enum.auto()
 
 
-CACHE_PATH = Path(__file__).parents[2] / "cache"
-
-SVG_CACHE = CACHE_PATH / "svg"
-SVG_CACHE.mkdir(parents=True, exist_ok=True)
-
 SVG_PATH = Path("images/svg")
 
 APP_IMG = SVG_PATH / Path("icon.svg")
@@ -45,31 +40,23 @@ TIP_IMAGES = {
     TipSeverity.WARNING: SVG_PATH / Path("tip-warning.svg"),
 }
 
-CIRCULAR_SVG: Final[str] = """<?xml version="1.0" encoding="utf-8"?>
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlinkwidth="512" height="512"  viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
-    <radialGradient id="grad" cx="256" cy="256" r="256" gradientUnits="userSpaceOnUse" width="512" height="512"  viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
-        <stop  offset="0" style="stop-color:#412A4C"/>
-        <stop  offset="4.280270e-03" style="stop-color:#412A4C"/>
-        <stop  offset="1" style="stop-color:#2C1338"/>
-	</radialGradient>
-    <rect x="52.7" y="52.7" rx="95" ry="95" width="406.6" height="406.6" fill="url(#grad)"/>
-    <circle cx="256" cy="256" r="151.5" fill="{color}" stroke="transparent"/>
-</svg>
-"""
+CIRCULAR_SVG: Final[str] = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" xml:space="preserve"><radialGradient id="a" cx="-24.309" cy="672.216" r="13.23" gradientTransform="matrix(0 15.3688 15.4467 0 -10127.536 629.602)" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:#412a4c"/><stop offset=".004" style="stop-color:#412a4c"/><stop offset="1" style="stop-color:#2c1338"/></radialGradient><rect x="52.7" y="52.7" rx="95" ry="95" width="406.6" height="406.6" fill="url(#a)"/><circle cx="256" cy="256" r="151.5" fill="{color}" stroke="transparent"/></svg>'
+)
 
 __all__ = (
-    "TipSeverity",
-    "APP_IMG",
-    "START_IMG",
-    "EDIT_IMG",
     "ADD_IMG",
-    "PROJECT_IMG",
-    "STOP_IMG",
-    "DELETE_IMG",
-    "CONTINUE_IMG",
-    "REPORT_IMG",
-    "BROWSER_IMG",
+    "APP_IMG",
     "BLANK_IMG",
-    "TIP_IMAGES",
+    "BROWSER_IMG",
     "CIRCULAR_SVG",
+    "CONTINUE_IMG",
+    "DELETE_IMG",
+    "EDIT_IMG",
+    "PROJECT_IMG",
+    "REPORT_IMG",
+    "START_IMG",
+    "STOP_IMG",
+    "TIP_IMAGES",
+    "TipSeverity",
 )
