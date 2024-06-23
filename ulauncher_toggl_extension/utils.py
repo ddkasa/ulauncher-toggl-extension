@@ -15,21 +15,36 @@ Examples:
 
 from __future__ import annotations
 
+import importlib
+import logging
 import re
-import subprocess
+import subprocess  # noqa: S404
 import sys
 from pathlib import Path
 from typing import Callable, Optional
 
 from gi.repository import Notify
 
+log = logging.getLogger(__name__)
 
-def ensure_import(package):
+
+def ensure_import(package, package_name):
     try:
-        return __import__(package)
-    except ImportError:
-        subprocess.call([sys.executable, "-m", "pip", "install", "--user", package])  # noqa: S603
-    return __import__(package)
+        return importlib.import_module(package)
+    except ModuleNotFoundError:
+        log.info("Package %s is missing. Installing...", package_name)
+        subprocess.call(
+            [  # noqa: S603
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--upgrade",
+                "--user",
+                package_name,
+            ],
+        )
+    return importlib.import_module(package)
 
 
 def sanitize_path(path: str | Path) -> str:
