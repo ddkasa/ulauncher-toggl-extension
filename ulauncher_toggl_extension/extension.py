@@ -1,16 +1,25 @@
+# ruff: noqa: E402
 from __future__ import annotations
 
 import contextlib
 import logging
 import re
-from functools import partial
+from collections import OrderedDict
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import TYPE_CHECKING, Callable, Iterable, Optional
 
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
+from ulauncher.api.shared.action.ActionList import ActionList
+from ulauncher.api.shared.action.BaseAction import BaseAction
+from ulauncher.api.shared.action.CopyToClipboardAction import CopyToClipboardAction
+from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
+from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
+from ulauncher.api.shared.action.OpenAction import OpenAction
+from ulauncher.api.shared.action.OpenUrlAction import OpenUrlAction
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
+from ulauncher.api.shared.action.RunScriptAction import RunScriptAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 from ulauncher.api.shared.event import (
     ItemEnterEvent,
@@ -22,22 +31,42 @@ from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.item.ExtensionSmallResultItem import ExtensionSmallResultItem
 from ulauncher.utils.fuzzy_search import get_score
 
-from ulauncher_toggl_extension.toggl.cli import (
-    TogglProjects,
-    TrackerCli,
+from ulauncher_toggl_extension.commands import (
+    ActionEnum,
+    AddCommand,
+    ClientCommand,
+    Command,
+    ContinueCommand,
+    CurrentTrackerCommand,
+    DeleteCommand,
+    EditCommand,
+    HelpCommand,
+    ListCommand,
+    ProjectCommand,
+    QueryParameters,
+    StartCommand,
+    StopCommand,
+    TagCommand,
 )
-from ulauncher_toggl_extension.toggl.manager import QueryParameters, TogglViewer
+from ulauncher_toggl_extension.date_time import (
+    TIME_FORMAT,
+    parse_datetime,
+    parse_timedelta,
+)
 
 from .preferences import (
     PreferencesEventListener,
     PreferencesUpdateEventListener,
 )
 
+if TYPE_CHECKING:
+    from ulauncher.api.shared.action.BaseAction import BaseAction
+
 log = logging.getLogger(__name__)
 
 
 class TogglExtension(Extension):
-    """Main extension clas housing most of querying funtionality.
+    """Main extension class housing most of querying funtionality.
 
     Methods:
         process_query: Processes query and returns results to be displayed
@@ -46,12 +75,41 @@ class TogglExtension(Extension):
 
     """
 
+    COMMANDS: OrderedDict[str, type[Command]] = OrderedDict(
+        {
+            CurrentTrackerCommand.PREFIX: CurrentTrackerCommand,
+            ContinueCommand.PREFIX: ContinueCommand,
+            StopCommand.PREFIX: StopCommand,
+            StartCommand.PREFIX: StartCommand,
+            EditCommand.PREFIX: EditCommand,
+            AddCommand.PREFIX: AddCommand,
+            DeleteCommand.PREFIX: DeleteCommand,
+            ListCommand.PREFIX: ListCommand,
+            ProjectCommand.PREFIX: ProjectCommand,
+            ClientCommand.PREFIX: ClientCommand,
+            TagCommand.PREFIX: TagCommand,
+            HelpCommand.PREFIX: HelpCommand,
+        },
+    )
+    MATCH_ACTION: dict[ActionEnum, BaseAction] = {
+        ActionEnum.LIST: ActionList(),
+        ActionEnum.CLIPBOARD: CopyToClipboardAction,
+        ActionEnum.DO_NOTHING: DoNothingAction,
+        ActionEnum.HIDE: HideWindowAction,
+        ActionEnum.OPEN: OpenAction,
+        ActionEnum.OPEN_URL: OpenUrlAction,
+        ActionEnum.RENDER_RESULT_LIST: RenderResultListAction,
+        ActionEnum.RUN_SCRIPT: RunScriptAction,
+        ActionEnum.SET_QUERY: SetUserQueryAction,
+    }
+
     __slots__ = (
-        "_toggl_exec_path",
-        "_max_results",
-        "_toggl_workspace",
-        "_toggl_hints",
-        "_default_project",
+        "auth",
+        "cache_path",
+        "hints",
+        "max_results",
+        "prefix",
+        "workspace_id",
     )
 
     def __init__(self) -> None:
@@ -73,30 +131,29 @@ class TogglExtension(Extension):
             PreferencesEventListener(),
         )
 
-        self._toggl_exec_path = Path.home() / Path(".local/bin/toggl")
-        self._max_results = 10
-        self._toggl_hints = True
-        self._toggl_workspace = None
-        self._default_project = None
+        self.prefix = "tgl"
+        self.cache_path = Path("cache")
+        self.hints = True
+        self.max_results = 10
+        self.auth = None
+        self.workspace_id = None
 
-        # OPTIMIZE: Possibly turn these cache functiosn into async methods.
-        tcli = TrackerCli(
-            self._toggl_exec_path,
-            self._max_results,
-            self._toggl_workspace,
-        )
-        log.debug("Updating trackers")
-        tcli.fetch_objects()
+    def default_results(
+        self,
+        query: list[str],
+        **kwargs,
+    ) -> list[QueryParameters]:
+        results: list[QueryParameters] = []
+        for obj in self.COMMANDS.values():
+            cmd = obj(self)
+            results.extend(cmd.preview(query, **kwargs))
+        return results
 
-        pcli = TogglProjects(
-            self._toggl_exec_path,
-            self._max_results,
-            self._toggl_workspace,
-        )
-        log.debug("Updating projects")
-        pcli.fetch_objects()
-
-    def process_query(self, query: list[str], **kwargs) -> list | Callable:
+    def process_query(
+        self,
+        query: list[str],
+        **kwargs,
+    ) -> list[ExtensionResultItem]:
         """Main method that handles querying for functionality.
 
         Could be refactored to be more readable as needed if more functions are
@@ -106,87 +163,42 @@ class TogglExtension(Extension):
             query (list[str]): List of query terms to parse.
 
         Returns:
-            query (list[str]) | Callable: List or oneq uery terms to display.
+            query (list[str]) | Callable: List of query terms to display.
         """
-        # HACK: Some query handling is still a mess as some function have
-        # different signatures.
-
-        tviewer = TogglViewer(self)
-
-        check = tviewer.pre_check_cli()
-        if isinstance(check, list):
-            return check
 
         if not query:
-            defaults = tviewer.default_options(*query)
-            return self.generate_results(defaults)
+            return self.generate_results(self.default_results(query, **kwargs))
 
-        query_match = {
-            "start": tviewer.start_tracker,
-            "add": tviewer.add_tracker,
-            "continue": tviewer.continue_tracker,
-            "cont": tviewer.continue_tracker,
-            "cnt": tviewer.continue_tracker,
-            "stop": tviewer.stop_tracker,
-            "end": tviewer.stop_tracker,
-            "edit": tviewer.edit_tracker,
-            "now": tviewer.edit_tracker,
-            "delete": tviewer.remove_tracker,
-            "del": tviewer.remove_tracker,
-            "remove": tviewer.remove_tracker,
-            "report": tviewer.total_trackers,
-            "sum": tviewer.total_trackers,
-            "list": tviewer.list_trackers,
-            "project": tviewer.list_projects,
-            "help": partial(
-                tviewer.generate_basic_hints,
-                max_values=self.max_results,
-                default_action=SetUserQueryAction("tgl "),
-            ),
-        }
+        match = self.COMMANDS.get(query[0]) or self.match_aliases(query[0])
 
-        q = query.pop(0)
-        method = query_match.get(
-            q,
-            partial(
-                self.match_results,
-                match_dict=query_match,
-                **kwargs,
-            ),
-        )
+        if match is None:
+            return self.generate_results(self.match_results(query, **kwargs))
 
-        results = method(*query, query=q, **kwargs)  # type: ignore[operator]
-        if not results:
-            defaults = tviewer.default_options(*query)
-            return self.generate_results(defaults)
-
-        if query and query[-1] == "@":
-            results = [results[0]]
-            q = ["tgl", q]
-            q.extend(query)
-            results.extend(
-                tviewer.manager.list_projects(
-                    query=q,
-                    post_method=tviewer.manager.query_builder,
-                    **kwargs,
-                ),
-            )
+        cmd = match(self)
+        results = cmd.view(query, **kwargs)
 
         return self.generate_results(results)
+
+    def match_aliases(self, query: str) -> Optional[type[Command]]:
+        # OPTIMIZE: There is probably a better way to do this.
+        for cmd in self.COMMANDS.values():
+            if query in cmd.ALIASES:
+                return cmd
+
+        return None
 
     @staticmethod
     def match_query(
         query: str,
         target: str,
-        threshold: int = 50,
+        *,
+        threshold: int = 40,
     ) -> bool:
         return get_score(query, target) >= threshold
 
     def match_results(
         self,
-        *args,
-        match_dict: dict[str, Callable],
-        query: str,
+        query: list[str],
         **kwargs,
     ) -> list[QueryParameters]:
         """Fuzzy matches query terms against a dictionary of functions using
@@ -203,17 +215,29 @@ class TogglExtension(Extension):
             list: List of possible matches that are produced by matched
                 functions.
         """
-        results = []
-        matched_results = set()
-        for trg, fn in match_dict.items():
-            if fn not in matched_results and TogglExtension.match_query(query, trg):
-                try:
-                    results.append(fn(*args, **kwargs)[0])
-                except TypeError:
-                    continue
-                matched_results.add(fn)
+        results: list[QueryParameters] = []
+        for trg, fn in self.COMMANDS.items():
+            if self.match_query(query[0], trg):
+                cmd = fn(self)
+                with contextlib.suppress(IndexError):
+                    results.append(cmd.preview(query, **kwargs)[0])
 
-        return results
+        return results or self.default_results(query, **kwargs)
+
+    def create_action(
+        self,
+        enter: Optional[ActionEnum | Callable | str] = None,
+    ) -> BaseAction:
+        if isinstance(enter, ActionEnum):
+            on_enter = self.MATCH_ACTION.get(enter, DoNothingAction)()
+        elif enter is None:
+            on_enter = DoNothingAction()
+        elif isinstance(enter, str):
+            on_enter = SetUserQueryAction(enter)
+        else:
+            on_enter = ExtensionCustomAction(enter, keep_app_open=True)
+
+        return on_enter
 
     def generate_results(
         self,
@@ -229,17 +253,20 @@ class TogglExtension(Extension):
         """
         results = []
 
-        # OPTIMIZE: Process actions here to make testing eaiser in the rest of
-        # of the modules.
+        i = 0
+        for item in actions:
+            on_enter = self.create_action(item.on_enter)
+            alt_enter = self.create_action(item.on_alt_enter)
 
-        for i, item in enumerate(actions, start=1):
             if item.small:
+                name = f"{item.name}"
+                if item.description:
+                    name += f": {item.description}"
                 action = ExtensionSmallResultItem(
                     icon=str(item.icon),
-                    name=f"{item.name}: {item.description}",
-                    description=item.description,
-                    on_enter=item.on_enter,
-                    on_alt_enter=item.on_alt_enter,
+                    name=name,
+                    on_enter=on_enter,
+                    on_alt_enter=alt_enter,
                     highlightable=False,
                 )
             else:
@@ -247,48 +274,18 @@ class TogglExtension(Extension):
                     icon=str(item.icon),
                     name=item.name,
                     description=item.description,
-                    on_enter=item.on_enter,
-                    on_alt_enter=item.on_alt_enter,
+                    on_enter=on_enter,
+                    on_alt_enter=alt_enter,
                 )
 
             results.append(action)
 
-            if i == self.max_results:
+            i += 0.5 if item.small else 1
+
+            if i >= self.max_results:
                 break
 
         return results
-
-    @property
-    def toggl_exec_path(self) -> Path:
-        return self._toggl_exec_path
-
-    @toggl_exec_path.setter
-    def toggl_exec_path(self, path: Path) -> None:
-        self._toggl_exec_path = path
-
-    @property
-    def default_project(self) -> int | None:
-        return self._default_project
-
-    @default_project.setter
-    def default_project(self, project: int | None) -> None:
-        self._default_project = project
-
-    @property
-    def max_results(self) -> int:
-        return self._max_results
-
-    @max_results.setter
-    def max_results(self, results: int) -> None:
-        self._max_results = results
-
-    @property
-    def toggled_hints(self) -> bool:
-        return self._toggl_hints
-
-    @toggled_hints.setter
-    def toggled_hints(self, hints: bool) -> None:
-        self._toggl_hints = hints
 
 
 class KeywordQueryEventListener(EventListener):
@@ -318,7 +315,8 @@ class KeywordQueryEventListener(EventListener):
 
         return RenderResultListAction(processed_query)
 
-    def parse_query(self, query: str, args: list[str]) -> dict[str, str]:  # noqa: C901
+    @staticmethod
+    def parse_query(query: str, args: list[str]) -> dict[str, str]:  # noqa: C901, PLR0912
         """Parses query into a dictionary of arguments useable by the rest of
         the extension.
 
@@ -328,16 +326,14 @@ class KeywordQueryEventListener(EventListener):
         Returns:
             dict: Dictionary of query terms and values usea
         """
-
-        # TODO: Input sanitizing in order to throw away invalid arguments.
-
-        arguments = {}
-        desc_patt = r'(?P<desc>(?<=")[\w \-]+(?="))'
-        # OPTIMIZE: Might be able to find a size fits all regex in the future.
+        arguments = {}  # REFACTOR: Turn this into a dataclass
+        desc_patt = r'(?P<desc>(?<=")(.*?)+(?="))'
         desc = re.search(desc_patt, query)
         if desc:
             arguments["description"] = desc.group("desc")
-        for i, item in enumerate(args[1:]):
+        for i, item in enumerate(args[1:], start=1):
+            if not item:
+                continue
             if item[0] == "#":
                 arguments["tags"] = item[1:].split(",")
             elif item[0] == "@":
@@ -345,32 +341,49 @@ class KeywordQueryEventListener(EventListener):
                 with contextlib.suppress(ValueError):
                     item = int(item)  # mypy: ignore [operator]
                 arguments["project"] = item
+            elif item[0] == "$":
+                arguments["client"] = item[1:]
             elif item[0] == ">" and item[-1] == "<":
-                arguments["duration"] = item[1:-1]
+                try:
+                    arguments["duration"] = parse_timedelta(item[1:-1])
+                except ValueError:
+                    continue
             elif item[0] == ">":
-                arguments["start"] = item[1:]
-                if i + 1 < len(query) and query[i + 1] in {"AM", "PM"}:
-                    arguments["start"] += " " + query[i + 1]
+                item = item[1:]
+                if i + 1 < len(args) and args[i + 1] in TIME_FORMAT:
+                    item += " " + args[i + 1]
+                try:
+                    arguments["start"] = parse_datetime(item)
+                except ValueError:
+                    continue
             elif item[0] == "<":
-                arguments["stop"] = item[1:]
-                if i + 1 < len(query) and query[i + 1] in {"AM", "PM"}:
-                    arguments["stop"] += " " + query[i + 1]
+                item = item[1:]
+                if i + 1 < len(args) and args[i + 1] in TIME_FORMAT:
+                    item += " " + args[i + 1]
+                try:
+                    arguments["stop"] = parse_datetime(item)
+                except ValueError:
+                    continue
             elif item == "refresh":
                 arguments["refresh"] = True
+            elif item == "active":
+                arguments["active"] = False
+            elif item == "private":
+                arguments["private"] = False
 
         return arguments
 
 
 class ItemEnterEventListener(EventListener):
-    def on_event(
+    def on_event(  # noqa: PLR6301
         self,
         event: ItemEnterEvent,
         extension: TogglExtension,
     ) -> None:
         data = event.get_data()
 
-        execution = data()
-        if not isinstance(execution, bool):
+        execution = data(extension=extension)
+        if execution and isinstance(execution, list):
             results = extension.generate_results(execution)
             return RenderResultListAction(results)
 
