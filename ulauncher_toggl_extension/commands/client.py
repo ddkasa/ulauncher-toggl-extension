@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import timedelta
 from functools import partial
 from typing import Optional
 
+from httpx import HTTPStatusError
 from toggl_api import ClientBody, ClientEndpoint, TogglClient
 
 from ulauncher_toggl_extension.images import (
@@ -23,11 +23,13 @@ class ClientCommand(SubCommand):
     PREFIX = "client"
     ALIASES = ("c", "cli")
     ICON = APP_IMG  # TODO: Need a custom image
-    EXPIRATION = timedelta(weeks=1)
+    EXPIRATION = None
 
     def get_models(self, **kwargs) -> list[TogglClient]:
-        user = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        return user.get_clients(refresh=kwargs.get("refresh", False))
+        endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
+        clients = endpoint.get_clients(refresh=kwargs.get("refresh", False))
+        clients.sort(key=lambda x: x.timestamp, reverse=True)
+        return clients
 
     def get_client(
         self,
@@ -38,7 +40,13 @@ class ClientCommand(SubCommand):
         if client_id is None:
             return None
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        return endpoint.get_client(client_id, refresh=refresh)
+        try:
+            client = endpoint.get_client(client_id, refresh=refresh)
+        except HTTPStatusError as err:
+            if err.response.status_code == endpoint.NOT_FOUND:
+                return None
+            raise
+        return client
 
 
 class ListClientCommand(ClientCommand):

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import timedelta
 from functools import partial
 
 from toggl_api import TagEndpoint, TogglTag
@@ -22,11 +21,13 @@ class TagCommand(SubCommand):
     PREFIX = "tag"
     ALIASES = ("t", "tags")
     ICON = APP_IMG  # TODO: Need a custom image
-    EXPIRATION = timedelta(weeks=1)
+    EXPIRATION = None
 
     def get_models(self, **kwargs) -> list[TogglTag]:
-        user = TagEndpoint(self.workspace_id, self.auth, self.cache)
-        return user.get_tags(refresh=kwargs.get("refresh", False))
+        endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
+        tags = endpoint.get_tags(refresh=kwargs.get("refresh", False))
+        tags.sort(key=lambda x: x.timestamp, reverse=True)
+        return tags
 
 
 class ListTagCommand(TagCommand):

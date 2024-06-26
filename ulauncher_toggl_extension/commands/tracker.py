@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional
 
 from httpx import HTTPStatusError
 from toggl_api import (
+    TogglProject,
     TogglTracker,
     TrackerBody,
     TrackerEndpoint,
@@ -50,10 +51,10 @@ class TrackerCommand(Command):
         advanced: bool = False,
         fmt_str: str = "{prefix} {name}",
     ) -> list[QueryParameters]:
-        path = self.get_icon(model.project)
         name = fmt_str.format(prefix=self.PREFIX.title(), name=model.name)
         cmd = ProjectCommand(self)
         project = cmd.get_project(model.project)
+        path = self.get_icon(project)
         description = f"@{project.name if project else model.project}" or ""
         if model.tags:
             description += f" #{','.join(tag.name for tag in model.tags)}"
@@ -117,22 +118,29 @@ class TrackerCommand(Command):
             f"Stopped at {display_dt(model.stop)}",
         )
 
-    def get_icon(self, project: Optional[int] = None) -> Path:
-        path = self.cache_path / f"svg/{project}.svg"
-        if project is None or not path.exists():
+    def get_icon(self, project: Optional[TogglProject] = None) -> Path:
+        if project is None or not project.color:
             return self.ICON
+
+        path = self.cache_path / f"svg/{project.color}.svg"
+
+        if not path.exists():
+            cmd = ProjectCommand(self)
+            cmd.generate_color_svg(project)
 
         return path
 
     def get_models(self, **kwargs) -> list[TogglTracker]:
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
-        return user.get_trackers(
+        trackers = user.get_trackers(
             kwargs.get("start"),
             kwargs.get("stop"),
             kwargs.get("end_data"),
             kwargs.get("start_date"),
             refresh=kwargs.get("refresh", False),
-        )  # TODO: Add name merging (Distinct Name Search)
+        )
+        trackers.sort(key=lambda x: x.timestamp, reverse=True)
+        return trackers
 
     def get_current_tracker(
         self,
@@ -149,21 +157,23 @@ class TrackerCommand(Command):
         if not self.check_autocmp(query):
             return autocomplete
 
-        if query[-1][0] == '"':
+        if query[-1][0] == '"' and query[-1][-1] != '"':
+            cmd = ProjectCommand(self)
             models = self.get_models(**kwargs)
 
             for model in models:
                 query[-1] = f'"{model.name}"'
+                project = cmd.get_project(model.project)
                 autocomplete.append(
                     QueryParameters(
-                        self.get_icon(model.project),
+                        self.get_icon(project),
                         model.name,
                         "Use this tracker description.",
                         " ".join(query),
                     ),
                 )
 
-        elif query[-1][0] == "@":
+        elif query[-1][0] == "@" and len(query[-1]) < 4:  # noqa: PLR2004
             cmd = ProjectCommand(self)
 
             for model in cmd.get_models(**kwargs):
@@ -177,7 +187,7 @@ class TrackerCommand(Command):
                     ),
                 )
 
-        elif query[-1][0] == "#":
+        elif query[-1][0] == "#" and (len(query[-1]) < 3 or query[-1][-1] == ","):  # noqa: PLR2004
             cmd = TagCommand(self)
 
             for model in cmd.get_models(**kwargs):
@@ -195,7 +205,7 @@ class TrackerCommand(Command):
                 )
 
         elif query[-1][0] in {">", "<"}:
-            # TODO: Autocomplete possibility for date auto completion.
+            # TODO: Autocomplete possibility for dates and time.
             pass
 
         return autocomplete
@@ -746,14 +756,13 @@ class EditCommand(TrackerCommand):
         if tracker is None:
             return False
 
-        now = datetime.now(tz=timezone.utc)
         tags = kwargs.get("tags", [])
 
         body = TrackerBody(
             self.workspace_id,
-            kwargs.get("description", ""),
-            project_id=kwargs.get("project"),
-            start=kwargs.get("start", now),
+            kwargs.get("description") or tracker.name,
+            project_id=kwargs.get("project") or tracker.project,
+            start=kwargs.get("start"),
             stop=kwargs.get("stop"),
             tags=tags,
             created_with="ulauncher-toggl-extension",
