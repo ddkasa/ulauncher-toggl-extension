@@ -26,8 +26,10 @@ class ClientCommand(SubCommand):
     EXPIRATION = None
 
     def get_models(self, **kwargs) -> list[TogglClient]:
-        user = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        return user.get_clients(refresh=kwargs.get("refresh", False))
+        endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
+        clients = endpoint.get_clients(refresh=kwargs.get("refresh", False))
+        clients.sort(key=lambda x: x.timestamp, reverse=True)
+        return clients
 
     def get_client(
         self,

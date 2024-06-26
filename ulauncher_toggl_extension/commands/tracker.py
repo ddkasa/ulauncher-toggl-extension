@@ -132,13 +132,15 @@ class TrackerCommand(Command):
 
     def get_models(self, **kwargs) -> list[TogglTracker]:
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
-        return user.get_trackers(
+        trackers = user.get_trackers(
             kwargs.get("start"),
             kwargs.get("stop"),
             kwargs.get("end_data"),
             kwargs.get("start_date"),
             refresh=kwargs.get("refresh", False),
-        )  # TODO: Add name merging (Distinct Name Search)
+        )
+        trackers.sort(key=lambda x: x.timestamp, reverse=True)
+        return trackers
 
     def get_current_tracker(
         self,
@@ -203,7 +205,7 @@ class TrackerCommand(Command):
                 )
 
         elif query[-1][0] in {">", "<"}:
-            # TODO: Autocomplete possibility for date auto completion.
+            # TODO: Autocomplete possibility for dates and time.
             pass
 
         return autocomplete

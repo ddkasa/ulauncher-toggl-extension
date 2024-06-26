@@ -60,7 +60,9 @@ class ProjectCommand(SubCommand):
 
     def get_models(self, **kwargs) -> list[TogglProject]:
         user = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
-        return user.get_projects(refresh=kwargs.get("refresh", False))
+        projects = user.get_projects(refresh=kwargs.get("refresh", False))
+        projects.sort(key=lambda x: x.timestamp, reverse=True)
+        return projects
 
     def get_project(
         self,

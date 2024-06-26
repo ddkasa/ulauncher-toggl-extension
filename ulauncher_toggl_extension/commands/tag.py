@@ -24,8 +24,10 @@ class TagCommand(SubCommand):
     EXPIRATION = None
 
     def get_models(self, **kwargs) -> list[TogglTag]:
-        user = TagEndpoint(self.workspace_id, self.auth, self.cache)
-        return user.get_tags(refresh=kwargs.get("refresh", False))
+        endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
+        tags = endpoint.get_tags(refresh=kwargs.get("refresh", False))
+        tags.sort(key=lambda x: x.timestamp, reverse=True)
+        return tags
 
 
 class ListTagCommand(TagCommand):
