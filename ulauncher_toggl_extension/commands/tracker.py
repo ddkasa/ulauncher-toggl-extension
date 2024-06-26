@@ -156,13 +156,15 @@ class TrackerCommand(Command):
             return autocomplete
 
         if query[-1][0] == '"':
+            cmd = ProjectCommand(self)
             models = self.get_models(**kwargs)
 
             for model in models:
                 query[-1] = f'"{model.name}"'
+                project = cmd.get_project(model.project)
                 autocomplete.append(
                     QueryParameters(
-                        self.get_icon(model.project),
+                        self.get_icon(project),
                         model.name,
                         "Use this tracker description.",
                         " ".join(query),
@@ -752,14 +754,13 @@ class EditCommand(TrackerCommand):
         if tracker is None:
             return False
 
-        now = datetime.now(tz=timezone.utc)
         tags = kwargs.get("tags", [])
 
         body = TrackerBody(
             self.workspace_id,
-            kwargs.get("description", ""),
-            project_id=kwargs.get("project"),
-            start=kwargs.get("start", now),
+            kwargs.get("description") or tracker.name,
+            project_id=kwargs.get("project") or tracker.project,
+            start=kwargs.get("start"),
             stop=kwargs.get("stop"),
             tags=tags,
             created_with="ulauncher-toggl-extension",
