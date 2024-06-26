@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
 from functools import partial
 from typing import TYPE_CHECKING, Optional
 
@@ -31,7 +30,7 @@ class ProjectCommand(SubCommand):
     PREFIX = "project"
     ALIASES = ("p", "proj")
     ICON = APP_IMG  # TODO: Need a custom image
-    EXPIRATION = timedelta(weeks=1)
+    EXPIRATION = None
 
     def process_model(  # noqa: PLR0913
         self,

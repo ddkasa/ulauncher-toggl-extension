@@ -23,7 +23,7 @@ class ClientCommand(SubCommand):
     PREFIX = "client"
     ALIASES = ("c", "cli")
     ICON = APP_IMG  # TODO: Need a custom image
-    EXPIRATION = timedelta(weeks=1)
+    EXPIRATION = None
 
     def get_models(self, **kwargs) -> list[TogglClient]:
         user = ClientEndpoint(self.workspace_id, self.auth, self.cache)
