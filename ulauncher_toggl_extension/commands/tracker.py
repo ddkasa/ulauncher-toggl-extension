@@ -157,7 +157,7 @@ class TrackerCommand(Command):
         if not self.check_autocmp(query):
             return autocomplete
 
-        if query[-1][0] == '"':
+        if query[-1][0] == '"' and query[-1][-1] != '"':
             cmd = ProjectCommand(self)
             models = self.get_models(**kwargs)
 
@@ -173,7 +173,7 @@ class TrackerCommand(Command):
                     ),
                 )
 
-        elif query[-1][0] == "@":
+        elif query[-1][0] == "@" and len(query[-1]) < 4:  # noqa: PLR2004
             cmd = ProjectCommand(self)
 
             for model in cmd.get_models(**kwargs):
@@ -187,7 +187,7 @@ class TrackerCommand(Command):
                     ),
                 )
 
-        elif query[-1][0] == "#":
+        elif query[-1][0] == "#" and (len(query[-1]) < 3 or query[-1][-1] == ","):  # noqa: PLR2004
             cmd = TagCommand(self)
 
             for model in cmd.get_models(**kwargs):

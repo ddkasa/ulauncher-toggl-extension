@@ -93,7 +93,7 @@ class ProjectCommand(SubCommand):
         if not self.check_autocmp(query):
             return autocomplete
 
-        if query[-1][0] == '"':
+        if query[-1][0] == '"' and query[-1][-1] != '"':
             models = self.get_models(**kwargs)
 
             for model in models:
@@ -107,7 +107,7 @@ class ProjectCommand(SubCommand):
                     ),
                 )
 
-        elif query[-1][0] == "#":
+        elif query[-1][0] == "#" and len(query[-1]) < 6:  # noqa: PLR2004
             path = self.cache_path / "svg"
             path.mkdir(parents=True, exist_ok=True)
             for name, color in ProjectEndpoint.BASIC_COLORS.items():
@@ -124,7 +124,7 @@ class ProjectCommand(SubCommand):
                     ),
                 )
 
-        elif query[-1][0] == "$":
+        elif query[-1][0] == "$" and len(query[-1]) < 3:  # noqa: PLR2004
             cmd = ClientCommand(self)
 
             for model in cmd.get_models(**kwargs):
