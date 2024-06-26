@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional
 
 from httpx import HTTPStatusError
 from toggl_api import (
+    TogglProject,
     TogglTracker,
     TrackerBody,
     TrackerEndpoint,
@@ -50,10 +51,10 @@ class TrackerCommand(Command):
         advanced: bool = False,
         fmt_str: str = "{prefix} {name}",
     ) -> list[QueryParameters]:
-        path = self.get_icon(model.project)
         name = fmt_str.format(prefix=self.PREFIX.title(), name=model.name)
         cmd = ProjectCommand(self)
         project = cmd.get_project(model.project)
+        path = self.get_icon(project)
         description = f"@{project.name if project else model.project}" or ""
         if model.tags:
             description += f" #{','.join(tag.name for tag in model.tags)}"
@@ -117,10 +118,15 @@ class TrackerCommand(Command):
             f"Stopped at {display_dt(model.stop)}",
         )
 
-    def get_icon(self, project: Optional[int] = None) -> Path:
-        path = self.cache_path / f"svg/{project}.svg"
-        if project is None or not path.exists():
+    def get_icon(self, project: Optional[TogglProject] = None) -> Path:
+        if project is None or not project.color:
             return self.ICON
+
+        path = self.cache_path / f"svg/{project.color}.svg"
+
+        if not path.exists():
+            cmd = ProjectCommand(self)
+            cmd.generate_color_svg(project)
 
         return path
 

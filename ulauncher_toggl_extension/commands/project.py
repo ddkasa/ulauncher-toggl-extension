@@ -145,10 +145,9 @@ class ProjectCommand(SubCommand):
             file.write(svg)
 
     def generate_color_svg(self, project: TogglProject) -> Path:
-        # TODO: Need mechanism to auto update the SVG if the color changes.
         path = self.cache_path / "svg"
         path.mkdir(parents=True, exist_ok=True)
-        icon = path / f"{project.id}.svg"
+        icon = path / f"{project.color}.svg"
 
         if icon.exists():
             return icon
