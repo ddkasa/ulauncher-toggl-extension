@@ -4,6 +4,7 @@ import logging
 from functools import partial
 from typing import TYPE_CHECKING, Optional
 
+from httpx import HTTPStatusError
 from toggl_api import ProjectBody, ProjectEndpoint, TogglProject
 
 from ulauncher_toggl_extension.images import (
@@ -73,7 +74,13 @@ class ProjectCommand(SubCommand):
         if project_id is None:
             return None
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
-        return endpoint.get_project(project_id, refresh=refresh)
+        try:
+            project = endpoint.get_project(project_id, refresh=refresh)
+        except HTTPStatusError as err:
+            if err.response.status_code == endpoint.NOT_FOUND:
+                return None
+            raise
+        return project
 
     def autocomplete(
         self,

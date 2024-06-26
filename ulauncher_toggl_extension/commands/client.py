@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import timedelta
 from functools import partial
 from typing import Optional
 
+from httpx import HTTPStatusError
 from toggl_api import ClientBody, ClientEndpoint, TogglClient
 
 from ulauncher_toggl_extension.images import (
@@ -40,7 +40,13 @@ class ClientCommand(SubCommand):
         if client_id is None:
             return None
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        return endpoint.get_client(client_id, refresh=refresh)
+        try:
+            client = endpoint.get_client(client_id, refresh=refresh)
+        except HTTPStatusError as err:
+            if err.response.status_code == endpoint.NOT_FOUND:
+                return None
+            raise
+        return client
 
 
 class ListClientCommand(ClientCommand):
