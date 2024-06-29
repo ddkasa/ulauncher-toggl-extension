@@ -143,6 +143,7 @@ class TogglExtension(Extension):
         query: list[str],
         **kwargs,
     ) -> list[QueryParameters]:
+        log.debug("Loading Default Results!")
         results: list[QueryParameters] = []
         for obj in self.COMMANDS.values():
             cmd = obj(self)
@@ -331,11 +332,13 @@ class KeywordQueryEventListener(EventListener):
         desc = re.search(desc_patt, query)
         if desc:
             arguments["description"] = desc.group("desc")
+        # TODO: Implement target model id option -> or =>
         for i, item in enumerate(args[1:], start=1):
             if not item:
                 continue
             if item[0] == "#":
                 arguments["tags"] = item[1:].split(",")
+                # TODO: Implement add + remove tag option
             elif item[0] == "@":
                 item = item[1:]
                 with contextlib.suppress(ValueError):

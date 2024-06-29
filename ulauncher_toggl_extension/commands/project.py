@@ -320,6 +320,7 @@ class EditProjectCommand(ProjectCommand):
     ESSENTIAL = True
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        del kwargs
         self.amend_query(query)
         return [
             QueryParameters(
@@ -327,12 +328,6 @@ class EditProjectCommand(ProjectCommand):
                 self.PREFIX.title(),
                 self.__doc__,
                 self.get_cmd(),
-                partial(
-                    self.call_pickle,
-                    method="handle",
-                    query=query,
-                    **kwargs,
-                ),
             ),
         ]
 
@@ -345,6 +340,13 @@ class EditProjectCommand(ProjectCommand):
                 partial(
                     self.process_model,
                     project,
+                    partial(
+                        self.call_pickle,
+                        method="handle",
+                        query=query,
+                        model=project,
+                        **kwargs,
+                    ),
                     self.generate_query(project),
                 )
                 for project in self.get_models(**kwargs)
@@ -378,7 +380,7 @@ class EditProjectCommand(ProjectCommand):
             active=kwargs.get("active", True),
             client_id=client if isinstance(client, int) else None,
             client_name=client if isinstance(client, str) else None,
-            is_private=kwargs.get("is_private", False),
+            is_private=kwargs.get("private", True),
             color=kwargs.get("color"),
             start_date=kwargs.get("start"),
             end_date=kwargs.get("end_date"),
