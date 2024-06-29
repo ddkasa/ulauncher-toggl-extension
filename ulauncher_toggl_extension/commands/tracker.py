@@ -629,13 +629,13 @@ class AddCommand(TrackerCommand):
                 self.ICON,
                 self.PREFIX.title(),
                 "Add a new tracker.",
+                f"{self.prefix} {self.PREFIX}",
                 partial(
                     self.call_pickle,
                     method="handle",
                     query=query,
                     **kwargs,
                 ),
-                f"{self.prefix} {self.PREFIX}",
             ),
         ]
 
@@ -701,18 +701,13 @@ class EditCommand(TrackerCommand):
     ESSENTIAL = True
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        del kwargs
         self.amend_query(query)
         return [
             QueryParameters(
                 self.ICON,
                 self.PREFIX.title(),
                 "Edit a tracker.",
-                partial(
-                    self.call_pickle,
-                    method="handle",
-                    query=query,
-                    **kwargs,
-                ),
                 f"{self.prefix} {self.PREFIX}",
             ),
         ]
@@ -726,6 +721,13 @@ class EditCommand(TrackerCommand):
                 partial(
                     self.process_model,
                     tracker,
+                    partial(
+                        self.call_pickle,
+                        method="handle",
+                        query=query,
+                        model=tracker,
+                        **kwargs,
+                    ),
                     self.generate_query(tracker),
                 )
                 for tracker in self.get_models(**kwargs)
@@ -757,11 +759,10 @@ class EditCommand(TrackerCommand):
             return False
 
         tags = kwargs.get("tags", [])
-
         body = TrackerBody(
             self.workspace_id,
-            kwargs.get("description") or tracker.name,
-            project_id=kwargs.get("project") or tracker.project,
+            kwargs.get("description"),
+            project_id=kwargs.get("project"),
             start=kwargs.get("start"),
             stop=kwargs.get("stop"),
             tags=tags,
