@@ -55,13 +55,30 @@ class ProjectCommand(SubCommand):
         ]
 
         if advanced:
-            pass
+            results.extend(
+                (
+                    QueryParameters(
+                        self.ICON,
+                        f"{model.name} is{' not' if not model.active else ''} active.",
+                        "",
+                        small=True,
+                    ),
+                    QueryParameters(
+                        self.get_icon(model),
+                        "Color",
+                        model.color,
+                        small=True,
+                    ),
+                ),
+            )
 
         return results
 
     def get_models(self, **kwargs) -> list[TogglProject]:
         user = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
         projects = user.get_projects(refresh=kwargs.get("refresh", False))
+        if kwargs.get("active", True):
+            projects = [project for project in projects if project.active]
         projects.sort(key=lambda x: x.timestamp, reverse=True)
         return projects
 
@@ -303,6 +320,7 @@ class EditProjectCommand(ProjectCommand):
     ESSENTIAL = True
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        del kwargs
         self.amend_query(query)
         return [
             QueryParameters(
@@ -310,12 +328,6 @@ class EditProjectCommand(ProjectCommand):
                 self.PREFIX.title(),
                 self.__doc__,
                 self.get_cmd(),
-                partial(
-                    self.call_pickle,
-                    method="handle",
-                    query=query,
-                    **kwargs,
-                ),
             ),
         ]
 
@@ -328,6 +340,13 @@ class EditProjectCommand(ProjectCommand):
                 partial(
                     self.process_model,
                     project,
+                    partial(
+                        self.call_pickle,
+                        method="handle",
+                        query=query,
+                        model=project,
+                        **kwargs,
+                    ),
                     self.generate_query(project),
                 )
                 for project in self.get_models(**kwargs)
@@ -361,7 +380,7 @@ class EditProjectCommand(ProjectCommand):
             active=kwargs.get("active", True),
             client_id=client if isinstance(client, int) else None,
             client_name=client if isinstance(client, str) else None,
-            is_private=kwargs.get("is_private", False),
+            is_private=kwargs.get("private", True),
             color=kwargs.get("color"),
             start_date=kwargs.get("start"),
             end_date=kwargs.get("end_date"),
