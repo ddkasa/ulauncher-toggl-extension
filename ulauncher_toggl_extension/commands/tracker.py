@@ -139,7 +139,10 @@ class TrackerCommand(Command):
             kwargs.get("start_date"),
             refresh=kwargs.get("refresh", False),
         )
-        trackers.sort(key=lambda x: x.timestamp, reverse=True)
+        trackers.sort(
+            key=lambda x: (x.stop or datetime.now(tz=timezone.utc), x.start),
+            reverse=True,
+        )
         return trackers
 
     def get_current_tracker(
