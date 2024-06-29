@@ -55,7 +55,22 @@ class ProjectCommand(SubCommand):
         ]
 
         if advanced:
-            pass
+            results.extend(
+                (
+                    QueryParameters(
+                        self.ICON,
+                        f"{model.name} is{' not' if not model.active else ''} active.",
+                        "",
+                        small=True,
+                    ),
+                    QueryParameters(
+                        self.get_icon(model),
+                        "Color",
+                        model.color,
+                        small=True,
+                    ),
+                ),
+            )
 
         return results
 
