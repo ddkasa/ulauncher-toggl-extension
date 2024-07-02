@@ -37,7 +37,7 @@ ORDINALS: dict[int, str] = {
 
 def display_dt(ts: datetime) -> str:
     ordinal = ORDINALS.get(ts.day % 10, "th")
-    return ts.astimezone(get_local_tz()).strftime(f"%H:%M %A, %-m{ordinal} of %B %Y")
+    return ts.astimezone(get_local_tz()).strftime(f"%H:%M %A, %-d{ordinal} of %B %Y")
 
 
 def parse_timedelta(ts_text: str) -> timedelta:
