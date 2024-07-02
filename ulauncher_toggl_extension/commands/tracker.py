@@ -519,10 +519,8 @@ class StartCommand(TrackerCommand):
             kwargs.get("description", tracker.name if tracker else ""),
             project_id=kwargs.get("project", tracker.project if tracker else None),
             start=kwargs.get("start", now),
-            tags=kwargs.get("tags") or [t.name for t in tracker.tags]
-            if tracker
-            else [],
-            tag_action="add",
+            tags=kwargs.get("tags")
+            or ([t.name for t in tracker.tags] if tracker else []),
             created_with="ulauncher-toggl-extension",
         )
 
@@ -686,6 +684,7 @@ class AddCommand(TrackerCommand):
             start=kwargs.get("start", now),
             stop=kwargs.get("stop"),
             tags=tags,
+            tag_action="add",
             created_with="ulauncher-toggl-extension",
         )
 
