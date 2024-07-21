@@ -131,6 +131,7 @@ class TrackerCommand(Command):
         return path
 
     def get_models(self, **kwargs) -> list[TogglTracker]:
+        """Collects trackers and filters and sorts them for further use."""
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
         trackers = user.get_trackers(
             kwargs.get("start"),
@@ -139,11 +140,31 @@ class TrackerCommand(Command):
             kwargs.get("start_date"),
             refresh=kwargs.get("refresh", False),
         )
+        if kwargs.get("distinct", True):
+            data: list[TogglTracker] = []
+            for tracker in trackers:
+                if self.distinct(tracker, data):
+                    data.append(tracker)
+
+            trackers = data
+
         trackers.sort(
             key=lambda x: (x.stop or datetime.now(tz=timezone.utc), x.start),
             reverse=True,
         )
         return trackers
+
+    @staticmethod
+    def distinct(tracker: TogglTracker, data: list[TogglTracker]) -> bool:
+        for t in data:
+            if (
+                tracker.name == t.name
+                and tracker.tags == t.tags
+                and tracker.project == t.project
+            ):
+                return False
+
+        return True
 
     def get_current_tracker(
         self,
@@ -320,6 +341,7 @@ class ListCommand(TrackerCommand):
     def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
         data: list[partial] = kwargs.get("data", [])
         if not data:
+            kwargs["distinct"] = not kwargs.get("distinct", True)
             data = [
                 partial(
                     self.process_model,
