@@ -14,7 +14,7 @@ from toggl_api import (
     UserEndpoint,
 )
 
-from ulauncher_toggl_extension.date_time import display_dt
+from ulauncher_toggl_extension.date_time import display_dt, get_local_tz
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
     APP_IMG,
@@ -131,6 +131,7 @@ class TrackerCommand(Command):
         return path
 
     def get_models(self, **kwargs) -> list[TogglTracker]:
+        """Collects trackers and filters and sorts them for further use."""
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
         trackers = user.get_trackers(
             kwargs.get("start"),
@@ -139,11 +140,31 @@ class TrackerCommand(Command):
             kwargs.get("start_date"),
             refresh=kwargs.get("refresh", False),
         )
+        if kwargs.get("distinct", True):
+            data: list[TogglTracker] = []
+            for tracker in trackers:
+                if self.distinct(tracker, data):
+                    data.append(tracker)
+
+            trackers = data
+
         trackers.sort(
             key=lambda x: (x.stop or datetime.now(tz=timezone.utc), x.start),
             reverse=True,
         )
         return trackers
+
+    @staticmethod
+    def distinct(tracker: TogglTracker, data: list[TogglTracker]) -> bool:
+        for t in data:
+            if (
+                tracker.name == t.name
+                and tracker.tags == t.tags
+                and tracker.project == t.project
+            ):
+                return False
+
+        return True
 
     def get_current_tracker(
         self,
@@ -320,6 +341,7 @@ class ListCommand(TrackerCommand):
     def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
         data: list[partial] = kwargs.get("data", [])
         if not data:
+            kwargs["distinct"] = not kwargs.get("distinct", True)
             data = [
                 partial(
                     self.process_model,
@@ -501,10 +523,11 @@ class StartCommand(TrackerCommand):
 
     def generate_query(self, model: TogglTracker) -> str:
         query = f'{self.prefix} {self.PREFIX} "{model.name}"'
+        now = datetime.now(tz=get_local_tz())
+        query += f" >{now.strftime('%H:%M')}"
         if model.project:
             query += f" @{model.project}"
-        if model.start:
-            query += f" >{model.start}"
+
         if model.tags:
             query += f" #{','.join(tag.name for tag in model.tags)}"
         return query

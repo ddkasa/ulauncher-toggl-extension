@@ -87,7 +87,7 @@ class Command(metaclass=Singleton):
         EXPIRATION: Invalidation time of the cache.
         cache_path: Location of the cache file.
         ICON: Base icon of the command.
-        ESSENTIAL: Whether the command is essential.
+        ESSENTIAL: Whether the command will be used in a submenu.
         prefix: User set application prefix. Usually defaults to "tgl".
     """
 
@@ -136,6 +136,9 @@ class Command(metaclass=Singleton):
         """Executes the actual command logic.
 
         Some children might not need this to be implemented.
+
+        Base implementation creates subcommands based on a selected models which
+        have ESSENTIAL marked as true.
 
         Returns:
             bool | list: Whether the command was successful or not. Will decide
@@ -188,7 +191,12 @@ class Command(metaclass=Singleton):
         **kwargs,
     ) -> Any:
         """Helper method to call a pickled command."""
-        # REFACTOR: Explore using the extension without this method.
+        log.info(
+            'Pickling method "%s" for %s!',
+            method,
+            cls.__name__,
+            extra={"arguments": args, "kwargs": kwargs},
+        )
         d = cls(extension)
         return getattr(d, method)(*args, **kwargs)
 

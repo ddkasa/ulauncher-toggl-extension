@@ -21,7 +21,7 @@
 4. You're now ready to use the extension.
 
 > [!NOTE]
-> This will install [Toggl Api Wrapper](https://pypi.org/project/toggl-api-wrapper/) on startup and update the dependency if needed. If you run into issues please check out your root pip installation and double check the wrapper is present with `/usr/bin/pip list | grep toggl`
+> This will install [Toggl Api Wrapper](https://pypi.org/project/toggl-api-wrapper/) on startup and update the dependency if needed. If you run into issues please check your root pip installation to see if the wrapper is present with `/usr/bin/pip list | grep toggl`
 
 
 ## Usage

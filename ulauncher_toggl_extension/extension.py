@@ -6,7 +6,7 @@ import logging
 import re
 from collections import OrderedDict
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
 
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -317,7 +317,7 @@ class KeywordQueryEventListener(EventListener):
         return RenderResultListAction(processed_query)
 
     @staticmethod
-    def parse_query(query: str, args: list[str]) -> dict[str, str]:  # noqa: C901, PLR0912
+    def parse_query(query: str, args: list[str]) -> dict[str, Any]:  # noqa: C901, PLR0912
         """Parses query into a dictionary of arguments useable by the rest of
         the extension.
 
@@ -373,6 +373,8 @@ class KeywordQueryEventListener(EventListener):
                 arguments["active"] = False
             elif item == "private":
                 arguments["private"] = False
+            elif item == "distinct":
+                arguments["distinct"] = False
 
         return arguments
 
