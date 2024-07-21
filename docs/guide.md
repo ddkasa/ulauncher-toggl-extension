@@ -10,7 +10,7 @@
 2. Project - ID of the project to use starting with an **@** sign e.g. **@3512351**. <sup>1</sup>
 3. Start Time - Start time of the tracker starting with a greater than sign e.g. **>10:10**. <sup>2</sup>
 4. End Time - End time of the tracker starting with a lesser than sign e.g. **<10:20**. <sup>2</sup>
-5. Duration - Duration of the tracker surrounded by a lesser than and greater than sign e.g. **>1h10m<**.
+5. Duration - Duration of the tracker surrounded by a lesser than and greater than sign e.g. **>1h<**.
     - Supported formats are:
         1. Hours: *h*
         2. Minutes: *m*
@@ -23,7 +23,7 @@
 8. Color - Hex code of color e.g. **#ffffff**. If using non-premium only the supplied colors will work. <sup>1</sup>
 7. Refresh - Whether to a refresh a list of values or not. Add **refresh** to the command to refresh cache. Most of the commands support this.
 8. Client - ID of the client to use starting with an **$** sign e.g. **$3512351**. <sup>1</sup>
-9. Private/Active - Inverted boolean flags, so if set the will return as False e.g. **private**, **active**.
+9. Private/Active/Distinct - Inverted boolean flags, so if set the will return as False e.g. **private**, **active**, **distinct**. 
 
 <sup>1</sup> *Autocomplete is supplied.*
 
@@ -123,7 +123,7 @@
 - Aliases: help, guide, hint, h
 
 ### Notes
-<sup>1</sup> *Will provide a list of older trackers as pre fill options.*
+<sup>1</sup> *Will provide a list of older trackers as pre fill options. These commands have a distinct flag available.*
 <sup>2</sup> *Will provide a list of older projects as pre fill options.*
 <sup>3</sup> *Will provide a list of older clients as pre fill options.*
 <sup>4</sup> *Will provide a list of older tags as pre fill options.*
