@@ -14,7 +14,7 @@ from toggl_api import (
     UserEndpoint,
 )
 
-from ulauncher_toggl_extension.date_time import display_dt
+from ulauncher_toggl_extension.date_time import display_dt, get_local_tz
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
     APP_IMG,
@@ -501,10 +501,11 @@ class StartCommand(TrackerCommand):
 
     def generate_query(self, model: TogglTracker) -> str:
         query = f'{self.prefix} {self.PREFIX} "{model.name}"'
+        now = datetime.now(tz=get_local_tz())
+        query += f" >{now.strftime('%H:%M')}"
         if model.project:
             query += f" @{model.project}"
-        if model.start:
-            query += f" >{model.start}"
+
         if model.tags:
             query += f" #{','.join(tag.name for tag in model.tags)}"
         return query
