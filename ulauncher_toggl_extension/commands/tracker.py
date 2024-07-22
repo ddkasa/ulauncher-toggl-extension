@@ -759,6 +759,7 @@ class EditCommand(TrackerCommand):
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
+            kwargs["distinct"] = not kwargs.get("distinct", True)
             data = [
                 partial(
                     self.process_model,
@@ -841,6 +842,7 @@ class DeleteCommand(TrackerCommand):
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
+            kwargs["distinct"] = not kwargs.get("distinct", True)
             data = [
                 partial(
                     self.process_model,
