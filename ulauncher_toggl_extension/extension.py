@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import contextlib
-from datetime import datetime, timezone
 import logging
 import re
 from collections import OrderedDict
+from datetime import datetime, timezone
 from pathlib import Path
-from time import timezone
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
 
 from ulauncher.api.client.EventListener import EventListener
