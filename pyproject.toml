@@ -12,6 +12,7 @@ toggl-api-wrapper = "^0.3.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
 pygobject-stubs = "^2.10.0"
+pytest-cov = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core"]
