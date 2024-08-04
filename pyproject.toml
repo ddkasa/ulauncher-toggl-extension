@@ -87,3 +87,9 @@ ignore = [
 [tool.mypy]
 ignore_missing_imports = true
 disable_error_code = ["attr-defined", "assignment"]
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: standard tests that don't access external resources.",
+    "integration: tests that access external apis.",
+]
