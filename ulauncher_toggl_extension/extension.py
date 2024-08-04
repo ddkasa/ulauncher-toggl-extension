@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import contextlib
-from datetime import datetime, timezone
 import logging
 import re
 from collections import OrderedDict
+from datetime import datetime, timezone
 from pathlib import Path
-from time import timezone
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
 
 from ulauncher.api.client.EventListener import EventListener
@@ -335,7 +334,6 @@ class KeywordQueryEventListener(EventListener):
         if desc:
             arguments["description"] = desc.group("desc")
         # TODO: Implement target model id option -> or =>
-        now = datetime.now(tz=timezone.utc)
         for i, item in enumerate(args[1:], start=1):
             if not item:
                 continue
@@ -359,10 +357,7 @@ class KeywordQueryEventListener(EventListener):
                 if i + 1 < len(args) and args[i + 1] in TIME_FORMAT:
                     item += " " + args[i + 1]
                 try:
-                    ts = parse_datetime(item)
-                    if ts > now:
-                        continue
-                    arguments["start"] = ts
+                    arguments["start"] = parse_datetime(item)
                 except ValueError:
                     continue
             elif item[0] == "<":
@@ -370,10 +365,7 @@ class KeywordQueryEventListener(EventListener):
                 if i + 1 < len(args) and args[i + 1] in TIME_FORMAT:
                     item += " " + args[i + 1]
                 try:
-                    ts = parse_datetime(item)
-                    if ts < now:
-                        continue
-                    arguments["stop"] = ts
+                    arguments["stop"] = parse_datetime(item)
                 except ValueError:
                     continue
             elif item == "refresh":

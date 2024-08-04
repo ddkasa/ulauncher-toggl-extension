@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from httpx import HTTPStatusError
 from toggl_api import (
@@ -234,6 +234,21 @@ class TrackerCommand(Command):
 
         return autocomplete
 
+    @classmethod
+    def sanitize_start_time(cls, **kwargs) -> dict[str, Any]:
+        start = kwargs.get("start")
+        if start:
+            now = datetime.now(tz=timezone.utc)
+            if start > now:
+                kwargs["start"] = now
+
+            stop = kwargs.get("stop")
+            if stop:
+                if stop <= kwargs["start"]:
+                    kwargs.pop("stop")
+
+        return kwargs
+
 
 class CurrentTrackerCommand(TrackerCommand):
     """Retrieves and stores the current running tracker."""
@@ -435,7 +450,8 @@ class ContinueCommand(TrackerCommand):
 
     def handle(self, query: list[str], **kwargs) -> bool:
         del query
-        now = kwargs.get("start", datetime.now(tz=timezone.utc))
+        kwargs = self.sanitize_start_time(**kwargs)
+        now = kwargs.get("start") or datetime.now(tz=timezone.utc)
         tracker = kwargs.get("model")
 
         if not isinstance(tracker, TogglTracker):
@@ -534,6 +550,7 @@ class StartCommand(TrackerCommand):
 
     def handle(self, query: list[str], **kwargs) -> bool:
         del query
+        kwargs = self.sanitize_start_time(**kwargs)
         now = datetime.now(tz=timezone.utc)
         tracker = kwargs.get("model")
 
@@ -742,6 +759,7 @@ class EditCommand(TrackerCommand):
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
+            kwargs["distinct"] = not kwargs.get("distinct", True)
             data = [
                 partial(
                     self.process_model,
@@ -824,6 +842,7 @@ class DeleteCommand(TrackerCommand):
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
+            kwargs["distinct"] = not kwargs.get("distinct", True)
             data = [
                 partial(
                     self.process_model,
