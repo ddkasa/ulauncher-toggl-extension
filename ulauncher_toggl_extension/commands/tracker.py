@@ -670,13 +670,13 @@ class AddCommand(TrackerCommand):
                 self.ICON,
                 self.PREFIX.title(),
                 "Add a new tracker.",
-                f"{self.prefix} {self.PREFIX}",
                 partial(
                     self.call_pickle,
                     method="handle",
                     query=query,
                     **kwargs,
                 ),
+                f"{self.prefix} {self.PREFIX}",
             ),
         ]
 

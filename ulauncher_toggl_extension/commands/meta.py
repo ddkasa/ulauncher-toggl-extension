@@ -95,7 +95,7 @@ class Command(metaclass=Singleton):
     MIN_ARGS: int = 2
     PREFIX: str = ""
     ALIASES: tuple[str]
-    EXPIRATION: timedelta = timedelta(days=1)
+    EXPIRATION: timedelta = timedelta(weeks=1)
     ICON: Path = APP_IMG
     ESSENTIAL: bool = False
 
