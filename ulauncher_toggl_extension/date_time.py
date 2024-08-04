@@ -41,10 +41,10 @@ def display_dt(ts: datetime) -> str:
 
 
 def parse_timedelta(ts_text: str) -> timedelta:
-    for fmt in TIME_SUFFIX:
+    for fmt, keyword in TIME_SUFFIX.items():
         if ts_text.endswith(fmt):
             ts_text = ts_text.removesuffix(fmt)
-            return timedelta(**{fmt: int(ts_text)})
+            return timedelta(**{keyword: int(ts_text)})
 
     msg = f"Could not find a time format that matched the supplied string. {ts_text}"
     raise ValueError(msg)
