@@ -16,6 +16,8 @@ DT_FORMATS: tuple[str, ...] = (
     "%Y-%m-%dT%H:%M",
     "%H:%M:%S",
     "%H:%M",
+    "%dT%H:%M",
+    "%dT%I:%M %p",
 )
 
 TIME_SUFFIX: dict[str, str] = {
@@ -65,7 +67,7 @@ def parse_datetime(ts_text: str) -> datetime:
                 month=today.month,
                 day=today.day,
             )
-        return localize_timezone(dt).astimezone(tz=timezone.utc)
+        return localize_timezone(dt)
 
     msg = f"Could not find a dt format that matched the supplied string. {ts_text}"
     raise ValueError(msg)
@@ -81,13 +83,12 @@ def get_local_tz() -> timezone:
 
 def localize_timezone(ts: datetime) -> datetime:
     return datetime(
-        ts.year,
-        ts.month,
-        ts.day,
-        ts.hour,
-        ts.minute,
-        ts.second,
-        ts.microsecond,
+        year=ts.year,
+        month=ts.month,
+        day=ts.day,
+        hour=ts.hour,
+        minute=ts.minute,
+        second=ts.second,
         tzinfo=get_local_tz(),
     )
 
