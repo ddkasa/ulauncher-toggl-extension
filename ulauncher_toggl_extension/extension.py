@@ -5,7 +5,7 @@ import contextlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
 
@@ -357,7 +357,9 @@ class KeywordQueryEventListener(EventListener):
                 if i + 1 < len(args) and args[i + 1] in TIME_FORMAT:
                     item += " " + args[i + 1]
                 try:
-                    arguments["start"] = parse_datetime(item)
+                    arguments["start"] = parse_datetime(item).astimezone(
+                        tz=timezone.utc,
+                    )
                 except ValueError:
                     continue
             elif item[0] == "<":

@@ -43,15 +43,32 @@ def _ensure_import(package: str, version: Optional[str] = None) -> ModuleType:
 
 def ensure_import(
     package: str,
-    package_name: str,
+    package_name: Optional[str] = None,
     version: Optional[str] = None,
 ) -> ModuleType:
+    """Utility for installing external dependencies.
+
+    Args:
+        package: Name of the package to important. Same as you would declare in
+            a `import package` statement.
+        package_name: Backup name for installing the package if not present as
+            PyPi package names may differ.
+        version: Optional version to look for when installing a missing
+            package.
+
+    Raises:
+        ModuleNotFoundError: If package is not found at all.
+
+    Return:
+        Module: The correct module for use in the application.
+    """
+    package_name = package_name or package
     try:
         return _ensure_import(package, version)
     except ModuleNotFoundError:
         log.info("Package %s is missing. Installing...", package_name)
-        subprocess.call(
-            [  # noqa: S603
+        subprocess.call(  # noqa: S603
+            [
                 sys.executable,
                 "-m",
                 "pip",
