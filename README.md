@@ -1,5 +1,10 @@
 # Ulauncher Toggl Time Tracker Extension
 
+
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ddkasa/ulauncher-toggl-extension/.github%2Fworkflows%2Ftests.yaml?style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fddkasa%2Fulauncher-toggl-extension%2Factions%2Fworkflows%2Ftests.yaml)
+
+***
+
 - Extension for [Ulauncher](https://github.com/Ulauncher/Ulauncher/) heavily inspired by [Flow Toggl Plugin](https://github.com/JamesNZL/flow-toggl-plugin).
 
 ## Requirements & Installation
@@ -53,6 +58,10 @@
     2. Adding tags.
     3. Editing tags.
     4. Deleting tags.
+
+
+# Development
+- See [DEVELOPMENT](docs/DEVELOPMENT.md).
 
 # License
 
