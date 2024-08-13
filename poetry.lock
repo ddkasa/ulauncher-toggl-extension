@@ -625,13 +625,13 @@ sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
 name = "toggl-api-wrapper"
-version = "0.3.0"
+version = "0.3.1"
 description = "Simple Toggl API wrapper for non-premium features."
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "toggl_api_wrapper-0.3.0-py3-none-any.whl", hash = "sha256:3262159c9b0ceb13d793e4398c7b3367689c1214efa4dbdace146a2bc9f81333"},
-    {file = "toggl_api_wrapper-0.3.0.tar.gz", hash = "sha256:53d84812e768f3222a4b241844cfb45f842144b1cdbc762d8d42f30ac8a1d1f2"},
+    {file = "toggl_api_wrapper-0.3.1-py3-none-any.whl", hash = "sha256:5f8e0fcf811128d07ccbee789390902f512bc57806e1cd8502c69b113419ef47"},
+    {file = "toggl_api_wrapper-0.3.1.tar.gz", hash = "sha256:4d7e8853ea6bb60f793ba800f4e259ef12666a5b4d250bc112f024928013e024"},
 ]
 
 [package.dependencies]
