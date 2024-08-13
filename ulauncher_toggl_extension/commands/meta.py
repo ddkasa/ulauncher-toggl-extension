@@ -53,9 +53,9 @@ class QueryParameters:
 
 
 class Singleton(type):
-    _instances: dict[type, object] = {}
+    _instances: dict[type, Singleton] = {}
 
-    def __call__(cls, *args, **kwargs) -> object:
+    def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
@@ -414,7 +414,7 @@ class SubCommand(Command):
         if base is None:
             query[0] = self.PREFIX
         elif len(query) >= 1:
-            query[0] = base.PREFIX
+            query[1] = base.PREFIX
 
     def get_cmd(self) -> str:
         cmd = f"{self.prefix}"

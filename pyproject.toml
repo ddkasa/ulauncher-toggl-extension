@@ -8,10 +8,13 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 toggl-api-wrapper = "^0.3.0"
+pycairo = "^1.26.1"
+pygobject = "^3.48.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
 pygobject-stubs = "^2.10.0"
+pytest-cov = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -86,3 +89,9 @@ ignore = [
 [tool.mypy]
 ignore_missing_imports = true
 disable_error_code = ["attr-defined", "assignment"]
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: standard tests that don't access external resources.",
+    "integration: tests that access external apis.",
+]
