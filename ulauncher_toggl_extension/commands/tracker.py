@@ -703,12 +703,13 @@ class AddCommand(TrackerCommand):
 
     def generate_query(self, model: TogglTracker) -> str:
         query = f'{self.prefix} {self.PREFIX} "{model.name}"'
+        now = datetime.now(tz=get_local_tz())
+        query += f" >{now.strftime('%H:%M')}"
+        now += timedelta(hours=1)
+        query += f" <{now.strftime('%H:%M')}"
+
         if model.project:
             query += f" @{model.project}"
-        if model.start:
-            query += f" >{model.start}"
-        if model.stop:
-            query += f" <{model.stop}"
         if model.tags:
             query += f" #{','.join(tag.name for tag in model.tags)}"
         return query
