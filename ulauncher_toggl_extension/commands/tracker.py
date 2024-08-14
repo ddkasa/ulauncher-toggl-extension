@@ -796,9 +796,9 @@ class EditCommand(TrackerCommand):
         if model.project:
             query += f" @{model.project}"
         if model.start:
-            query += f" >{model.start}"
+            query += f" >{model.start.strftime('%Y-%m-%dT%H:%M')}"
         if model.stop:
-            query += f" <{model.stop}"
+            query += f" <{model.stop.strftime('%Y-%m-%dT%H:%M')}"
         if model.tags:
             query += f" #{','.join(tag.name for tag in model.tags)}"
         return query
