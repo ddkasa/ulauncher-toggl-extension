@@ -22,7 +22,7 @@ from ulauncher_toggl_extension.date_time import (
         (datetime(2024, 6, 4, 5, 2), "05:02 Tuesday, 4th of June 2024"),
     ],
 )
-@pytest.mark.unit()
+@pytest.mark.unit
 def test_display_dt(date, expected):
     assert display_dt(date) == expected
 
@@ -38,7 +38,7 @@ def test_display_dt(date, expected):
         ("2m", timedelta(minutes=2)),
     ],
 )
-@pytest.mark.unit()
+@pytest.mark.unit
 def test_parse_timedelta(data, expected):
     if expected is not None:
         assert parse_timedelta(data) == expected
@@ -47,7 +47,7 @@ def test_parse_timedelta(data, expected):
             assert parse_timedelta(data)
 
 
-@pytest.mark.unit()
+@pytest.mark.unit
 def test_parse_datetime(get_tz):
     now = datetime.now(tz=get_tz)
 
@@ -71,7 +71,7 @@ def test_parse_datetime(get_tz):
         assert parse_datetime("wadfwadad")
 
 
-@pytest.mark.unit()
+@pytest.mark.unit
 def test_parse_localize(get_tz):
     now = datetime.now(tz=timezone.utc)
 

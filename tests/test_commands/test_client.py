@@ -9,7 +9,7 @@ from ulauncher_toggl_extension.commands.client import (
 )
 
 
-@pytest.mark.unit()
+@pytest.mark.unit
 def test_client_subcommand(dummy_ext):
     cmd = ClientCommand(dummy_ext)
 
@@ -19,16 +19,21 @@ def test_client_subcommand(dummy_ext):
     assert cmd.view(query)
 
 
-@pytest.mark.integration()
-def test_add_client_command(dummy_ext):
+@pytest.mark.integration
+def test_add_client_command(dummy_ext, faker, helper):
     cmd = AddClientCommand(dummy_ext)
 
     query = []
     assert cmd.preview(query)
     assert cmd.view(query)
 
+    desc = faker.name()
+    assert cmd.handle(query, description=desc)
 
-@pytest.mark.integration()
+    assert helper(desc, cmd) is not None
+
+
+@pytest.mark.integration
 def test_list_client_command(dummy_ext):
     cmd = ListClientCommand(dummy_ext)
 
@@ -38,20 +43,25 @@ def test_list_client_command(dummy_ext):
     assert isinstance(cmd.view(query), list)
 
 
-@pytest.mark.integration()
-def test_edit_client_command(dummy_ext):
+@pytest.mark.integration
+def test_edit_client_command(dummy_ext, create_client, faker, helper):
     cmd = EditClientCommand(dummy_ext)
 
     query = []
 
     assert cmd.preview(query)
     assert isinstance(cmd.view(query), list)
+    desc = faker.name()
+    assert cmd.handle(query, model=create_client, description=desc)
+
+    assert helper(desc, cmd) is not None
 
 
-@pytest.mark.integration()
-def test_delete_client_command(dummy_ext):
+@pytest.mark.integration
+def test_delete_client_command(dummy_ext, create_client):
     cmd = DeleteClientCommand(dummy_ext)
 
     query = []
     assert cmd.preview(query)
     assert isinstance(cmd.view(query), list)
+    assert cmd.handle(query, model=create_client)
