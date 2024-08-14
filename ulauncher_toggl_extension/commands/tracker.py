@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 class TrackerCommand(Command):
     """Base Tracker command setting up default methods."""
 
-    def process_model(  # noqa: PLR0913
+    def process_model(
         self,
         model: TogglTracker,
         action: ACTION_TYPE,

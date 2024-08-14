@@ -121,6 +121,6 @@ class HelpCommand(Command):
             ),
         ]
 
-    def handle(self, query: list[str], **kwargs) -> bool:
+    def handle(self, query: list[str], **kwargs) -> bool:  # noqa: PLR6301
         del query, kwargs
         return True

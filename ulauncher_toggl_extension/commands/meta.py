@@ -200,7 +200,7 @@ class Command(metaclass=Singleton):
         d = cls(extension)
         return getattr(d, method)(*args, **kwargs)
 
-    def process_model(  # noqa: PLR0913
+    def process_model(
         self,
         model: TogglClass,
         action: ACTION_TYPE,
