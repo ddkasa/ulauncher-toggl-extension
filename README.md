@@ -1,11 +1,7 @@
 # Ulauncher Toggl Time Tracker Extension
-
-
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ddkasa/ulauncher-toggl-extension/.github%2Fworkflows%2Ftests.yaml?style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fddkasa%2Fulauncher-toggl-extension%2Factions%2Fworkflows%2Ftests.yaml)
 
-***
-
-- Extension for [Ulauncher](https://github.com/Ulauncher/Ulauncher/) heavily inspired by [Flow Toggl Plugin](https://github.com/JamesNZL/flow-toggl-plugin).
+> Extension for [Ulauncher](https://github.com/Ulauncher/Ulauncher/) heavily inspired by [Flow Toggl Plugin](https://github.com/JamesNZL/flow-toggl-plugin).
 
 ## Requirements & Installation
 
@@ -22,8 +18,9 @@
     2. Environment Variables
         - Either **TOGGL_API_TOKEN** or if using email **TOGGL_API_TOKEN** + **TOGGL_PASSWORD**
     3. *.togglrc* in the default home location. Configuration from [Toggl CLI](https://github.com/AuHau/toggl-cli).
-3. Set your default workspace inside the configuration and anything else you would like to customize.
-4. You're now ready to use the extension.
+3. Set your default workspace inside the configuration or as an environment variable: **TOGGL_WORKSPACE_ID**
+4. Customize any other settings inside the Ulauncher configuration.
+5. You're now ready to use the extension.
 
 > [!NOTE]
 > This will install [Toggl Api Wrapper](https://pypi.org/project/toggl-api-wrapper/) on startup and update the dependency if needed. If you run into issues please check your root pip installation to see if the wrapper is present with `/usr/bin/pip list | grep toggl`
@@ -61,7 +58,7 @@
 
 
 # Development
-- See [DEVELOPMENT](docs/DEVELOPMENT.md).
+See [DEVELOPMENT](docs/DEVELOPMENT.md).
 
 # License
 
