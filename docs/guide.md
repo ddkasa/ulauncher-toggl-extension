@@ -35,10 +35,12 @@
 
 1. **Continue**
 - Description: Continue the last tracker or a tracker selected from the provided list.
+- Alt-Option: List alternative trackers to continue from cache.
 - Aliases: continue, cnt, cont, c
 - Optional Arguments: *Start Time, Tracker ID*
 2. **Start**
 - Description: Start a new tracker. <sup>1</sup>
+- Alt-Option: List trackers a pre-fill options to be edited before starting.
 - Aliases: start, stt, begin
 - Required Arguments: *Description*
 - Optional Arguments: *Project, Start Time, Tags*
@@ -46,11 +48,12 @@
 - Description: Stop the current tracker.
 - Aliases: stop, end, stp
 4. **Edit**
-- Description: Edit the current trackers attributes.  <sup>1</sup>
+- Description: Edit the current trackers attributes. <sup>1</sup>
 - Aliases: edit, change, amend, ed
 - Optional Arguments: *Description, Project, Start Time, Tags* 
 5. **Add**
 - Description: Add a new tracker with given attributes. <sup>1</sup>
+- Alt-Option: Select a tracker from cache to be used as a pre-fill option.
 - Aliases: add, a, insert
 - Required Arguments: *Start Time, Stop Time, Description*
 6. **Delete**
@@ -58,6 +61,7 @@
 - Aliases: delete, remove, del
 7. **List**
 - Description: Display a list of trackers. Use one of the listed trackers for more options and details.
+- Alt-Option: Refresh cache and fetch new trackers.
 - Aliases: list, ls, lst
 8. **Current**
 - Description: Display the current tracker.
@@ -68,9 +72,11 @@
 - **Subcommands**:
     1. **List**
     - Description: Display a list of projects. Select a project for more options/details.
+    - Alt-Option: Refresh cache and fetch new projects.
     - Aliases: list, ls, l
     2. **Add**
     - Description: Add a new project. <sup>2</sup>
+    - Alt-Option: Use a list of projects as pre-fill options.
     - Aliases: add, a, create, insert
     - Required Arguments: *Description*
     - Optional Arguments: *Color*, *Client*, *active*, *private*
@@ -86,10 +92,12 @@
 - Aliases: clients, c, cli
 - **Subcommands**:
     1. **List**
-    - Description: Display a list of clients. Select a client for more options/details. 
+    - Description: Display a list of clients. Select a client for more options/details.
+    - Alt-Option: Refresh cache and fetch new clients.
     - Aliases: list, ls, l
     2. **Add**
     - Description: Add a new client. <sup>3</sup>
+    - Alt-Option: Use a list of clients as pre-fill options.
     - Aliases: add, a, create, insert
     - Required Arguments: *Description*
     3. **Edit**
@@ -105,9 +113,11 @@
 - **Subcommands**:
     1. **List**
     - Description: Display a list of tags. Select a tag for more options/details.
+    - Alt-Option: Refresh cache and fetch new tags.
     - Aliases: list, ls, l
     2. **Add**
     - Description: Add a new tag. <sup>4</sup>
+    - Alt-Option: Use a list of tags as pre-fill options.
     - Aliases: add, a, create
     - Required Arguments: *Description*
     3. **Edit**
@@ -124,6 +134,9 @@
 
 ### Notes
 <sup>1</sup> *Will provide a list of older trackers as pre fill options. These commands have a distinct flag available.*
+
 <sup>2</sup> *Will provide a list of older projects as pre fill options.*
+
 <sup>3</sup> *Will provide a list of older clients as pre fill options.*
+
 <sup>4</sup> *Will provide a list of older tags as pre fill options.*
