@@ -351,6 +351,16 @@ class Command(metaclass=Singleton):
         ]
         return hints
 
+    @abstractmethod
+    def get_models(self, **kwargs) -> list[TogglClass]:
+        """Method that collects a list of Toggl objects.
+
+        Will usually apply some sort of sorting and filtering before returning.
+
+        Returns:
+            list: A selection of models that were gathered.
+        """
+
 
 # TODO: Might not need this as a seperate subclass, but could also just be
 # used as a mixin.
