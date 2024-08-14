@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -47,7 +48,9 @@ class PreferencesEventListener(EventListener):
         extension.max_results = self.max_results(
             event.preferences["max_search_results"],
         )
-        wid = self.workspace(event.preferences["workspace"])
+        wid = self.workspace(
+            os.environ.get("TOGGL_WORKSPACE_ID") or event.preferences["workspace"],
+        )
 
         extension.workspace_id = wid
 

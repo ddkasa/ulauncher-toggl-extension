@@ -46,6 +46,7 @@ class ListTagCommand(TagCommand):
                 self.PREFIX.title(),
                 self.__doc__,
                 self.get_cmd(),
+                self.get_cmd() + " refresh",
             ),
         ]
 

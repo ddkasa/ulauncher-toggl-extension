@@ -41,11 +41,11 @@ Classes:
 
 """
 
-from .client import ClientCommand
+from .client import AddClientCommand, ClientCommand, DeleteClientCommand
 from .help import HelpCommand
 from .meta import ActionEnum, Command, QueryParameters
-from .project import ProjectCommand
-from .tag import TagCommand
+from .project import AddProjectCommand, DeleteProjectCommand, ProjectCommand
+from .tag import AddTagCommand, DeleteTagCommand, TagCommand
 from .tracker import (
     AddCommand,
     ContinueCommand,
@@ -59,12 +59,18 @@ from .tracker import (
 
 __all__ = [
     "ActionEnum",
+    "AddClientCommand",
     "AddCommand",
+    "AddProjectCommand",
+    "AddTagCommand",
     "ClientCommand",
     "Command",
     "ContinueCommand",
     "CurrentTrackerCommand",
+    "DeleteClientCommand",
     "DeleteCommand",
+    "DeleteProjectCommand",
+    "DeleteTagCommand",
     "EditCommand",
     "HelpCommand",
     "ListCommand",

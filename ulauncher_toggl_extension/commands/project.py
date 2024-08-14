@@ -33,7 +33,7 @@ class ProjectCommand(SubCommand):
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
 
-    def process_model(  # noqa: PLR0913
+    def process_model(
         self,
         model: TogglProject,
         action: ACTION_TYPE,
@@ -403,6 +403,7 @@ class DeleteProjectCommand(ProjectCommand):
     ESSENTIAL = True
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        del kwargs
         self.amend_query(query)
         return [
             QueryParameters(
@@ -410,12 +411,6 @@ class DeleteProjectCommand(ProjectCommand):
                 self.PREFIX.title(),
                 self.__doc__,
                 self.get_cmd(),
-                partial(
-                    self.call_pickle,
-                    method="handle",
-                    query=query,
-                    **kwargs,
-                ),
             ),
         ]
 

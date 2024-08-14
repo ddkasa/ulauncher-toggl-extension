@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NoReturn
 
 from ulauncher_toggl_extension.images import TIP_IMAGES, TipSeverity
 
@@ -121,6 +121,9 @@ class HelpCommand(Command):
             ),
         ]
 
-    def handle(self, query: list[str], **kwargs) -> bool:
+    def handle(self, query: list[str], **kwargs) -> bool:  # noqa: PLR6301
         del query, kwargs
         return True
+
+    def get_models(self, **kwargs) -> NoReturn:
+        raise NotImplementedError

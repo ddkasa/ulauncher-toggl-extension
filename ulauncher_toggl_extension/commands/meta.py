@@ -200,7 +200,7 @@ class Command(metaclass=Singleton):
         d = cls(extension)
         return getattr(d, method)(*args, **kwargs)
 
-    def process_model(  # noqa: PLR0913
+    def process_model(
         self,
         model: TogglClass,
         action: ACTION_TYPE,
@@ -351,6 +351,16 @@ class Command(metaclass=Singleton):
         ]
         return hints
 
+    @abstractmethod
+    def get_models(self, **kwargs) -> list[TogglClass]:
+        """Method that collects a list of Toggl objects.
+
+        Will usually apply some sort of sorting and filtering before returning.
+
+        Returns:
+            list: A selection of models that were gathered.
+        """
+
 
 # TODO: Might not need this as a seperate subclass, but could also just be
 # used as a mixin.
@@ -413,8 +423,6 @@ class SubCommand(Command):
         base = self.__class__.__base__
         if base is None:
             query[0] = self.PREFIX
-        elif len(query) >= 1:
-            query[1] = base.PREFIX
 
     def get_cmd(self) -> str:
         cmd = f"{self.prefix}"

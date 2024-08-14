@@ -65,6 +65,7 @@ class ListClientCommand(ClientCommand):
                 self.PREFIX.title(),
                 self.__doc__,
                 self.get_cmd(),
+                self.get_cmd() + " refresh",
             ),
         ]
 
@@ -92,7 +93,7 @@ class ListClientCommand(ClientCommand):
 
 
 class AddClientCommand(ClientCommand):
-    """Create a new toggl client."""
+    """Create a new client."""
 
     PREFIX = "add"
     ALIASES = ("a", "add", "create", "insert")

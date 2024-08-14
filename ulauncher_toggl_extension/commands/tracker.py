@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 class TrackerCommand(Command):
     """Base Tracker command setting up default methods."""
 
-    def process_model(  # noqa: PLR0913
+    def process_model(
         self,
         model: TogglTracker,
         action: ACTION_TYPE,
@@ -386,16 +386,14 @@ class ContinueCommand(TrackerCommand):
 
     def can_continue(self, **kwargs) -> bool:
         return not isinstance(
-            self.current_tracker(
-                refresh=kwargs.get("refresh", False),
-            ),
+            self.current_tracker(refresh=kwargs.get("refresh", False)),
             TogglTracker,
         )
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
 
-        if not self.can_continue(**kwargs):
+        if not self.can_continue(**kwargs) or not self.get_models(**kwargs):
             return []
 
         return [
@@ -415,6 +413,15 @@ class ContinueCommand(TrackerCommand):
 
     def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
         data: list[partial] = kwargs.get("data", [])
+        if not self.get_models(**kwargs):
+            return [
+                QueryParameters(
+                    TIP_IMAGES[TipSeverity.ERROR],
+                    "Error",
+                    "No trackers are available!",
+                    "tgl ",
+                ),
+            ]
         if not self.can_continue(**kwargs):
             return [
                 QueryParameters(
@@ -703,12 +710,13 @@ class AddCommand(TrackerCommand):
 
     def generate_query(self, model: TogglTracker) -> str:
         query = f'{self.prefix} {self.PREFIX} "{model.name}"'
+        now = datetime.now(tz=get_local_tz())
+        query += f" >{now.strftime('%H:%M')}"
+        now += timedelta(hours=1)
+        query += f" <{now.strftime('%H:%M')}"
+
         if model.project:
             query += f" @{model.project}"
-        if model.start:
-            query += f" >{model.start}"
-        if model.stop:
-            query += f" <{model.stop}"
         if model.tags:
             query += f" #{','.join(tag.name for tag in model.tags)}"
         return query
@@ -788,9 +796,9 @@ class EditCommand(TrackerCommand):
         if model.project:
             query += f" @{model.project}"
         if model.start:
-            query += f" >{model.start}"
+            query += f" >{model.start.strftime('%Y-%m-%dT%H:%M')}"
         if model.stop:
-            query += f" <{model.stop}"
+            query += f" <{model.stop.strftime('%Y-%m-%dT%H:%M')}"
         if model.tags:
             query += f" #{','.join(tag.name for tag in model.tags)}"
         return query
