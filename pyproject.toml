@@ -86,6 +86,7 @@ ignore = ["S101", "RUF012", "SIM102", "UP007", "PLW2901"]
 [tool.mypy]
 ignore_missing_imports = true
 disable_error_code = ["attr-defined", "assignment"]
+exclude = ["tests/", "main.py", "__init__.py"]
 
 [tool.pytest.ini_options]
 markers = [
