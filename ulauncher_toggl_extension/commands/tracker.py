@@ -386,16 +386,14 @@ class ContinueCommand(TrackerCommand):
 
     def can_continue(self, **kwargs) -> bool:
         return not isinstance(
-            self.current_tracker(
-                refresh=kwargs.get("refresh", False),
-            ),
+            self.current_tracker(refresh=kwargs.get("refresh", False)),
             TogglTracker,
         )
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
 
-        if not self.can_continue(**kwargs):
+        if not self.can_continue(**kwargs) or not self.get_models(**kwargs):
             return []
 
         return [
@@ -415,6 +413,15 @@ class ContinueCommand(TrackerCommand):
 
     def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
         data: list[partial] = kwargs.get("data", [])
+        if not self.get_models(**kwargs):
+            return [
+                QueryParameters(
+                    TIP_IMAGES[TipSeverity.ERROR],
+                    "Error",
+                    "No trackers are available!",
+                    "tgl ",
+                ),
+            ]
         if not self.can_continue(**kwargs):
             return [
                 QueryParameters(
