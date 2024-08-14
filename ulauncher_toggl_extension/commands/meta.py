@@ -413,8 +413,8 @@ class SubCommand(Command):
         base = self.__class__.__base__
         if base is None:
             query[0] = self.PREFIX
-        elif len(query) >= 1:
-            query[1] = base.PREFIX
+            if len(query) > 1:
+                query[1] = base.PREFIX
 
     def get_cmd(self) -> str:
         cmd = f"{self.prefix}"
