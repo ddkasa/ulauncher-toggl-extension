@@ -27,59 +27,59 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff.lint]
 preview = true
 select = [
-    "F",
-    "E",
-    "W",
-    "C90",
-    "I",
-    "N",
-    "UP",
-    "YTT",
-    "ASYNC",
-    "S",
-    "BLE",
-    "FBT",
-    "B",
-    "A",
-    "COM",
-    "C4",
-    "DTZ",
-    "T10",
-    "DJ",
-    "EM",
-    "EXE",
-    "FA",
-    'ISC',
-    "ICN",
-    "G",
-    'INP',
-    'PIE',
-    "T20",
-    'PYI',
-    'PT',
-    "Q",
-    "RSE",
-    "RET",
-    "SLF",
-    "SLOT",
-    "SIM",
-    "TID",
-    "TCH",
-    "INT",
-    "ARG",
-    "PTH",
-    "ERA",
-    "PD",
-    "PGH",
-    "PL",
-    "TRY",
-    "FLY",
-    "NPY",
-    "AIR",
-    "PERF",
-    "FURB",
-    "LOG",
-    "RUF",
+  "F",
+  "E",
+  "W",
+  "C90",
+  "I",
+  "N",
+  "UP",
+  "YTT",
+  "ASYNC",
+  "S",
+  "BLE",
+  "FBT",
+  "B",
+  "A",
+  "COM",
+  "C4",
+  "DTZ",
+  "T10",
+  "DJ",
+  "EM",
+  "EXE",
+  "FA",
+  'ISC',
+  "ICN",
+  "G",
+  'INP',
+  'PIE',
+  "T20",
+  'PYI',
+  'PT',
+  "Q",
+  "RSE",
+  "RET",
+  "SLF",
+  "SLOT",
+  "SIM",
+  "TID",
+  "TCH",
+  "INT",
+  "ARG",
+  "PTH",
+  "ERA",
+  "PD",
+  "PGH",
+  "PL",
+  "TRY",
+  "FLY",
+  "NPY",
+  "AIR",
+  "PERF",
+  "FURB",
+  "LOG",
+  "RUF",
 ]
 ignore = ["S101", "RUF012", "SIM102", "UP007", "PLW2901"]
 
@@ -90,8 +90,8 @@ exclude = ["tests/", "main.py", "__init__.py"]
 
 [tool.pytest.ini_options]
 markers = [
-    "unit: standard tests that don't access external resources.",
-    "integration: tests that access external apis.",
+  "unit: standard tests that don't access external resources.",
+  "integration: tests that access external apis.",
 ]
 testpaths = ["tests"]
 
@@ -99,7 +99,7 @@ testpaths = ["tests"]
 legacy_tox_ini = """
 [tox]
 isolated_build = True
-envlist = py310, py311, py312
+envlist = ruff, mypy, py312, py311, py310
 
 [testenv]
 skip_install = true
@@ -120,5 +120,15 @@ commands =
 python = 
     3.10: py310
     3.11: py311
-    3.12: ruff
+    3.12: ruff, mypy, py312
+
+[testenv:mypy]
+allowlist_externals = mypy, poetry
+basepython = python3.12
+commands = mypy ulauncher_toggl_extension/
+
+[testenv:ruff]
+allowlist_externals = ruff, poetry
+basepython = python3.12
+commands = ruff check ulauncher_toggl_extension/
 """
