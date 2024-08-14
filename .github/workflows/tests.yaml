@@ -41,3 +41,4 @@ jobs:
           tox
   merge-branch:
     uses: ./.github/workflows/merge.yaml
+    needs: [test]
