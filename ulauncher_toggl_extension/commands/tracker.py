@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from httpx import HTTPStatusError
 from toggl_api import (
+    JSONCache,
     TogglProject,
     TogglTracker,
     TrackerBody,
@@ -249,6 +250,10 @@ class TrackerCommand(Command):
 
         return kwargs
 
+    @property
+    def cache(self) -> partial[JSONCache]:
+        return partial(JSONCache, self.cache_path, self.expiration)()
+
 
 class CurrentTrackerCommand(TrackerCommand):
     """Retrieves and stores the current running tracker."""
@@ -273,7 +278,7 @@ class CurrentTrackerCommand(TrackerCommand):
         if (
             self._ts is None
             or refresh
-            or datetime.now(timezone.utc) - self.EXPIRATION >= self._ts
+            or datetime.now(timezone.utc) - self.expiration >= self._ts
         ):
             self.tracker = super().get_current_tracker(refresh=True)
         return self.tracker

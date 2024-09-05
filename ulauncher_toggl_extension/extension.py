@@ -107,6 +107,7 @@ class TogglExtension(Extension):
     __slots__ = (
         "auth",
         "cache_path",
+        "expiration",
         "hints",
         "max_results",
         "prefix",
@@ -138,6 +139,7 @@ class TogglExtension(Extension):
         self.max_results = 10
         self.auth = None
         self.workspace_id = None
+        self.expiration = None
 
     def default_results(
         self,

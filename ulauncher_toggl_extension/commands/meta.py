@@ -85,6 +85,7 @@ class Command(metaclass=Singleton):
         PREFIX: Prefix of the command.
         ALIASES: Alternate prefixes of the command.
         EXPIRATION: Invalidation time of the cache.
+        expiration: Overrides EXPIRATION if set by user.
         cache_path: Location of the cache file.
         ICON: Base icon of the command.
         ESSENTIAL: Whether the command will be used in a submenu.
@@ -102,6 +103,7 @@ class Command(metaclass=Singleton):
     __slots__ = (
         "auth",
         "cache_path",
+        "expiration",
         "max_results",
         "prefix",
         "workspace_id",
@@ -113,6 +115,7 @@ class Command(metaclass=Singleton):
         self.auth: BasicAuth = extension.auth
         self.workspace_id: int = extension.workspace_id
         self.cache_path: Path = Path(extension.cache_path)
+        self.expiration: timedelta = extension.expiration or self.EXPIRATION
 
     @abstractmethod
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:

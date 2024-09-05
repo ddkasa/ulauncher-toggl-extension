@@ -11,6 +11,7 @@ from toggl_api import JSONCache, UserEndpoint
 from toggl_api.config import AuthenticationError, generate_authentication, use_togglrc
 from ulauncher.api.client.EventListener import EventListener
 
+from ulauncher_toggl_extension.date_time import parse_timedelta
 from ulauncher_toggl_extension.images import TIP_IMAGES, TipSeverity
 from ulauncher_toggl_extension.utils import show_notification
 
@@ -36,6 +37,7 @@ class PreferencesEventListener(EventListener):
         on_event: Updates extension preferences and checks for changes.
         workspace_id: Sets up the workspace id.
         max_results: Checks if max search results are set.
+        expiration: Parses custom expiration date for trackers.
     """
 
     def on_event(
@@ -53,16 +55,14 @@ class PreferencesEventListener(EventListener):
         wid = self.workspace(
             os.environ.get("TOGGL_WORKSPACE_ID") or event.preferences["workspace"],
         )
-
         extension.workspace_id = wid
-
         extension.hints = event.preferences["hints"] == "true"
-
         extension.auth = self.authentication(
             wid,
             extension.cache_path,
             event.preferences["api_token"],
         )
+        extension.expiration = self.parse_expiration(event.preferences["expiration"])
 
     @staticmethod
     def authentication(
@@ -128,6 +128,23 @@ class PreferencesEventListener(EventListener):
                 pass
         log.info("Max search results are not setup. Using default.")
         return 10
+
+    @staticmethod
+    def parse_expiration(expiration: str) -> timedelta | None:
+        if not expiration:
+            return None
+        try:
+            td = parse_timedelta(expiration)
+            log.info(
+                "User set tracker cache expiration at %s seconds.",
+                int(td.total_seconds()),
+            )
+            return td  # noqa: TRY300
+        except ValueError:
+            msg = "Invalid expiration time set: %s."
+            show_notification(msg % expiration, TIP_IMAGES[TipSeverity.ERROR])
+            log.exception(msg, expiration)
+            return None
 
 
 class PreferencesUpdateEventListener(EventListener):

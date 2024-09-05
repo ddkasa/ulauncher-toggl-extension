@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,6 +52,7 @@ class DummyExtension:
     prefix: str = "tgl"
     max_results: int = 12
     hints: bool = True
+    expiration: timedelta = timedelta(days=7)
 
 
 @pytest.fixture
