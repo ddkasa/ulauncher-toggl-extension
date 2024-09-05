@@ -1,6 +1,6 @@
 name: Publish
 
-on: 
+on:
   workflow_call:
 
 jobs:
@@ -9,10 +9,11 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - name: Merge main into production
+      - name: Merge main -> production
         uses: devmasx/merge-branch@master
         with:
+          type: now
           github_token: ${{ github.token }}
-          from_branch: "main"
-          target_branch: "production"
+          from_branch: main
+          target_branch: production
           message: "automated: merged main into production"

@@ -17,7 +17,7 @@ jobs:
       TOGGL_WORKSPACE_ID: ${{ secrets.TOGGL_WORKSPACE_ID }}
       TOGGL_API_TOKEN: ${{ secrets.TOGGL_API_TOKEN }}
       DEBIAN_FRONTEND: noninteractive
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +25,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-    
 
       - name: Install dependencies
         run: |
