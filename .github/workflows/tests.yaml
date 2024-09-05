@@ -38,6 +38,3 @@ jobs:
       - name: Run tests
         run: |
           tox
-  merge-branch:
-    uses: ./.github/workflows/merge.yaml
-    needs: [test]
