@@ -44,7 +44,9 @@ class PreferencesEventListener(EventListener):
         extension: TogglExtension,
     ) -> None:
         extension.prefix = event.preferences.get("toggl_keyword", "tgl")
-        extension.cache_path = event.preferences["cache"] or Path("cache")
+        extension.cache_path = event.preferences["cache"] or Path.home() / (
+            ".cache/ulauncher_toggl_extension"
+        )
         extension.max_results = self.max_results(
             event.preferences["max_search_results"],
         )
