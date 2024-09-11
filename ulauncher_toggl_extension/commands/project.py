@@ -87,7 +87,7 @@ class ProjectCommand(SubCommand):
         project_id: Optional[int] = None,
         *,
         refresh: bool = False,
-    ) -> Optional[TogglProject]:
+    ) -> TogglProject | None:
         if project_id is None:
             return None
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)

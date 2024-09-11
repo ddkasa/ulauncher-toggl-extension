@@ -183,7 +183,7 @@ class TogglExtension(Extension):
 
         return self.generate_results(results)
 
-    def match_aliases(self, query: str) -> Optional[type[Command]]:
+    def match_aliases(self, query: str) -> type[Command] | None:
         # OPTIMIZE: There is probably a better way to do this.
         for cmd in self.COMMANDS.values():
             if query in cmd.ALIASES:

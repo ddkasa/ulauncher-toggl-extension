@@ -171,7 +171,7 @@ class TrackerCommand(Command):
         self,
         *,
         refresh: bool = True,
-    ) -> Optional[TogglTracker]:
+    ) -> TogglTracker | None:
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
         return user.current_tracker(refresh=refresh)
 
@@ -274,7 +274,7 @@ class CurrentTrackerCommand(TrackerCommand):
         self,
         *,
         refresh: bool = False,
-    ) -> Optional[TogglTracker]:
+    ) -> TogglTracker | None:
         if (
             self._ts is None
             or refresh
@@ -288,6 +288,7 @@ class CurrentTrackerCommand(TrackerCommand):
         tracker = self.get_current_tracker()
         if tracker is None:
             return []
+
         return self.process_model(
             tracker,
             f"{self.prefix} {self.PREFIX}",
@@ -298,7 +299,7 @@ class CurrentTrackerCommand(TrackerCommand):
                 refresh=True,
                 **kwargs,
             ),
-            fmt_str="{name}",
+            fmt_str="Current: {name}",
         )
 
     def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
@@ -329,7 +330,7 @@ class CurrentTrackerCommand(TrackerCommand):
         )
 
     @property
-    def tracker(self) -> Optional[TogglTracker]:
+    def tracker(self) -> TogglTracker | None:
         return self._tracker
 
     @tracker.setter
@@ -499,7 +500,7 @@ class ContinueCommand(TrackerCommand):
 
         return True
 
-    def current_tracker(self, *, refresh: bool = False) -> Optional[TogglTracker]:
+    def current_tracker(self, *, refresh: bool = False) -> TogglTracker | None:
         cmd = CurrentTrackerCommand(self)
         return cmd.get_current_tracker(refresh=refresh)
 
@@ -613,7 +614,7 @@ class StopCommand(TrackerCommand):
             ]
         return []
 
-    def current_tracker(self, *, refresh: bool = False) -> Optional[TogglTracker]:
+    def current_tracker(self, *, refresh: bool = False) -> TogglTracker | None:
         cmd = CurrentTrackerCommand(self)
         return cmd.get_current_tracker(refresh=refresh)
 
@@ -636,8 +637,14 @@ class StopCommand(TrackerCommand):
             query=query,
             **kwargs,
         )
-        results: list[QueryParameters] = [
-            self.process_model(current_tracker, handle)[0],
+
+        results: list[QueryParameters] = self.process_model(
+            current_tracker,
+            handle,
+            advanced=True,
+        )[0:3]
+
+        results.append(
             QueryParameters(
                 self.ICON,
                 self.PREFIX.title(),
@@ -645,7 +652,7 @@ class StopCommand(TrackerCommand):
                 handle,
                 small=True,
             ),
-        ]
+        )
 
         return results
 

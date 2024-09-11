@@ -36,7 +36,7 @@ class ClientCommand(SubCommand):
         client_id: Optional[int] = None,
         *,
         refresh: bool = False,
-    ) -> Optional[TogglClient]:
+    ) -> TogglClient | None:
         if client_id is None:
             return None
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
