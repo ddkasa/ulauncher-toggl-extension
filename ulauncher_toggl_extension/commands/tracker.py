@@ -298,7 +298,7 @@ class CurrentTrackerCommand(TrackerCommand):
                 refresh=True,
                 **kwargs,
             ),
-            fmt_str="{name}",
+            fmt_str="Current: {name}",
         )
 
     def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
