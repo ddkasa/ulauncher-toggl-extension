@@ -636,8 +636,14 @@ class StopCommand(TrackerCommand):
             query=query,
             **kwargs,
         )
-        results: list[QueryParameters] = [
-            self.process_model(current_tracker, handle)[0],
+
+        results: list[QueryParameters] = self.process_model(
+            current_tracker,
+            handle,
+            advanced=True,
+        )[0:3]
+
+        results.append(
             QueryParameters(
                 self.ICON,
                 self.PREFIX.title(),
@@ -645,7 +651,7 @@ class StopCommand(TrackerCommand):
                 handle,
                 small=True,
             ),
-        ]
+        )
 
         return results
 

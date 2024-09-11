@@ -14,7 +14,7 @@ from ulauncher_toggl_extension.commands import (
 )
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_continue_command(dummy_ext, create_tracker):
     cmd = ContinueCommand(dummy_ext)
 
@@ -28,7 +28,7 @@ def test_continue_command(dummy_ext, create_tracker):
     assert cmd.current_tracker().name == create_tracker.name
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_list_command(dummy_ext):
     cmd = ListCommand(dummy_ext)
 
@@ -40,7 +40,7 @@ def test_list_command(dummy_ext):
     assert isinstance(cmd.view(query), list)
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_start_command(dummy_ext, faker):
     cmd = StartCommand(dummy_ext)
 
@@ -53,7 +53,7 @@ def test_start_command(dummy_ext, faker):
     assert cmd.handle(query, description=faker.name())
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_add_command(dummy_ext, faker):
     cmd = AddCommand(dummy_ext)
 
@@ -66,7 +66,7 @@ def test_add_command(dummy_ext, faker):
     assert cmd.handle(query, description=faker.name())
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_delete_command(dummy_ext, create_tracker, helper):
     cmd = DeleteCommand(dummy_ext)
 
@@ -81,7 +81,7 @@ def test_delete_command(dummy_ext, create_tracker, helper):
     assert helper(create_tracker.name, cmd) is None
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_edit_command(dummy_ext, create_tracker, faker):
     cmd = EditCommand(dummy_ext)
 
@@ -94,7 +94,7 @@ def test_edit_command(dummy_ext, create_tracker, faker):
     assert cmd.handle(query, model=create_tracker, description=faker.name())
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_stop_command(dummy_ext, create_tracker, helper):
     cmd = StopCommand(dummy_ext)
 
