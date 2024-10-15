@@ -7,9 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-toggl-api-wrapper = "^0.3.0"
 pycairo = "^1.26.1"
 pygobject = "^3.48.2"
+toggl-api-wrapper = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
