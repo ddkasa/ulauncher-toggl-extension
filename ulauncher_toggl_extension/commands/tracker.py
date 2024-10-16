@@ -274,7 +274,7 @@ class CurrentTrackerCommand(TrackerCommand):
         if (
             self._ts is None
             or refresh
-            or datetime.now(timezone.utc) - self.expiration >= self._ts
+            or datetime.now(timezone.utc) - self.EXPIRATION >= self._ts
         ):
             self.tracker = super().get_current_tracker(refresh=True)
         return self.tracker

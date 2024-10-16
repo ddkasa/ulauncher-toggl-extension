@@ -1,11 +1,14 @@
+import time
 from datetime import datetime
+from pathlib import Path
 
 import pytest
-from toggl_api import TogglTracker
+from toggl_api import JSONCache, TogglTracker, TrackerEndpoint
 
 from ulauncher_toggl_extension.commands import (
     AddCommand,
     ContinueCommand,
+    CurrentTrackerCommand,
     DeleteCommand,
     EditCommand,
     ListCommand,
@@ -26,6 +29,29 @@ def test_continue_command(dummy_ext, create_tracker):
     assert len(cmd.view(query)) == 1
 
     assert cmd.current_tracker().name == create_tracker.name
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+def test_current_command(
+    dummy_ext,
+    create_tracker,
+    auth,
+    workspace,
+    tmp_path,
+):
+    cmd = CurrentTrackerCommand(dummy_ext)
+    assert cmd.get_current_tracker(refresh=True).id == create_tracker.id
+    endpoint = TrackerEndpoint(workspace, auth, JSONCache(Path(tmp_path)))
+    assert endpoint.stop(create_tracker).id == create_tracker.id
+
+    time.sleep(5)
+
+    assert cmd.get_current_tracker().id == create_tracker.id
+
+    time.sleep(5)
+
+    assert cmd.get_current_tracker() is None
 
 
 @pytest.mark.integration
