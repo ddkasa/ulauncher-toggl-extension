@@ -491,7 +491,7 @@ class ContinueCommand(TrackerCommand):
 
             if tracker is None:
                 start = datetime.now(tz=timezone.utc) - timedelta(days=7)
-                tracker = user_endpoint.get_trackers(since=start, refresh=True)[0]
+                tracker = user_endpoint.collect(since=start, refresh=True)[0]
 
         if tracker is None:
             return False
