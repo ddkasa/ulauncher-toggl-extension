@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import logging
 from functools import partial
 
+from httpx import HTTPStatusError
 from toggl_api import TagEndpoint, TogglTag
 
 from ulauncher_toggl_extension.images import (
@@ -14,6 +16,8 @@ from ulauncher_toggl_extension.images import (
 
 from .meta import QueryParameters, SubCommand
 
+log = logging.getLogger(__name__)
+
 
 class TagCommand(SubCommand):
     """Subcommand for all tag based tasks."""
@@ -25,7 +29,13 @@ class TagCommand(SubCommand):
 
     def get_models(self, **kwargs) -> list[TogglTag]:
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
-        tags = endpoint.get_tags(refresh=kwargs.get("refresh", False))
+        try:
+            tags = endpoint.collect(refresh=kwargs.get("refresh", False))
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return []
+
         tags.sort(key=lambda x: x.timestamp, reverse=True)
         return tags
 
@@ -129,7 +139,15 @@ class AddTagCommand(TagCommand):
             return False
 
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.create_tag(name)
+        try:
+            tag = endpoint.add(name)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        if not tag:
+            return False
 
         self.notification(msg=f"Created a new tag: {name}!")
         return True
@@ -199,8 +217,15 @@ class EditTagCommand(TagCommand):
         model.name = name
 
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
+        try:
+            tag = endpoint.edit(model)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
 
-        endpoint.update_tag(model)
+        if not tag:
+            return False
 
         self.notification(f"Updated tag {old_name} with a new name {name}!")
 
@@ -260,7 +285,12 @@ class DeleteTagCommand(TagCommand):
             return False
 
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.delete_tag(model)
+        try:
+            endpoint.delete(model)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
 
         self.notification(msg=f"Deleted tag {model.name}!")
 

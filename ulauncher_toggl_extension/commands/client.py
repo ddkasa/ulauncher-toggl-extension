@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from functools import partial
 from typing import Optional
 
@@ -16,6 +17,8 @@ from ulauncher_toggl_extension.images import (
 
 from .meta import QueryParameters, SubCommand
 
+log = logging.getLogger(__name__)
+
 
 class ClientCommand(SubCommand):
     """Subcommand for all client based tasks."""
@@ -27,7 +30,13 @@ class ClientCommand(SubCommand):
 
     def get_models(self, **kwargs) -> list[TogglClient]:
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        clients = endpoint.get_clients(refresh=kwargs.get("refresh", False))
+        try:
+            clients = endpoint.collect(refresh=kwargs.get("refresh", False))
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return []
+
         clients.sort(key=lambda x: x.timestamp, reverse=True)
         return clients
 
@@ -41,11 +50,12 @@ class ClientCommand(SubCommand):
             return None
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
         try:
-            client = endpoint.get_client(client_id, refresh=refresh)
+            client = endpoint.get(client_id, refresh=refresh)
         except HTTPStatusError as err:
-            if err.response.status_code == endpoint.NOT_FOUND:
-                return None
-            raise
+            log.exception("%s")
+            self.notification(str(err))
+            return None
+
         return client
 
 
@@ -147,15 +157,20 @@ class AddClientCommand(ClientCommand):
         if not isinstance(name, str):
             return False
 
-        body = ClientBody(
-            self.workspace_id,
-            name,
-            kwargs.get("status"),
-            kwargs.get("notes"),
-        )
+        body = ClientBody(name, kwargs.get("status"), kwargs.get("notes"))
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.create_client(body)
 
+        try:
+            client = endpoint.add(body)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        if not client:
+            return False
+
+        self.notification(msg=f"Created client {body.name}!")
         return True
 
 
@@ -208,8 +223,15 @@ class DeleteClientCommand(ClientCommand):
             return False
 
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.delete_client(model)
 
+        try:
+            endpoint.delete(model)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        self.notification(msg=f"Deleted client {model}!")
         return True
 
 
@@ -268,12 +290,22 @@ class EditClientCommand(ClientCommand):
             return False
 
         body = ClientBody(
-            self.workspace_id,
             name if isinstance(name, str) else None,
             kwargs.get("status"),
             kwargs.get("notes"),
         )
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.update_client(model, body)
+
+        try:
+            client = endpoint.edit(model, body)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        if not client:
+            return False
+
+        self.notification(msg=f"Edited client {body.name}!")
 
         return True

@@ -320,8 +320,8 @@ class Command(metaclass=Singleton):
         show_notification(msg, self.ICON.absolute(), on_close=on_close)
 
     @property
-    def cache(self) -> partial[JSONCache]:
-        return partial(JSONCache, self.cache_path, self.EXPIRATION)()
+    def cache(self) -> JSONCache:
+        return JSONCache(self.cache_path, self.EXPIRATION)
 
     @classmethod
     def check_autocmp(cls, query: list[str]) -> bool:

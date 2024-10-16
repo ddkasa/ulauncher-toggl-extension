@@ -59,9 +59,9 @@
   3. Editing tags.
   4. Deleting tags.
 
-# Development
+# Contributing
 
-See [DEVELOPMENT](docs/DEVELOPMENT.md).
+See [CONTRIBUTING](docs/CONTRIBUTING.md).
 
 # License
 
