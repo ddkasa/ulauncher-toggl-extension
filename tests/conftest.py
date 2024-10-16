@@ -1,4 +1,5 @@
 import os
+import time
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
@@ -9,6 +10,13 @@ from httpx import BasicAuth
 from toggl_api import generate_authentication
 
 from ulauncher_toggl_extension.date_time import get_local_tz
+
+
+@pytest.fixture(autouse=True)
+def _rate_limit(request):
+    yield
+    if "integration" in request.keywords:
+        time.sleep(1)
 
 
 @pytest.fixture(autouse=True)
