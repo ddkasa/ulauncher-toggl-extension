@@ -1,6 +1,6 @@
-from datetime import timedelta
 import os
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
