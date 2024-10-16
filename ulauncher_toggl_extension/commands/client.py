@@ -27,7 +27,7 @@ class ClientCommand(SubCommand):
 
     def get_models(self, **kwargs) -> list[TogglClient]:
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        clients = endpoint.get_clients(refresh=kwargs.get("refresh", False))
+        clients = endpoint.collect(refresh=kwargs.get("refresh", False))
         clients.sort(key=lambda x: x.timestamp, reverse=True)
         return clients
 
@@ -41,7 +41,7 @@ class ClientCommand(SubCommand):
             return None
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
         try:
-            client = endpoint.get_client(client_id, refresh=refresh)
+            client = endpoint.get(client_id, refresh=refresh)
         except HTTPStatusError as err:
             if err.response.status_code == endpoint.NOT_FOUND:
                 return None
@@ -147,14 +147,9 @@ class AddClientCommand(ClientCommand):
         if not isinstance(name, str):
             return False
 
-        body = ClientBody(
-            self.workspace_id,
-            name,
-            kwargs.get("status"),
-            kwargs.get("notes"),
-        )
+        body = ClientBody(name, kwargs.get("status"), kwargs.get("notes"))
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.create_client(body)
+        endpoint.add(body)
 
         return True
 
@@ -208,7 +203,7 @@ class DeleteClientCommand(ClientCommand):
             return False
 
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.delete_client(model)
+        endpoint.delete(model)
 
         return True
 
@@ -268,12 +263,11 @@ class EditClientCommand(ClientCommand):
             return False
 
         body = ClientBody(
-            self.workspace_id,
             name if isinstance(name, str) else None,
             kwargs.get("status"),
             kwargs.get("notes"),
         )
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.update_client(model, body)
+        endpoint.edit(model, body)
 
         return True

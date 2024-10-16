@@ -25,7 +25,7 @@ class TagCommand(SubCommand):
 
     def get_models(self, **kwargs) -> list[TogglTag]:
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
-        tags = endpoint.get_tags(refresh=kwargs.get("refresh", False))
+        tags = endpoint.collect(refresh=kwargs.get("refresh", False))
         tags.sort(key=lambda x: x.timestamp, reverse=True)
         return tags
 
@@ -129,7 +129,7 @@ class AddTagCommand(TagCommand):
             return False
 
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.create_tag(name)
+        endpoint.add(name)
 
         self.notification(msg=f"Created a new tag: {name}!")
         return True
@@ -200,7 +200,7 @@ class EditTagCommand(TagCommand):
 
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
 
-        endpoint.update_tag(model)
+        endpoint.edit(model)
 
         self.notification(f"Updated tag {old_name} with a new name {name}!")
 
@@ -260,7 +260,7 @@ class DeleteTagCommand(TagCommand):
             return False
 
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.delete_tag(model)
+        endpoint.delete(model)
 
         self.notification(msg=f"Deleted tag {model.name}!")
 

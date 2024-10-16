@@ -134,10 +134,10 @@ class TrackerCommand(Command):
     def get_models(self, **kwargs) -> list[TogglTracker]:
         """Collects trackers and filters and sorts them for further use."""
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
-        trackers = user.get_trackers(
+        trackers = user.collect(
             kwargs.get("start"),
             kwargs.get("stop"),
-            kwargs.get("end_data"),
+            kwargs.get("end_date"),
             kwargs.get("start_date"),
             refresh=kwargs.get("refresh", False),
         )
@@ -167,13 +167,9 @@ class TrackerCommand(Command):
 
         return True
 
-    def get_current_tracker(
-        self,
-        *,
-        refresh: bool = True,
-    ) -> TogglTracker | None:
+    def get_current_tracker(self, *, refresh: bool = True) -> TogglTracker | None:
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
-        return user.current_tracker(refresh=refresh)
+        return user.current(refresh=refresh)
 
     def autocomplete(self, query: list[str], **kwargs) -> list[QueryParameters]:
         query = query.copy()
@@ -473,8 +469,10 @@ class ContinueCommand(TrackerCommand):
                 self.auth,
                 self.cache,
             )
+
             if isinstance(tracker, int):
                 tracker = user_endpoint.get_tracker(tracker)
+
             if tracker is None:
                 start = datetime.now(tz=timezone.utc) - timedelta(days=7)
                 tracker = user_endpoint.get_trackers(since=start, refresh=True)[0]
@@ -483,7 +481,6 @@ class ContinueCommand(TrackerCommand):
             return False
 
         body = TrackerBody(
-            self.workspace_id,
             tracker.name,
             duration=-1,
             project_id=tracker.project,
@@ -494,7 +491,7 @@ class ContinueCommand(TrackerCommand):
 
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
         cmd = CurrentTrackerCommand(self)
-        cmd.tracker = endpoint.add_tracker(body)
+        cmd.tracker = endpoint.add(body)
 
         self.notification(msg=f"Continuing {tracker.name}!")
 
@@ -568,7 +565,6 @@ class StartCommand(TrackerCommand):
         tracker = kwargs.get("model")
 
         body = TrackerBody(
-            self.workspace_id,
             kwargs.get("description", tracker.name if tracker else ""),
             project_id=kwargs.get("project", tracker.project if tracker else None),
             start=kwargs.get("start", now),
@@ -579,7 +575,7 @@ class StartCommand(TrackerCommand):
 
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
         cmd = CurrentTrackerCommand(self)
-        cmd.tracker = endpoint.add_tracker(body)
+        cmd.tracker = endpoint.add(body)
 
         self.notification(msg=f"Started new tracker {cmd.tracker.name}!")
         return True
@@ -663,7 +659,7 @@ class StopCommand(TrackerCommand):
             return False
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
         try:
-            endpoint.stop_tracker(current_tracker)
+            endpoint.stop(current_tracker)
         except HTTPStatusError as err:
             if err.response.status_code == endpoint.NOT_FOUND:
                 self.notification(msg="Tracker does not exist anymore!")
@@ -738,7 +734,6 @@ class AddCommand(TrackerCommand):
         now = datetime.now(tz=timezone.utc)
         tags = kwargs.get("tags")
         body = TrackerBody(
-            self.workspace_id,
             kwargs.get("description", ""),
             project_id=kwargs.get("project"),
             start=kwargs.get("start", now),
@@ -749,7 +744,7 @@ class AddCommand(TrackerCommand):
         )
 
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
-        tracker = endpoint.add_tracker(body)
+        tracker = endpoint.add(body)
         self.notification(msg=f"Created new tracker {tracker.name}!")
         return True
 
@@ -823,7 +818,6 @@ class EditCommand(TrackerCommand):
 
         tags = kwargs.get("tags", [])
         body = TrackerBody(
-            self.workspace_id,
             kwargs.get("description"),
             project_id=kwargs.get("project"),
             start=kwargs.get("start"),
@@ -833,7 +827,7 @@ class EditCommand(TrackerCommand):
         )
 
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
-        tracker = endpoint.edit_tracker(tracker, body)
+        tracker = endpoint.edit(tracker, body)
         self.notification(msg=f"Changed tracker {tracker.name}!")
         return True
 
@@ -886,6 +880,6 @@ class DeleteCommand(TrackerCommand):
         if tracker is None:
             return False
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.delete_tracker(tracker)
+        endpoint.delete(tracker)
         self.notification(msg=f"Removed {tracker.name}!")
         return True
