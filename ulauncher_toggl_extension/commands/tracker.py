@@ -247,8 +247,8 @@ class TrackerCommand(Command):
         return kwargs
 
     @property
-    def cache(self) -> partial[JSONCache]:
-        return partial(JSONCache, self.cache_path, self.expiration)()
+    def cache(self) -> JSONCache:
+        return JSONCache(self.cache_path, self.expiration)
 
 
 class CurrentTrackerCommand(TrackerCommand):
