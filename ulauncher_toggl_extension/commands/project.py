@@ -76,7 +76,13 @@ class ProjectCommand(SubCommand):
 
     def get_models(self, **kwargs) -> list[TogglProject]:
         user = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
-        projects = user.collect(refresh=kwargs.get("refresh", False))
+        try:
+            projects = user.collect(refresh=kwargs.get("refresh", False))
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return []
+
         if kwargs.get("active", True):
             projects = [project for project in projects if project.active]
         projects.sort(key=lambda x: x.timestamp, reverse=True)
@@ -94,9 +100,10 @@ class ProjectCommand(SubCommand):
         try:
             project = endpoint.get(project_id, refresh=refresh)
         except HTTPStatusError as err:
-            if err.response.status_code == endpoint.NOT_FOUND:
-                return None
-            raise
+            log.exception("%s")
+            self.notification(str(err))
+            return None
+
         return project
 
     def autocomplete(
@@ -303,7 +310,15 @@ class AddProjectCommand(ProjectCommand):
             start_date=kwargs.get("start"),
             end_date=kwargs.get("end_date"),
         )
-        endpoint.add(body)
+        try:
+            proj = endpoint.add(body)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        if proj is None:
+            return False
 
         self.notification(msg=f"Created project {body.name}!")
 
@@ -385,7 +400,16 @@ class EditProjectCommand(ProjectCommand):
         )
         if isinstance(model, int):
             model = TogglProject(model, "")
-        endpoint.edit(model, body)
+
+        try:
+            proj = endpoint.edit(model, body)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        if proj is None:
+            return False
 
         self.notification(msg=f"Changed project {body.name}!")
 
@@ -455,7 +479,13 @@ class DeleteProjectCommand(ProjectCommand):
         if isinstance(model, int):
             model = TogglProject(model, "")
 
-        endpoint.delete(model)
+        try:
+            endpoint.delete(model)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
         self.notification(msg=f"Deleted project {model.name}!")
 
         return True

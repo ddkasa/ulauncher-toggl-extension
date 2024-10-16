@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from functools import partial
 from typing import Optional
 
@@ -16,6 +17,8 @@ from ulauncher_toggl_extension.images import (
 
 from .meta import QueryParameters, SubCommand
 
+log = logging.getLogger(__name__)
+
 
 class ClientCommand(SubCommand):
     """Subcommand for all client based tasks."""
@@ -27,7 +30,13 @@ class ClientCommand(SubCommand):
 
     def get_models(self, **kwargs) -> list[TogglClient]:
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        clients = endpoint.collect(refresh=kwargs.get("refresh", False))
+        try:
+            clients = endpoint.collect(refresh=kwargs.get("refresh", False))
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return []
+
         clients.sort(key=lambda x: x.timestamp, reverse=True)
         return clients
 
@@ -43,9 +52,10 @@ class ClientCommand(SubCommand):
         try:
             client = endpoint.get(client_id, refresh=refresh)
         except HTTPStatusError as err:
-            if err.response.status_code == endpoint.NOT_FOUND:
-                return None
-            raise
+            log.exception("%s")
+            self.notification(str(err))
+            return None
+
         return client
 
 
@@ -149,7 +159,16 @@ class AddClientCommand(ClientCommand):
 
         body = ClientBody(name, kwargs.get("status"), kwargs.get("notes"))
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.add(body)
+
+        try:
+            client = endpoint.add(body)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        if not client:
+            return False
 
         return True
 
@@ -203,7 +222,13 @@ class DeleteClientCommand(ClientCommand):
             return False
 
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.delete(model)
+
+        try:
+            endpoint.delete(model)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
 
         return True
 
@@ -268,6 +293,16 @@ class EditClientCommand(ClientCommand):
             kwargs.get("notes"),
         )
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.edit(model, body)
+
+        try:
+            client = endpoint.edit(model, body)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        if not client:
+            return False
+
 
         return True
