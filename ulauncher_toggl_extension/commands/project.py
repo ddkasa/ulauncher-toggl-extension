@@ -411,7 +411,7 @@ class EditProjectCommand(ProjectCommand):
         if proj is None:
             return False
 
-        self.notification(msg=f"Changed project {body.name}!")
+        self.notification(msg=f"Edited project {body.name}!")
 
         return True
 

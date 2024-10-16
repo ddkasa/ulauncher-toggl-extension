@@ -170,6 +170,7 @@ class AddClientCommand(ClientCommand):
         if not client:
             return False
 
+        self.notification(msg=f"Created client {body.name}!")
         return True
 
 
@@ -230,6 +231,7 @@ class DeleteClientCommand(ClientCommand):
             self.notification(str(err))
             return False
 
+        self.notification(msg=f"Deleted client {model}!")
         return True
 
 
@@ -304,5 +306,6 @@ class EditClientCommand(ClientCommand):
         if not client:
             return False
 
+        self.notification(msg=f"Edited client {body.name}!")
 
         return True
