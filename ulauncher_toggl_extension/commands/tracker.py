@@ -198,13 +198,13 @@ class TrackerCommand(Command):
             cmd = ProjectCommand(self)
             models = self.get_models(**kwargs)
 
-            for model in models:
-                query[-1] = f'"{model.name}"'
-                project = cmd.get_project(model.project)
+            for tracker in models:
+                query[-1] = f'"{tracker.name}"'
+                project = cmd.get_project(tracker.project)
                 autocomplete.append(
                     QueryParameters(
                         self.get_icon(project),
-                        model.name,
+                        tracker.name,
                         "Use this tracker description.",
                         " ".join(query),
                     ),
@@ -213,12 +213,12 @@ class TrackerCommand(Command):
         elif query[-1][0] == "@" and len(query[-1]) < 4:  # noqa: PLR2004
             cmd = ProjectCommand(self)
 
-            for model in cmd.get_models(**kwargs):
-                query[-1] = f"@{model.id}"
+            for project in cmd.get_models(**kwargs):
+                query[-1] = f"@{project.id}"
                 autocomplete.append(
                     QueryParameters(
-                        cmd.get_icon(model),
-                        model.name,
+                        cmd.get_icon(project),
+                        project.name,
                         "Use this project.",
                         " ".join(query),
                     ),
@@ -227,15 +227,15 @@ class TrackerCommand(Command):
         elif query[-1][0] == "#" and (len(query[-1]) < 3 or query[-1][-1] == ","):  # noqa: PLR2004
             cmd = TagCommand(self)
 
-            for model in cmd.get_models(**kwargs):
+            for tag in cmd.get_models(**kwargs):
                 if "," in query[-1]:
-                    query[-1] = query[-1][: query[-1].rfind(",")] + f",{model.name}"
+                    query[-1] = query[-1][: query[-1].rfind(",")] + f",{tag.name}"
                 else:
-                    query[-1] = f"#{model.name}"
+                    query[-1] = f"#{tag.name}"
                 autocomplete.append(
                     QueryParameters(
                         cmd.ICON,
-                        model.name,
+                        tag.name,
                         "Use this tag.",
                         " ".join(query),
                     ),
