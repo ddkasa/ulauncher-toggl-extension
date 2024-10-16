@@ -76,7 +76,13 @@ class ProjectCommand(SubCommand):
 
     def get_models(self, **kwargs) -> list[TogglProject]:
         user = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
-        projects = user.get_projects(refresh=kwargs.get("refresh", False))
+        try:
+            projects = user.collect(refresh=kwargs.get("refresh", False))
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return []
+
         if kwargs.get("active", True):
             projects = [project for project in projects if project.active]
         projects.sort(key=lambda x: x.timestamp, reverse=True)
@@ -92,11 +98,12 @@ class ProjectCommand(SubCommand):
             return None
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
         try:
-            project = endpoint.get_project(project_id, refresh=refresh)
+            project = endpoint.get(project_id, refresh=refresh)
         except HTTPStatusError as err:
-            if err.response.status_code == endpoint.NOT_FOUND:
-                return None
-            raise
+            log.exception("%s")
+            self.notification(str(err))
+            return None
+
         return project
 
     def autocomplete(
@@ -294,7 +301,6 @@ class AddProjectCommand(ProjectCommand):
             color = "#" + color
 
         body = ProjectBody(
-            self.workspace_id,
             name=name,
             active=kwargs.get("active", True),
             client_id=client if isinstance(client, int) else None,
@@ -304,7 +310,15 @@ class AddProjectCommand(ProjectCommand):
             start_date=kwargs.get("start"),
             end_date=kwargs.get("end_date"),
         )
-        endpoint.add_project(body)
+        try:
+            proj = endpoint.add(body)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        if proj is None:
+            return False
 
         self.notification(msg=f"Created project {body.name}!")
 
@@ -375,7 +389,6 @@ class EditProjectCommand(ProjectCommand):
         client = kwargs.get("client")
 
         body = ProjectBody(
-            self.workspace_id,
             name=description if isinstance(description, str) else None,
             active=kwargs.get("active", True),
             client_id=client if isinstance(client, int) else None,
@@ -387,9 +400,18 @@ class EditProjectCommand(ProjectCommand):
         )
         if isinstance(model, int):
             model = TogglProject(model, "")
-        endpoint.edit_project(model, body)
 
-        self.notification(msg=f"Changed project {body.name}!")
+        try:
+            proj = endpoint.edit(model, body)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
+
+        if proj is None:
+            return False
+
+        self.notification(msg=f"Edited project {body.name}!")
 
         return True
 
@@ -456,7 +478,13 @@ class DeleteProjectCommand(ProjectCommand):
             return False
         if isinstance(model, int):
             model = TogglProject(model, "")
-        endpoint.delete_project(model)
+
+        try:
+            endpoint.delete(model)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            return False
 
         self.notification(msg=f"Deleted project {model.name}!")
 

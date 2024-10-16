@@ -73,7 +73,7 @@ class TrackerCommand(Command):
             dates = self.format_datetime(model)
             total_time = (
                 model.duration
-                if model.stop
+                if isinstance(model.duration, timedelta | int)
                 else datetime.now(timezone.utc) - model.start
             )
 
@@ -111,7 +111,7 @@ class TrackerCommand(Command):
 
     @staticmethod
     def format_datetime(model: TogglTracker) -> tuple[str, str]:
-        if not model.stop:
+        if not isinstance(model.stop, datetime):
             text = f"Running since {display_dt(model.start)}!"
             return text, ""
         return (
@@ -134,13 +134,23 @@ class TrackerCommand(Command):
     def get_models(self, **kwargs) -> list[TogglTracker]:
         """Collects trackers and filters and sorts them for further use."""
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
-        trackers = user.get_trackers(
-            kwargs.get("start"),
-            kwargs.get("stop"),
-            kwargs.get("end_data"),
-            kwargs.get("start_date"),
-            refresh=kwargs.get("refresh", False),
-        )
+        try:
+            trackers = user.collect(
+                kwargs.get("start"),
+                kwargs.get("stop"),
+                kwargs.get("end_date"),
+                kwargs.get("start_date"),
+                refresh=kwargs.get("refresh", False),
+            )
+        except ValueError as err:
+            self.notification(str(err))
+            log.exception("%s")
+            trackers = user.collect(kwargs.get("refresh", False))
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+            trackers = user.collect()
+
         trackers.sort(
             key=lambda x: (x.stop or datetime.now(tz=timezone.utc), x.start),
             reverse=True,
@@ -167,13 +177,15 @@ class TrackerCommand(Command):
 
         return True
 
-    def get_current_tracker(
-        self,
-        *,
-        refresh: bool = True,
-    ) -> TogglTracker | None:
+    def get_current_tracker(self, *, refresh: bool = True) -> TogglTracker | None:
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
-        return user.current_tracker(refresh=refresh)
+        try:
+            return user.current(refresh=refresh)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+
+        return None
 
     def autocomplete(self, query: list[str], **kwargs) -> list[QueryParameters]:
         query = query.copy()
@@ -186,13 +198,13 @@ class TrackerCommand(Command):
             cmd = ProjectCommand(self)
             models = self.get_models(**kwargs)
 
-            for model in models:
-                query[-1] = f'"{model.name}"'
-                project = cmd.get_project(model.project)
+            for tracker in models:
+                query[-1] = f'"{tracker.name}"'
+                project = cmd.get_project(tracker.project)
                 autocomplete.append(
                     QueryParameters(
                         self.get_icon(project),
-                        model.name,
+                        tracker.name,
                         "Use this tracker description.",
                         " ".join(query),
                     ),
@@ -201,12 +213,12 @@ class TrackerCommand(Command):
         elif query[-1][0] == "@" and len(query[-1]) < 4:  # noqa: PLR2004
             cmd = ProjectCommand(self)
 
-            for model in cmd.get_models(**kwargs):
-                query[-1] = f"@{model.id}"
+            for project in cmd.get_models(**kwargs):
+                query[-1] = f"@{project.id}"
                 autocomplete.append(
                     QueryParameters(
-                        cmd.get_icon(model),
-                        model.name,
+                        cmd.get_icon(project),
+                        project.name,
                         "Use this project.",
                         " ".join(query),
                     ),
@@ -215,15 +227,15 @@ class TrackerCommand(Command):
         elif query[-1][0] == "#" and (len(query[-1]) < 3 or query[-1][-1] == ","):  # noqa: PLR2004
             cmd = TagCommand(self)
 
-            for model in cmd.get_models(**kwargs):
+            for tag in cmd.get_models(**kwargs):
                 if "," in query[-1]:
-                    query[-1] = query[-1][: query[-1].rfind(",")] + f",{model.name}"
+                    query[-1] = query[-1][: query[-1].rfind(",")] + f",{tag.name}"
                 else:
-                    query[-1] = f"#{model.name}"
+                    query[-1] = f"#{tag.name}"
                 autocomplete.append(
                     QueryParameters(
                         cmd.ICON,
-                        model.name,
+                        tag.name,
                         "Use this tag.",
                         " ".join(query),
                     ),
@@ -251,8 +263,8 @@ class TrackerCommand(Command):
         return kwargs
 
     @property
-    def cache(self) -> partial[JSONCache]:
-        return partial(JSONCache, self.cache_path, self.expiration)()
+    def cache(self) -> JSONCache:
+        return JSONCache(self.cache_path, self.expiration)
 
 
 class CurrentTrackerCommand(TrackerCommand):
@@ -278,7 +290,7 @@ class CurrentTrackerCommand(TrackerCommand):
         if (
             self._ts is None
             or refresh
-            or datetime.now(timezone.utc) - self.expiration >= self._ts
+            or datetime.now(timezone.utc) - self.EXPIRATION >= self._ts
         ):
             self.tracker = super().get_current_tracker(refresh=True)
         return self.tracker
@@ -473,8 +485,10 @@ class ContinueCommand(TrackerCommand):
                 self.auth,
                 self.cache,
             )
+
             if isinstance(tracker, int):
                 tracker = user_endpoint.get_tracker(tracker)
+
             if tracker is None:
                 start = datetime.now(tz=timezone.utc) - timedelta(days=7)
                 tracker = user_endpoint.get_trackers(since=start, refresh=True)[0]
@@ -483,7 +497,6 @@ class ContinueCommand(TrackerCommand):
             return False
 
         body = TrackerBody(
-            self.workspace_id,
             tracker.name,
             duration=-1,
             project_id=tracker.project,
@@ -494,11 +507,15 @@ class ContinueCommand(TrackerCommand):
 
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
         cmd = CurrentTrackerCommand(self)
-        cmd.tracker = endpoint.add_tracker(body)
-
-        self.notification(msg=f"Continuing {tracker.name}!")
-
-        return True
+        try:
+            cmd.tracker = endpoint.add(body)
+        except (HTTPStatusError, TypeError) as err:
+            log.exception("%s")
+            self.notification(str(err))
+        else:
+            self.notification(msg=f"Continuing {tracker.name}!")
+            return True
+        return False
 
     def current_tracker(self, *, refresh: bool = False) -> TogglTracker | None:
         cmd = CurrentTrackerCommand(self)
@@ -568,7 +585,6 @@ class StartCommand(TrackerCommand):
         tracker = kwargs.get("model")
 
         body = TrackerBody(
-            self.workspace_id,
             kwargs.get("description", tracker.name if tracker else ""),
             project_id=kwargs.get("project", tracker.project if tracker else None),
             start=kwargs.get("start", now),
@@ -579,10 +595,19 @@ class StartCommand(TrackerCommand):
 
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
         cmd = CurrentTrackerCommand(self)
-        cmd.tracker = endpoint.add_tracker(body)
 
-        self.notification(msg=f"Started new tracker {cmd.tracker.name}!")
-        return True
+        try:
+            cmd.tracker = endpoint.add(body)
+        except (HTTPStatusError, ValueError) as err:
+            log.exception("%s")
+            self.notification(str(err))
+        else:
+            if not cmd.tracker:
+                return False
+            self.notification(msg=f"Started new tracker {cmd.tracker.name}!")
+            return True
+
+        return False
 
 
 class StopCommand(TrackerCommand):
@@ -662,17 +687,18 @@ class StopCommand(TrackerCommand):
         if not isinstance(current_tracker, TogglTracker):
             return False
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
-        try:
-            endpoint.stop_tracker(current_tracker)
-        except HTTPStatusError as err:
-            if err.response.status_code == endpoint.NOT_FOUND:
-                self.notification(msg="Tracker does not exist anymore!")
-                return True
-            raise
+
         cmd = CurrentTrackerCommand(self)
-        cmd.tracker = None
-        self.notification(msg=f"Stopped {current_tracker.name}!")
-        return True
+        try:
+            endpoint.stop(current_tracker)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+        else:
+            cmd.tracker = None
+            self.notification(msg=f"Stopped {current_tracker.name}!")
+            return True
+        return False
 
 
 class AddCommand(TrackerCommand):
@@ -736,9 +762,8 @@ class AddCommand(TrackerCommand):
     def handle(self, query: list[str], **kwargs) -> bool:
         del query
         now = datetime.now(tz=timezone.utc)
-        tags = kwargs.get("tags")
+        tags = kwargs.get("tags", [])
         body = TrackerBody(
-            self.workspace_id,
             kwargs.get("description", ""),
             project_id=kwargs.get("project"),
             start=kwargs.get("start", now),
@@ -749,9 +774,18 @@ class AddCommand(TrackerCommand):
         )
 
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
-        tracker = endpoint.add_tracker(body)
-        self.notification(msg=f"Created new tracker {tracker.name}!")
-        return True
+        try:
+            tracker = endpoint.add(body)
+        except (HTTPStatusError, TypeError) as err:
+            log.exception("%s")
+            self.notification(str(err))
+        else:
+            if tracker is None:
+                return False
+            self.notification(msg=f"Created new tracker {tracker.name}!")
+            return True
+
+        return False
 
 
 class EditCommand(TrackerCommand):
@@ -809,7 +843,7 @@ class EditCommand(TrackerCommand):
             query += f" @{model.project}"
         if model.start:
             query += f" >{model.start.strftime('%Y-%m-%dT%H:%M')}"
-        if model.stop:
+        if isinstance(model.stop, datetime):
             query += f" <{model.stop.strftime('%Y-%m-%dT%H:%M')}"
         if model.tags:
             query += f" #{','.join(tag.name for tag in model.tags)}"
@@ -823,7 +857,6 @@ class EditCommand(TrackerCommand):
 
         tags = kwargs.get("tags", [])
         body = TrackerBody(
-            self.workspace_id,
             kwargs.get("description"),
             project_id=kwargs.get("project"),
             start=kwargs.get("start"),
@@ -833,9 +866,18 @@ class EditCommand(TrackerCommand):
         )
 
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
-        tracker = endpoint.edit_tracker(tracker, body)
-        self.notification(msg=f"Changed tracker {tracker.name}!")
-        return True
+        try:
+            tracker = endpoint.edit(tracker, body)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+        else:
+            if tracker is None:
+                return False
+            self.notification(msg=f"Changed tracker {tracker.name}!")
+            return True
+
+        return False
 
 
 class DeleteCommand(TrackerCommand):
@@ -886,6 +928,13 @@ class DeleteCommand(TrackerCommand):
         if tracker is None:
             return False
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
-        endpoint.delete_tracker(tracker)
-        self.notification(msg=f"Removed {tracker.name}!")
-        return True
+        try:
+            endpoint.delete(tracker)
+        except HTTPStatusError as err:
+            log.exception("%s")
+            self.notification(str(err))
+        else:
+            self.notification(msg=f"Removed {tracker.name}!")
+            return True
+
+        return False

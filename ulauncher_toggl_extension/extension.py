@@ -280,6 +280,8 @@ class TogglExtension(Extension):
                     description=item.description,
                     on_enter=on_enter,
                     on_alt_enter=alt_enter,
+                    highlightable=False,
+                    # REFACTOR: Add highlightable option in query params.
                 )
 
             results.append(action)
