@@ -382,6 +382,8 @@ class KeywordQueryEventListener(EventListener):
                 arguments["private"] = False
             elif item == "distinct":
                 arguments["distinct"] = False
+            elif item[0] == "~":
+                arguments["path"] = Path(item)
 
         return arguments
 
