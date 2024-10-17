@@ -34,6 +34,12 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+def quote_member(text: str, member: str) -> str:
+    if member.lower() in text.lower():
+        return f'"{text}"'
+    return member
+
+
 def _ensure_import(package: str, version: Optional[str] = None) -> ModuleType:
     module = importlib.import_module(package)
     if version is not None and module.__version__ != version:
