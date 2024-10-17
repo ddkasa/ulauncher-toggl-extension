@@ -25,6 +25,17 @@ class DateTimeFrame:
         return cls(start, end, frame)
 
 
+WEEKDAYS: tuple[str, ...] = (
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+)
+
+
 TIME_FORMAT = frozenset({"AM", "PM", "am", "pm"})
 
 DT_FORMATS: tuple[str, ...] = (
