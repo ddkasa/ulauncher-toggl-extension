@@ -101,5 +101,54 @@ def localize_timezone(ts: datetime) -> datetime:
     )
 
 
+def get_caps(date_obj: date, frame: TimeFrame) -> tuple[datetime, datetime]:
+    if isinstance(date_obj, datetime):
+        date_obj = date_obj.date()
+
+    if frame == TimeFrame.DAY:
+        start = datetime.combine(
+            date_obj,
+            datetime.min.time(),
+            tzinfo=timezone.utc,
+        )
+        stop = datetime.combine(
+            date_obj,
+            datetime.max.time(),
+            tzinfo=timezone.utc,
+        )
+    elif frame == TimeFrame.WEEK:
+        start_date = date_obj - timedelta(days=date_obj.weekday())
+        start = datetime.combine(
+            start_date,
+            datetime.min.time(),
+            tzinfo=timezone.utc,
+        )
+        stop = datetime.combine(
+            start_date + timedelta(days=7),
+            datetime.max.time(),
+            tzinfo=timezone.utc,
+        )
+    elif frame == TimeFrame.MONTH:
+        start = datetime.combine(
+            date_obj.replace(day=1),
+            datetime.min.time(),
+            tzinfo=timezone.utc,
+        )
+        stop = datetime.combine(
+            date(date_obj.year, (date_obj.month % 12) + 1, 1) - timedelta(days=1),
+            datetime.max.time(),
+            tzinfo=timezone.utc,
+        )
+    else:
+        msg = "Target timeframe is not supported!"
+        raise NotImplementedError(msg)
+
+    tday = date.today()  # noqa: DTZ011
+    if tday.month == stop.month and tday.year == stop.year:
+        stop = stop.replace(day=min(tday.day, stop.day))
+
+    return start, stop
+
+
 if __name__ == "__main__":
     pass
