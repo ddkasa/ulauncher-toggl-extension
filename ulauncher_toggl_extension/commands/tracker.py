@@ -598,7 +598,7 @@ class StartCommand(TrackerCommand):
 
         try:
             cmd.tracker = endpoint.add(body)
-        except (HTTPStatusError, ValueError) as err:
+        except (HTTPStatusError, TypeError) as err:
             log.exception("%s")
             self.notification(str(err))
         else:
