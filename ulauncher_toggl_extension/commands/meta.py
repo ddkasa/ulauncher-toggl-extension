@@ -78,6 +78,7 @@ class Command(metaclass=Singleton):
         process_model: Generates a viewable query from a Toggl object.
         call_pickle: Calls a pickled command.
         pagination: Helper method for creating paginated results.
+        handler_error: Helper method for handling and dispatching consistent errors.
 
     Attributes:
         SPECIAL_SYMBOLS: Special symbols that can be used to trigger auto
@@ -318,6 +319,10 @@ class Command(metaclass=Singleton):
         on_close: Optional[Callable] = None,
     ) -> None:
         show_notification(msg, self.ICON.absolute(), on_close=on_close)
+
+    def handle_error(self, error: Exception) -> None:
+        log.error("%s", error)
+        self.notification(str(error))
 
     @property
     def cache(self) -> JSONCache:
