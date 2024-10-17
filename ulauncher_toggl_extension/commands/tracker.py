@@ -73,7 +73,7 @@ class TrackerCommand(Command):
             dates = self.format_datetime(model)
             total_time = (
                 model.duration
-                if isinstance(model.duration, timedelta | int)
+                if isinstance(model.duration, timedelta)
                 else datetime.now(timezone.utc) - model.start
             )
 
