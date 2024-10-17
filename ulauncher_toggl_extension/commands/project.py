@@ -79,8 +79,7 @@ class ProjectCommand(SubCommand):
         try:
             projects = user.collect(refresh=kwargs.get("refresh", False))
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return []
 
         if kwargs.get("active", True):
@@ -100,8 +99,7 @@ class ProjectCommand(SubCommand):
         try:
             project = endpoint.get(project_id, refresh=refresh)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return None
 
         return project
@@ -313,8 +311,7 @@ class AddProjectCommand(ProjectCommand):
         try:
             proj = endpoint.add(body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if proj is None:
@@ -404,8 +401,7 @@ class EditProjectCommand(ProjectCommand):
         try:
             proj = endpoint.edit(model, body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if proj is None:
@@ -482,8 +478,7 @@ class DeleteProjectCommand(ProjectCommand):
         try:
             endpoint.delete(model)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         self.notification(msg=f"Deleted project {model.name}!")

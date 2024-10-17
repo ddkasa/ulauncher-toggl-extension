@@ -33,9 +33,8 @@ class ClientCommand(SubCommand):
         try:
             clients = endpoint.collect(refresh=kwargs.get("refresh", False))
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
-            return []
+            self.handle_error(err)
+            clients = endpoint.collect()
 
         clients.sort(key=lambda x: x.timestamp, reverse=True)
         return clients
@@ -52,8 +51,7 @@ class ClientCommand(SubCommand):
         try:
             client = endpoint.get(client_id, refresh=refresh)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return None
 
         return client
@@ -163,8 +161,7 @@ class AddClientCommand(ClientCommand):
         try:
             client = endpoint.add(body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if not client:
@@ -227,8 +224,7 @@ class DeleteClientCommand(ClientCommand):
         try:
             endpoint.delete(model)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         self.notification(msg=f"Deleted client {model}!")
@@ -299,8 +295,7 @@ class EditClientCommand(ClientCommand):
         try:
             client = endpoint.edit(model, body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if not client:

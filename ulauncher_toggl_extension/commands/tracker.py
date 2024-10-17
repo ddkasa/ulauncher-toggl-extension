@@ -143,13 +143,16 @@ class TrackerCommand(Command):
                 refresh=kwargs.get("refresh", False),
             )
         except ValueError as err:
-            self.notification(str(err))
-            log.exception("%s")
+            self.handle_error(err)
             trackers = user.collect(kwargs.get("refresh", False))
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
-            trackers = user.collect()
+            self.handle_error(err)
+            trackers = user.collect(
+                kwargs.get("start"),
+                kwargs.get("stop"),
+                kwargs.get("end_date"),
+                kwargs.get("start_date"),
+            )
 
         trackers.sort(
             key=lambda x: (x.stop or datetime.now(tz=timezone.utc), x.start),
@@ -182,8 +185,7 @@ class TrackerCommand(Command):
         try:
             return user.current(refresh=refresh)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
 
         return None
 
@@ -510,8 +512,7 @@ class ContinueCommand(TrackerCommand):
         try:
             cmd.tracker = endpoint.add(body)
         except (HTTPStatusError, TypeError) as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             self.notification(msg=f"Continuing {tracker.name}!")
             return True
@@ -599,8 +600,7 @@ class StartCommand(TrackerCommand):
         try:
             cmd.tracker = endpoint.add(body)
         except (HTTPStatusError, TypeError) as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             if not cmd.tracker:
                 return False
@@ -697,8 +697,7 @@ class StopCommand(TrackerCommand):
                 body = TrackerBody(stop=stop)
                 endpoint.edit(current_tracker, body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             cmd.tracker = None
             self.notification(msg=f"Stopped {current_tracker.name}!")
@@ -782,8 +781,7 @@ class AddCommand(TrackerCommand):
         try:
             tracker = endpoint.add(body)
         except (HTTPStatusError, TypeError) as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             if tracker is None:
                 return False
@@ -874,8 +872,7 @@ class EditCommand(TrackerCommand):
         try:
             tracker = endpoint.edit(tracker, body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             if tracker is None:
                 return False
@@ -936,8 +933,7 @@ class DeleteCommand(TrackerCommand):
         try:
             endpoint.delete(tracker)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             self.notification(msg=f"Removed {tracker.name}!")
             return True

@@ -32,9 +32,8 @@ class TagCommand(SubCommand):
         try:
             tags = endpoint.collect(refresh=kwargs.get("refresh", False))
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
-            return []
+            self.handle_error(err)
+            tags = endpoint.collect()
 
         tags.sort(key=lambda x: x.timestamp, reverse=True)
         return tags
@@ -142,8 +141,7 @@ class AddTagCommand(TagCommand):
         try:
             tag = endpoint.add(name)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if not tag:
@@ -220,8 +218,7 @@ class EditTagCommand(TagCommand):
         try:
             tag = endpoint.edit(model)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if not tag:
@@ -288,8 +285,7 @@ class DeleteTagCommand(TagCommand):
         try:
             endpoint.delete(model)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         self.notification(msg=f"Deleted tag {model.name}!")
