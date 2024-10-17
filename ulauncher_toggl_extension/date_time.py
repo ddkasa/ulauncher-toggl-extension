@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import time
+from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from functools import cache
 
@@ -10,6 +11,18 @@ class TimeFrame(enum.Enum):
     DAY = enum.auto()
     WEEK = enum.auto()
     MONTH = enum.auto()
+
+
+@dataclass(frozen=True)
+class DateTimeFrame:
+    start: datetime = field()
+    end: datetime = field()
+    frame: TimeFrame = field()
+
+    @classmethod
+    def from_date(cls, day: date, frame: TimeFrame) -> DateTimeFrame:
+        start, end = get_caps(day, frame)
+        return cls(start, end, frame)
 
 
 TIME_FORMAT = frozenset({"AM", "PM", "am", "pm"})
