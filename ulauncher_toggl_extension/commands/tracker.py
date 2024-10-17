@@ -687,10 +687,15 @@ class StopCommand(TrackerCommand):
         if not isinstance(current_tracker, TogglTracker):
             return False
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
-
         cmd = CurrentTrackerCommand(self)
+
+        stop = kwargs.get("stop")
+
         try:
-            endpoint.stop(current_tracker)
+            current_tracker = endpoint.stop(current_tracker) or current_tracker
+            if isinstance(stop, datetime) and stop > current_tracker.start:
+                body = TrackerBody(stop=stop)
+                endpoint.edit(current_tracker, body)
         except HTTPStatusError as err:
             log.exception("%s")
             self.notification(str(err))
