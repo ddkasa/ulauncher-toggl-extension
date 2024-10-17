@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Sequence
 from toggl_api import JSONCache
 
 from ulauncher_toggl_extension.images import APP_IMG, TIP_IMAGES, TipSeverity
-from ulauncher_toggl_extension.utils import show_notification
+from ulauncher_toggl_extension.utils import quote_member, show_notification
 
 if TYPE_CHECKING:
     from httpx import BasicAuth
@@ -215,10 +215,11 @@ class Command(metaclass=Singleton):
     ) -> list[QueryParameters]:
         """Helper method to create result content."""
         del advanced
+        model_name = quote_member(self.PREFIX, model.name)
         return [
             QueryParameters(
                 self.ICON,
-                fmt_str.format(prefix=self.PREFIX.title(), name=model.name),
+                fmt_str.format(prefix=self.PREFIX.title(), name=model_name),
                 "",
                 action,
                 alt_action,

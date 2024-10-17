@@ -15,6 +15,7 @@ from ulauncher_toggl_extension.images import (
     DELETE_IMG,
     EDIT_IMG,
 )
+from ulauncher_toggl_extension.utils import quote_member
 
 from .client import ClientCommand
 from .meta import ACTION_TYPE, QueryParameters, SubCommand
@@ -44,10 +45,12 @@ class ProjectCommand(SubCommand):
     ) -> list[QueryParameters]:
         cmd = ClientCommand(self)
         client = cmd.get_client(model.client)
+
+        model_name = quote_member(self.PREFIX, model.name)
         results = [
             QueryParameters(
                 self.get_icon(model),
-                fmt_str.format(prefix=self.PREFIX.title(), name=model.name),
+                fmt_str.format(prefix=self.PREFIX.title(), name=model_name),
                 f"${client.name if client else model.client}" if model.client else "",
                 action,
                 alt_action,

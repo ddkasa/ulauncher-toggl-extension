@@ -28,6 +28,7 @@ from ulauncher_toggl_extension.images import (
     TIP_IMAGES,
     TipSeverity,
 )
+from ulauncher_toggl_extension.utils import quote_member
 
 from .meta import ACTION_TYPE, ActionEnum, Command, QueryParameters
 from .project import ProjectCommand
@@ -52,7 +53,9 @@ class TrackerCommand(Command):
         advanced: bool = False,
         fmt_str: str = "{prefix} {name}",
     ) -> list[QueryParameters]:
-        name = fmt_str.format(prefix=self.PREFIX.title(), name=model.name)
+        model_name = quote_member(self.PREFIX, model.name)
+        name = fmt_str.format(prefix=self.PREFIX.title(), name=model_name)
+
         cmd = ProjectCommand(self)
         project = cmd.get_project(model.project)
         path = self.get_icon(project)
