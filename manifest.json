@@ -54,6 +54,14 @@
       "name": "Expiration",
       "description": "Custom expiration time for tracker cache. Same as syntax for duration variable. eg. 1d",
       "default_value": "7d"
+    },
+    {
+      "id": "report_format",
+      "type": "select",
+      "name": "Report Format",
+      "description": "Default file format to export reports in.",
+      "default_value": "pdf",
+      "options": ["pdf", "csv"]
     }
   ]
 }
