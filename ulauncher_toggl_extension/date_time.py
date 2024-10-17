@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+import enum
 import time
 from datetime import date, datetime, timedelta, timezone
 from functools import cache
+
+
+class TimeFrame(enum.Enum):
+    DAY = enum.auto()
+    WEEK = enum.auto()
+    MONTH = enum.auto()
+
 
 TIME_FORMAT = frozenset({"AM", "PM", "am", "pm"})
 
