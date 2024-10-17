@@ -111,6 +111,7 @@ class TogglExtension(Extension):
         "hints",
         "max_results",
         "prefix",
+        "report_format",
         "workspace_id",
     )
 
@@ -140,6 +141,7 @@ class TogglExtension(Extension):
         self.auth = None
         self.workspace_id = None
         self.expiration = None
+        self.report_format = "pdf"
 
     def default_results(
         self,
