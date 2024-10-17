@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Sequence
 
 from toggl_api import JSONCache
 
@@ -92,13 +92,13 @@ class Command(metaclass=Singleton):
         prefix: User set application prefix. Usually defaults to "tgl".
     """
 
-    SPECIAL_SYMBOLS: tuple[str] = ('"', "#", "@", ">", "<", "$")
-    MIN_ARGS: int = 2
-    PREFIX: str = ""
-    ALIASES: tuple[str]
-    EXPIRATION: timedelta = timedelta(weeks=1)
-    ICON: Path = APP_IMG
-    ESSENTIAL: bool = False
+    SPECIAL_SYMBOLS: ClassVar[tuple[str, ...]] = ('"', "#", "@", ">", "<", "$")
+    MIN_ARGS: ClassVar[int] = 2
+    PREFIX: ClassVar[str] = ""
+    ALIASES: ClassVar[tuple[str, ...]]
+    EXPIRATION: ClassVar[timedelta] = timedelta(weeks=1)
+    ICON: ClassVar[Path] = APP_IMG
+    ESSENTIAL: ClassVar[bool] = False
 
     __slots__ = (
         "auth",
@@ -394,7 +394,7 @@ class SubCommand(Command):
         get_cmd: Generate the command for the subcommand
     """
 
-    MIN_ARGS: int = 3
+    MIN_ARGS: ClassVar[int] = 3
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del query, kwargs
