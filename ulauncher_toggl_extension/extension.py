@@ -257,7 +257,7 @@ class TogglExtension(Extension):
         """
         results = []
 
-        i = 0
+        i: float = 0.0
         for item in actions:
             on_enter = self.create_action(item.on_enter)
             alt_enter = self.create_action(item.on_alt_enter)
@@ -286,7 +286,7 @@ class TogglExtension(Extension):
 
             results.append(action)
 
-            i += 0.5 if item.small else 1
+            i += 0.5 if item.small else 1.0
 
             if i >= self.max_results:
                 break
