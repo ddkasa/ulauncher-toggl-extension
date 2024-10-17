@@ -371,7 +371,7 @@ class KeywordQueryEventListener(EventListener):
                 if i + 1 < len(args) and args[i + 1] in TIME_FORMAT:
                     item += " " + args[i + 1]
                 try:
-                    arguments["stop"] = parse_datetime(item)
+                    arguments["stop"] = parse_datetime(item).astimezone(tz=timezone.utc)
                 except ValueError:
                     continue
             elif item == "refresh":
