@@ -320,3 +320,89 @@ class DailyReportCommand(ReportCommand):
     def format_datetime(cls, day: date) -> str:
         ordinal = ORDINALS.get(day.day % 10, "th")
         return day.astimezone(get_local_tz()).strftime(f"%-d{ordinal} of %B %Y")
+
+
+class WeeklyReportCommand(ReportCommand):
+    """View the weekly breakdown."""
+
+    PREFIX = "week"
+    ALIASES = ("weekly", "w")
+    ICON = REPORT_IMG  # TODO: Custom image for each type of report.
+    ENDPOINT = WeeklyReportEndpoint
+    FRAME = TimeFrame.WEEK
+
+    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        del kwargs
+        self.amend_query(query)
+        return [
+            QueryParameters(
+                self.ICON,
+                self.PREFIX.title(),
+                self.__doc__,
+                self.get_cmd(),
+            ),
+        ]
+
+    def break_down_days(self, day: date) -> list[int]:
+        days: list[int] = [0] * 7
+
+        for tracker in self._fetch_break_down(self.get_frame(day)):
+            time_data = tracker["time_entries"][0]
+            start = datetime.fromisoformat(time_data["stop"])
+            # FIX: If tracking over midnight this will cause issues
+            days[start.weekday()] += time_data["seconds"]
+
+        return days
+
+    def summary(self, day: date) -> list[QueryParameters]:
+        days = self.break_down_days(day)
+        result = [
+            QueryParameters(
+                self.ICON,
+                f"{WEEKDAYS[weekday]}: {round(d / 3600, 2)} hours",
+                small=True,
+            )
+            for weekday, d in enumerate(days)
+        ]
+        result.append(
+            QueryParameters(
+                self.ICON,
+                f"Total: {sum(days) // 3600} hours",
+                small=True,
+            ),
+        )
+
+        return result
+
+    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        day = kwargs.get("day", datetime.now(tz=timezone.utc))
+        kwargs["day"] = day
+        suffix = kwargs.get("format", self.report_format)
+        kwargs["format"] = suffix
+
+        results = [
+            QueryParameters(
+                self.ICON,
+                self.format_datetime(day),
+                "Weekly Breakdown",
+            ),
+            QueryParameters(
+                self.ICON,
+                "Export Report",
+                f"Export report in {suffix} format.",
+                partial(
+                    self.call_pickle,
+                    method="handle",
+                    query=query,
+                    **kwargs,
+                ),
+            ),
+        ]
+        results += self.summary(day)
+        results.extend(self.paginate_report(query, day))
+        return results
+
+    @classmethod
+    def format_datetime(cls, day: date) -> str:
+        week = day.isocalendar().week
+        return f"{week}{ORDINALS.get(week % 10, 'th')} week of {day.year}"
