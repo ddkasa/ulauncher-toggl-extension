@@ -96,6 +96,7 @@ exclude = ["tests/", "main.py", "__init__.py"]
 markers = [
     "unit: standard tests that don't access external resources.",
     "integration: tests that access external apis.",
+    "slow: tests that include a long wait time.",
 ]
 testpaths = ["tests"]
 
