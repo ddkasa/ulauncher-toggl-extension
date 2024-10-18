@@ -323,3 +323,108 @@ class DailyReportCommand(ReportCommand):
     def format_datetime(cls, day: date) -> str:
         ordinal = ORDINALS.get(day.day % 10, "th")
         return day.astimezone(get_local_tz()).strftime(f"%-d{ordinal} of %B %Y")
+
+
+class WeeklyReportCommand(ReportCommand):
+    """View the weekly breakdown."""
+
+    PREFIX = "week"
+    ALIASES = ("weekly", "w")
+    ICON = REPORT_IMG  # TODO: Custom image for each type of report.
+    ENDPOINT = WeeklyReportEndpoint
+    FRAME = TimeFrame.WEEK
+
+    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        self.amend_query(query)
+        return [
+            QueryParameters(
+                self.ICON,
+                self.PREFIX.title(),
+                self.__doc__,
+                self.get_cmd(),
+                partial(
+                    self.call_pickle,
+                    method="handle",
+                    query=query,
+                    **kwargs,
+                ),
+            ),
+        ]
+
+    def break_down(self, day: date) -> list[int]:
+        days: list[int] = [0] * 7
+        for tracker in self._fetch_break_down(self.get_frame(day)):
+            time_data = tracker["time_entries"][0]
+
+            start = datetime.fromisoformat(time_data["start"])
+            next_day = (start + timedelta(days=1)).replace(
+                second=0,
+                microsecond=0,
+                minute=0,
+                hour=0,
+            )
+            diff = int((next_day - start).total_seconds())
+            days[start.weekday()] += min(diff, time_data["seconds"])
+
+            total = time_data["seconds"] - diff
+            weekday = start.weekday() + 1
+            while total > 0 and weekday <= 6:  # noqa: PLR2004
+                days[weekday] += min(86400, total)
+                total -= 86400
+                weekday += 1
+
+        return days
+
+    def summary(self, day: date) -> list[QueryParameters]:
+        days = self.break_down(day)
+        result = [
+            QueryParameters(
+                self.ICON,
+                f"{WEEKDAYS[weekday]}: {round(d / 3600, 2)} hours",
+                small=True,
+            )
+            for weekday, d in enumerate(days)
+            if d
+        ]
+        result.append(
+            QueryParameters(
+                self.ICON,
+                f"Total: {sum(days) // 3600} hours",
+                small=True,
+            ),
+        )
+
+        return result
+
+    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        start = kwargs.get("start", datetime.now(tz=timezone.utc))
+        kwargs["start"] = start
+        suffix = kwargs.get("format", self.report_format)
+        kwargs["format"] = suffix
+
+        results = [
+            QueryParameters(
+                self.ICON,
+                self.format_datetime(start),
+                "Weekly Breakdown",
+            ),
+            QueryParameters(
+                self.ICON,
+                "Export Report",
+                f"Export report in {suffix} format.",
+                partial(
+                    self.call_pickle,
+                    method="handle",
+                    query=query,
+                    **kwargs,
+                ),
+            ),
+        ]
+        results += self.summary(start)
+        results.extend(self.paginate_report(query, start))
+        return results
+
+    @classmethod
+    def format_datetime(cls, day: date) -> str:
+        week = day.isocalendar().week
+        return f"{week}{ORDINALS.get(week % 10, 'th')} week of {day.year}"
