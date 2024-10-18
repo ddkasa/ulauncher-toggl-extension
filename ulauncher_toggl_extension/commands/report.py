@@ -216,3 +216,107 @@ class ReportCommand(SubCommand, ReportMixin):
         return ""
 
 
+class DailyReportCommand(ReportCommand):
+    """View the daily breakdown."""
+
+    PREFIX = "day"
+    ALIASES = ("daily", "d")
+    ICON = REPORT_IMG  # TODO: Custom image for each type of report.
+    ENDPOINT = SummaryReportEndpoint
+    FRAME = TimeFrame.DAY
+
+    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        day = kwargs.get("day") or datetime.now(tz=timezone.utc)
+        kwargs["day"] = day
+        self.amend_query(query)
+        return [
+            QueryParameters(
+                self.ICON,
+                self.PREFIX.title(),
+                self.__doc__,
+                self.get_cmd(),
+                partial(
+                    self.call_pickle,
+                    method="handle",
+                    query=query,
+                    **kwargs,
+                ),
+            ),
+        ]
+
+    def break_down_hours(self, day: date) -> list[int]:
+        hours: list[int] = [0] * 24
+
+        for tracker in self._fetch_break_down(self.get_frame(day)):
+            time_data = tracker["time_entries"][0]
+            start = datetime.fromisoformat(time_data["start"])
+            next_hour = start.replace(
+                second=0,
+                microsecond=0,
+                minute=0,
+            ) + timedelta(hours=1)
+            diff = int((next_hour - start).total_seconds())
+            hours[start.hour] += diff
+            remaining = time_data["seconds"] - diff
+            hour = start.hour
+            while remaining > 0:
+                hour = (hour + 1) % 24
+                hours[hour] += min(3600, remaining)
+                remaining -= 3600
+
+        return hours
+
+    def summary(self, day: date) -> list[QueryParameters]:
+        hours = self.break_down_hours(day)
+        results = [
+            QueryParameters(
+                self.ICON,
+                f"{h}{'pm' if h >= NOON else 'am'}: {min(60, t // 60)}min",
+                small=True,
+            )
+            for h, t in enumerate(hours)
+            if t
+        ]
+
+        results.append(
+            QueryParameters(
+                self.ICON,
+                "Total Hours",
+                f"{round(sum(hours) / 3600, 2)} hours",
+                small=True,
+            ),
+        )
+
+        return results
+
+    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        day = kwargs.get("day") or datetime.now(tz=timezone.utc)
+        kwargs["day"] = day
+        suffix = kwargs.get("format", self.report_format)
+        kwargs["format"] = suffix
+        results = [
+            QueryParameters(
+                self.ICON,
+                self.format_datetime(day),
+                "Daily Breakdown",
+            ),
+            QueryParameters(
+                self.ICON,
+                "Export Report",
+                f"Export report in {suffix} format.",
+                partial(
+                    self.call_pickle,
+                    method="handle",
+                    query=query,
+                    **kwargs,
+                ),
+            ),
+        ]
+        results += self.summary(day)
+        results += self.paginate_report(query, day)
+        return results
+
+    @classmethod
+    def format_datetime(cls, day: date) -> str:
+        ordinal = ORDINALS.get(day.day % 10, "th")
+        return day.astimezone(get_local_tz()).strftime(f"%-d{ordinal} of %B %Y")
