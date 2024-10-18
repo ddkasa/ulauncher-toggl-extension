@@ -45,6 +45,7 @@ from ulauncher_toggl_extension.commands import (
     ListCommand,
     ProjectCommand,
     QueryParameters,
+    ReportCommand,
     StartCommand,
     StopCommand,
     TagCommand,
@@ -89,6 +90,7 @@ class TogglExtension(Extension):
             ProjectCommand.PREFIX: ProjectCommand,
             ClientCommand.PREFIX: ClientCommand,
             TagCommand.PREFIX: TagCommand,
+            ReportCommand.PREFIX: ReportCommand,
             HelpCommand.PREFIX: HelpCommand,
         },
     )
