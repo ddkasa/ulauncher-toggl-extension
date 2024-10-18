@@ -3,11 +3,13 @@ import time
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
+from random import Random
 
 import pytest
 from faker import Faker
 from httpx import BasicAuth
 from toggl_api import generate_authentication
+from toggl_api.reports.reports import REPORT_FORMATS
 
 from ulauncher_toggl_extension.date_time import get_local_tz
 
@@ -28,6 +30,11 @@ def _patch_noti(monkeypatch):
         "ulauncher_toggl_extension.commands.meta.show_notification",
         lambda *_, **__: None,
     )
+
+
+@pytest.fixture
+def number():
+    return Random()  # noqa: S311
 
 
 @pytest.fixture
@@ -60,6 +67,7 @@ class DummyExtension:
     prefix: str = "tgl"
     max_results: int = 12
     hints: bool = True
+    report_format: REPORT_FORMATS = "csv"
     expiration: timedelta = timedelta(days=7)
 
 
