@@ -555,13 +555,13 @@ files = [
 
 [[package]]
 name = "toggl-api-wrapper"
-version = "1.0.1"
+version = "1.0.2"
 description = "Simple Toggl API wrapper for non-premium features."
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "toggl_api_wrapper-1.0.1-py3-none-any.whl", hash = "sha256:b7ec36920fb91f92e2132160af877ab4438c4e485658634af3a4f81983441613"},
-    {file = "toggl_api_wrapper-1.0.1.tar.gz", hash = "sha256:88df3d707a57f2cd271a67b1be087c053aac907b7a523b90d1c04c4c1177cfdf"},
+    {file = "toggl_api_wrapper-1.0.2-py3-none-any.whl", hash = "sha256:852821d4da5a1f30279ba01925d6e8639fe2f4cd5b3bbc88dd0c0f2d8494b3ee"},
+    {file = "toggl_api_wrapper-1.0.2.tar.gz", hash = "sha256:b12b1360e7cfe851471b1f7560f7f5efb949a3692132fcf87460b3fd65b4faa2"},
 ]
 
 [package.dependencies]
@@ -583,13 +583,13 @@ files = [
 
 [[package]]
 name = "tox"
-version = "4.22.0"
+version = "4.23.0"
 description = "tox is a generic virtualenv management and test command line tool"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "tox-4.22.0-py3-none-any.whl", hash = "sha256:03734d9a9ac138cd1a898a372fb1b8079e2728618ae06dc37cbf3686cfb56eea"},
-    {file = "tox-4.22.0.tar.gz", hash = "sha256:acc6c627cb3316585238d55d2b633e132fea1bdb01b9d93b56bce7caea6ae73d"},
+    {file = "tox-4.23.0-py3-none-any.whl", hash = "sha256:46da40afb660e46238c251280eb910bdaf00b390c7557c8e4bb611f422e9db12"},
+    {file = "tox-4.23.0.tar.gz", hash = "sha256:a6bd7d54231d755348d3c3a7b450b5bf6563833716d1299a1619587a1b77a3bf"},
 ]
 
 [package.dependencies]
@@ -635,13 +635,13 @@ files = [
 
 [[package]]
 name = "virtualenv"
-version = "20.26.6"
+version = "20.27.0"
 description = "Virtual Python Environment builder"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "virtualenv-20.26.6-py3-none-any.whl", hash = "sha256:7345cc5b25405607a624d8418154577459c3e0277f5466dd79c49d5e492995f2"},
-    {file = "virtualenv-20.26.6.tar.gz", hash = "sha256:280aede09a2a5c317e409a00102e7077c6432c5a38f0ef938e643805a7ad2c48"},
+    {file = "virtualenv-20.27.0-py3-none-any.whl", hash = "sha256:44a72c29cceb0ee08f300b314848c86e57bf8d1f13107a5e671fb9274138d655"},
+    {file = "virtualenv-20.27.0.tar.gz", hash = "sha256:2ca56a68ed615b8fe4326d11a0dca5dfbe8fd68510fb6c6349163bed3c15f2b2"},
 ]
 
 [package.dependencies]
@@ -656,4 +656,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "9a02f04f1beea57c1b22ba7f9ebb711941239d3a768e13bd62e0ec60ad5ab768"
+content-hash = "328392446c846a29ba6f956fe2b1b7769c7c917eb35f4a9037ee8ddd83b36237"
