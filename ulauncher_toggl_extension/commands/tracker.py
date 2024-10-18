@@ -139,8 +139,8 @@ class TrackerCommand(Command):
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
         try:
             trackers = user.collect(
-                kwargs.get("start"),
-                kwargs.get("stop"),
+                kwargs.get("since"),
+                kwargs.get("before"),
                 kwargs.get("end_date"),
                 kwargs.get("start_date"),
                 refresh=kwargs.get("refresh", False),
@@ -151,8 +151,8 @@ class TrackerCommand(Command):
         except HTTPStatusError as err:
             self.handle_error(err)
             trackers = user.collect(
-                kwargs.get("start"),
-                kwargs.get("stop"),
+                kwargs.get("since"),
+                kwargs.get("before"),
                 kwargs.get("end_date"),
                 kwargs.get("start_date"),
             )
