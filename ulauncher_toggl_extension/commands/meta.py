@@ -319,6 +319,7 @@ class Command(metaclass=Singleton):
         msg: str,
         on_close: Optional[Callable] = None,
     ) -> None:
+        log.info(msg)
         show_notification(msg, self.ICON.absolute(), on_close=on_close)
 
     def handle_error(self, error: Exception) -> None:
