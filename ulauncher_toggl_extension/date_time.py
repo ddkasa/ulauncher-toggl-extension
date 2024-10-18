@@ -174,5 +174,10 @@ def get_caps(date_obj: date, frame: TimeFrame) -> tuple[datetime, datetime]:
     return start, stop
 
 
+def format_seconds(total_seconds: int) -> str:
+    hours, minutes = divmod(total_seconds, 3600)
+    return f"{hours}:{minutes // 60}"
+
+
 if __name__ == "__main__":
     pass
