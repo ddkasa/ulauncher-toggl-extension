@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 from datetime import date, datetime, timedelta, timezone
 from functools import partial
 from pathlib import Path
@@ -428,3 +429,105 @@ class WeeklyReportCommand(ReportCommand):
     def format_datetime(cls, day: date) -> str:
         week = day.isocalendar().week
         return f"{week}{ORDINALS.get(week % 10, 'th')} week of {day.year}"
+
+
+class MonthlyReportCommand(ReportCommand):
+    """View the monthly breakdown."""
+
+    PREFIX = "month"
+    ALIASES = ("monthly", "m")
+    ICON = REPORT_IMG  # TODO: Custom image for each type of report.
+    ENDPOINT = SummaryReportEndpoint
+    FRAME = TimeFrame.MONTH
+
+    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        self.amend_query(query)
+        return [
+            QueryParameters(
+                self.ICON,
+                self.PREFIX.title(),
+                self.__doc__,
+                self.get_cmd(),
+                partial(
+                    self.call_pickle,
+                    method="handle",
+                    query=query,
+                    **kwargs,
+                ),
+            ),
+        ]
+
+    def break_down(self, day: date) -> tuple[int, int]:
+        first, second = 0, 0
+
+        _, number_of_days = calendar.monthrange(day.year, day.month)
+        mid_point = number_of_days // 2
+
+        for tracker in self._fetch_break_down(self.get_frame(day)):
+            time_data = tracker["time_entries"][0]
+
+            start = datetime.fromisoformat(time_data["start"])
+            if start.day <= mid_point:
+                first += time_data["seconds"]
+            else:
+                second += time_data["seconds"]
+
+        return first, second
+
+    def summary(self, day: date) -> list[QueryParameters]:
+        frame = self.get_frame(day)
+        first_half, second_half = self.break_down(day)
+        total_hours = (first_half + second_half) / 3600
+        return [
+            QueryParameters(
+                self.ICON,
+                "Total Hours",
+                f"{total_hours:.2f} hours",
+            ),
+            QueryParameters(
+                self.ICON,
+                "Average Hours Per Day",
+                f"{(total_hours / frame.end.day):.2f} hours",
+            ),
+            QueryParameters(
+                self.ICON,
+                f"First Half: {(first_half / 3600):.2f} hours",
+                small=True,
+            ),
+            QueryParameters(
+                self.ICON,
+                f"Second Half: {(second_half / 3600):.2f} hours",
+                small=True,
+            ),
+        ]
+
+    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        start = kwargs.get("start") or datetime.now(tz=timezone.utc)
+        kwargs["start"] = start
+        suffix = kwargs.get("format", self.report_format)
+        kwargs["format"] = suffix
+        results = [
+            QueryParameters(
+                self.ICON,
+                self.format_datetime(start),
+                "Monthly Breakdown",
+            ),
+            QueryParameters(
+                self.ICON,
+                "Export Report",
+                f"Export report in {suffix} format.",
+                partial(
+                    self.call_pickle,
+                    method="handle",
+                    query=query,
+                    **kwargs,
+                ),
+            ),
+        ]
+        results += self.summary(start)
+        results.extend(self.paginate_report(query, start))
+        return results
+
+    @classmethod
+    def format_datetime(cls, day: date) -> str:
+        return day.strftime("%B %Y")
