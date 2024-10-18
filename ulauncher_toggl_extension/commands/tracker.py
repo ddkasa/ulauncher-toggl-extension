@@ -938,6 +938,10 @@ class DeleteCommand(TrackerCommand):
         except HTTPStatusError as err:
             self.handle_error(err)
         else:
+            current_cmd = CurrentTrackerCommand(self)
+            current_tracker = current_cmd.get_current_tracker()
+            if current_tracker and tracker.id == current_tracker.id:
+                current_cmd.current_tracker = None
             self.notification(msg=f"Removed {tracker.name}!")
             return True
 
