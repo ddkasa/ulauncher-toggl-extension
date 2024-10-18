@@ -45,6 +45,7 @@ from .client import AddClientCommand, ClientCommand, DeleteClientCommand
 from .help import HelpCommand
 from .meta import ActionEnum, Command, QueryParameters
 from .project import AddProjectCommand, DeleteProjectCommand, ProjectCommand
+from .report import ReportCommand
 from .tag import AddTagCommand, DeleteTagCommand, TagCommand
 from .tracker import (
     AddCommand,
@@ -57,7 +58,7 @@ from .tracker import (
     StopCommand,
 )
 
-__all__ = [
+__all__ = (
     "ActionEnum",
     "AddClientCommand",
     "AddCommand",
@@ -76,7 +77,8 @@ __all__ = [
     "ListCommand",
     "ProjectCommand",
     "QueryParameters",
+    "ReportCommand",
     "StartCommand",
     "StopCommand",
     "TagCommand",
-]
+)
