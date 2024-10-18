@@ -406,3 +406,72 @@ class WeeklyReportCommand(ReportCommand):
     def format_datetime(cls, day: date) -> str:
         week = day.isocalendar().week
         return f"{week}{ORDINALS.get(week % 10, 'th')} week of {day.year}"
+
+
+class MonthlyReportCommand(ReportCommand):
+    """View the monthly breakdown."""
+
+    PREFIX = "month"
+    ALIASES = ("monthly", "m")
+    ICON = REPORT_IMG  # TODO: Custom image for each type of report.
+    ENDPOINT = SummaryReportEndpoint
+    FRAME = TimeFrame.MONTH
+
+    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        del kwargs
+        self.amend_query(query)
+        return [
+            QueryParameters(
+                self.ICON,
+                self.PREFIX.title(),
+                self.__doc__,
+                self.get_cmd(),
+            ),
+        ]
+
+    def summary(self, day: date) -> list[QueryParameters]:
+        frame = self.get_frame(day)
+        total_hours = self.get_totals(frame)
+        return [
+            QueryParameters(
+                self.ICON,
+                "Total Hours",
+                f"{total_hours} hours",
+            ),
+            QueryParameters(
+                self.ICON,
+                "Average Hours Per Day",
+                f"{(total_hours / frame.end.day):.2f} hours",
+            ),
+        ]
+
+    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        day = kwargs.get("day") or datetime.now(tz=timezone.utc)
+        kwargs["day"] = day
+        suffix = kwargs.get("format", self.report_format)
+        kwargs["format"] = suffix
+        results = [
+            QueryParameters(
+                self.ICON,
+                self.format_datetime(day),
+                "Monthly Breakdown",
+            ),
+            QueryParameters(
+                self.ICON,
+                "Export Report",
+                f"Export report in {suffix} format.",
+                partial(
+                    self.call_pickle,
+                    method="handle",
+                    query=query,
+                    **kwargs,
+                ),
+            ),
+        ]
+        results += self.summary(day)
+        results.extend(self.paginate_report(query, day))
+        return results
+
+    @classmethod
+    def format_datetime(cls, day: date) -> str:
+        return day.strftime("%B %Y")
