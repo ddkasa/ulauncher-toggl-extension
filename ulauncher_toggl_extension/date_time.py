@@ -5,6 +5,9 @@ import time
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from functools import cache
+from typing import Final
+
+NOON: Final[int] = 12
 
 
 class TimeFrame(enum.Enum):
