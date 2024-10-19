@@ -77,7 +77,7 @@ class ListTagCommand(TagCommand):
                 )
                 data.append(mdl[0])
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
 
 class AddTagCommand(TagCommand):
@@ -117,7 +117,7 @@ class AddTagCommand(TagCommand):
                 for tag in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -191,7 +191,7 @@ class EditTagCommand(TagCommand):
                 for tag in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -268,7 +268,7 @@ class DeleteTagCommand(TagCommand):
                 for tag in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),

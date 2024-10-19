@@ -333,6 +333,7 @@ class CurrentTrackerCommand(TrackerCommand):
                     "tgl ",
                 ),
             ]
+
         return self.process_model(
             tracker,
             partial(
@@ -396,7 +397,7 @@ class ListCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
 
 class ContinueCommand(TrackerCommand):
@@ -471,7 +472,7 @@ class ContinueCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -564,7 +565,7 @@ class StartCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             static=self.preview(query, **kwargs),
@@ -746,7 +747,7 @@ class AddCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             static=self.preview(query, **kwargs),
@@ -836,7 +837,7 @@ class EditCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             static=self.preview(query, **kwargs),
@@ -925,13 +926,14 @@ class DeleteCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
     def handle(self, query: list[str], **kwargs) -> bool:
         del query
         tracker = kwargs.get("model")
         if tracker is None:
             return False
+
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
         try:
             endpoint.delete(tracker)

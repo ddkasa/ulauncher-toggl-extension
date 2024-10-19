@@ -226,7 +226,7 @@ class Command(metaclass=Singleton):
             ),
         ]
 
-    def paginator(
+    def _paginator(
         self,
         query: list[str],
         data: list[partial] | list[QueryParameters],

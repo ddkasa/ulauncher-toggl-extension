@@ -97,7 +97,7 @@ class ListClientCommand(ClientCommand):
                 for client in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
 
 class AddClientCommand(ClientCommand):
@@ -135,7 +135,7 @@ class AddClientCommand(ClientCommand):
                 )
                 data.append(mdl[0])
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -210,7 +210,7 @@ class DeleteClientCommand(ClientCommand):
                 for client in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
     def handle(self, query: list[str], **kwargs) -> bool:
         del query
@@ -270,7 +270,7 @@ class EditClientCommand(ClientCommand):
                 for client in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),

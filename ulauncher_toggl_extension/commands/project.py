@@ -98,6 +98,7 @@ class ProjectCommand(SubCommand):
     ) -> TogglProject | None:
         if project_id is None:
             return None
+
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
         try:
             project = endpoint.get(project_id, refresh=refresh)
@@ -231,7 +232,7 @@ class ListProjectCommand(ProjectCommand):
                 for project in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
 
 class AddProjectCommand(ProjectCommand):
@@ -272,7 +273,7 @@ class AddProjectCommand(ProjectCommand):
                 for project in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             self.preview(query, **kwargs),
@@ -366,7 +367,7 @@ class EditProjectCommand(ProjectCommand):
                 for project in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             self.preview(query, **kwargs),
@@ -455,7 +456,7 @@ class DeleteProjectCommand(ProjectCommand):
                 for project in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             self.preview(query, **kwargs),
@@ -475,6 +476,7 @@ class DeleteProjectCommand(ProjectCommand):
         model = kwargs.get("model") or kwargs.get("project")
         if not isinstance(model, TogglProject | int):
             return False
+
         if isinstance(model, int):
             model = TogglProject(model, "")
 
