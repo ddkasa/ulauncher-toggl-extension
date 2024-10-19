@@ -42,6 +42,16 @@ class ActionEnum(enum.Enum):
 ACTION_TYPE = Optional[ActionEnum | Callable | str]
 
 
+OPTION_DESCRIPTIONS: dict[str, str] = {
+    '"': "Description",
+    "#": "Tags or Color",
+    "@": "Project",
+    ">": "Start Time",
+    "<": "End Time",
+    "$": "Client",
+}
+
+
 @dataclass(frozen=True)
 class QueryParameters:
     icon: Path = APP_IMG
@@ -81,8 +91,8 @@ class Command(metaclass=Singleton):
         handler_error: Helper method for handling and dispatching consistent errors.
 
     Attributes:
-        SPECIAL_SYMBOLS: Special symbols that can be used to trigger auto
-            complete and set various values.
+        OPTIONS: Special symbols that can be used to trigger auto complete and
+            set various values.
         PREFIX: Prefix of the command.
         ALIASES: Alternate prefixes of the command.
         EXPIRATION: Invalidation time of the cache.
@@ -93,7 +103,7 @@ class Command(metaclass=Singleton):
         prefix: User set application prefix. Usually defaults to "tgl".
     """
 
-    SPECIAL_SYMBOLS: ClassVar[tuple[str, ...]] = ('"', "#", "@", ">", "<", "$")
+    OPTIONS: ClassVar[tuple[str, ...]]
     MIN_ARGS: ClassVar[int] = 2
     PREFIX: ClassVar[str] = ""
     ALIASES: ClassVar[tuple[str, ...]]
@@ -333,13 +343,12 @@ class Command(metaclass=Singleton):
     def check_autocmp(cls, query: list[str]) -> bool:
         """Simple helper for verfying if a autocomplet can be used."""
         return len(query) >= cls.MIN_ARGS and any(
-            query[-1][0] == x for x in cls.SPECIAL_SYMBOLS
+            query[-1][0] == x for x in cls.OPTIONS
         )
 
     @classmethod
     def hint(cls) -> list[QueryParameters]:
         """Returns a list of hints for the command."""
-        # TODO: Integrate special arguments.
         desc = cls.__doc__.split(".")[0] + "." if cls.__doc__ else ""
         hints: list[QueryParameters] = [
             QueryParameters(
@@ -358,6 +367,15 @@ class Command(metaclass=Singleton):
                 ", ".join(cls.ALIASES),
             ),
         ]
+        if cls.OPTIONS:
+            hints.append(
+                QueryParameters(
+                    TIP_IMAGES[TipSeverity.INFO],
+                    "Accepts Options",
+                    ", ".join(cls.OPTIONS),
+                ),
+            )
+
         return hints
 
     @abstractmethod
@@ -401,6 +419,7 @@ class SubCommand(Command):
     """
 
     MIN_ARGS: ClassVar[int] = 3
+    OPTIONS = ()
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del query, kwargs

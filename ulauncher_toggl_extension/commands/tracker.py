@@ -279,6 +279,7 @@ class CurrentTrackerCommand(TrackerCommand):
     ALIASES = ("now", "running")
     EXPIRATION = timedelta(seconds=10)
     ICON = APP_IMG
+    OPTIONS = ("refresh",)
 
     __slots__ = ("_tracker", "_ts")
 
@@ -364,6 +365,8 @@ class ListCommand(TrackerCommand):
     ALIASES = ("ls", "lst")
     ICON = BROWSER_IMG
 
+    OPTIONS = ("refresh", "distinct")
+
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
         self.amend_query(query)
@@ -407,6 +410,8 @@ class ContinueCommand(TrackerCommand):
     ALIASES = ("c", "cnt", "cont")
     ICON = CONTINUE_IMG
     ESSENTIAL = True
+
+    OPTIONS = ("refresh", "distinct", ">")
 
     def can_continue(self, **kwargs) -> bool:
         return not isinstance(
@@ -533,6 +538,7 @@ class StartCommand(TrackerCommand):
     PREFIX = "start"
     ALIASES = ("stt", "begin")
     ICON = START_IMG
+    OPTIONS = ("refresh", "distinct", ">", '"', "@", "#")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -620,6 +626,7 @@ class StopCommand(TrackerCommand):
     PREFIX = "stop"
     ALIASES = ("end", "stp")
     ICON = STOP_IMG
+    OPTIONS = ("refresh", "distinct", ">", '"', "@", "#", "<")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -715,6 +722,7 @@ class AddCommand(TrackerCommand):
     PREFIX = "add"
     ALIASES = ("a", "insert")
     ICON = ADD_IMG
+    OPTIONS = ("refresh", "distinct", ">", '"', "@", "#", "<")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -802,6 +810,8 @@ class EditCommand(TrackerCommand):
     ALIASES = ("ed", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
+
+    OPTIONS = ("refresh", "distinct", ">", "<", '"', "@", "#")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -893,6 +903,7 @@ class DeleteCommand(TrackerCommand):
     ALIASES = ("rm", "del", "remove")
     ICON = DELETE_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", "distinct")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs

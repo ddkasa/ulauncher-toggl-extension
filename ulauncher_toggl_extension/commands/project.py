@@ -33,6 +33,7 @@ class ProjectCommand(SubCommand):
     ALIASES = ("p", "proj")
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
+    OPTIONS = ()
 
     def process_model(
         self,
@@ -198,6 +199,7 @@ class ListProjectCommand(ProjectCommand):
     PREFIX = "list"
     ALIASES = ("ls", "l")
     ICON = BROWSER_IMG
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -241,6 +243,7 @@ class AddProjectCommand(ProjectCommand):
     PREFIX = "add"
     ALIASES = ("a", "create", "insert")
     ICON = ADD_IMG
+    OPTIONS = ("refresh", "#", "$", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -299,6 +302,7 @@ class AddProjectCommand(ProjectCommand):
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
         client = kwargs.get("client")
         color = kwargs.get("tags", [None])[0]
+
         if isinstance(color, str):
             color = "#" + color
 
@@ -333,6 +337,7 @@ class EditProjectCommand(ProjectCommand):
     ALIASES = ("e", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", "#", "$", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -423,6 +428,7 @@ class DeleteProjectCommand(ProjectCommand):
     ALIASES = ("rm", "d", "del")
     ICON = DELETE_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs

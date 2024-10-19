@@ -27,6 +27,7 @@ class ClientCommand(SubCommand):
     ALIASES = ("c", "cli")
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
+    OPTIONS = ()
 
     def get_models(self, **kwargs) -> list[TogglClient]:
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
@@ -63,6 +64,7 @@ class ListClientCommand(ClientCommand):
     PREFIX = "list"
     ALIASES = ("l", "ls")
     ICON = BROWSER_IMG
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -106,6 +108,7 @@ class AddClientCommand(ClientCommand):
     PREFIX = "add"
     ALIASES = ("a", "add", "create", "insert")
     ICON = ADD_IMG
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -178,6 +181,7 @@ class DeleteClientCommand(ClientCommand):
     ALIASES = ("d", "del", "rm", "remove")
     ICON = DELETE_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -238,6 +242,7 @@ class EditClientCommand(ClientCommand):
     ALIASES = ("e", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs

@@ -102,6 +102,7 @@ class ReportCommand(SubCommand, ReportMixin):
     EXPIRATION = None  # NOTE: Report endpoints don't have cache.
     FRAME: ClassVar[TimeFrame]
     ENDPOINT: ClassVar[type[ReportEndpoint]]
+    OPTIONS = ()
 
     __slots__ = ("report_format",)
 
@@ -226,6 +227,7 @@ class DailyReportCommand(ReportCommand):
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.DAY
+    OPTIONS = (">",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         start = kwargs.get("start") or datetime.now(tz=timezone.utc)
@@ -334,6 +336,7 @@ class WeeklyReportCommand(ReportCommand):
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
     ENDPOINT = WeeklyReportEndpoint
     FRAME = TimeFrame.WEEK
+    OPTIONS = (">",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -439,6 +442,7 @@ class MonthlyReportCommand(ReportCommand):
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.MONTH
+    OPTIONS = (">",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)

@@ -26,6 +26,7 @@ class TagCommand(SubCommand):
     ALIASES = ("t", "tags")
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
+    OPTIONS = ()
 
     def get_models(self, **kwargs) -> list[TogglTag]:
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
@@ -45,6 +46,7 @@ class ListTagCommand(TagCommand):
     PREFIX = "list"
     ALIASES = ("l", "ls")
     ICON = BROWSER_IMG
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -86,6 +88,7 @@ class AddTagCommand(TagCommand):
     PREFIX = "add"
     ALIASES = ("a", "add", "create")
     ICON = ADD_IMG
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -158,6 +161,7 @@ class EditTagCommand(TagCommand):
     ALIASES = ("e", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -236,6 +240,7 @@ class DeleteTagCommand(TagCommand):
     ALIASES = ("d", "rm", "remove", "del")
     ICON = DELETE_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
