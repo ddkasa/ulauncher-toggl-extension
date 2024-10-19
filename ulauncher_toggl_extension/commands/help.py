@@ -19,6 +19,12 @@ from .project import (
     ListProjectCommand,
     ProjectCommand,
 )
+from .report import (
+    DailyReportCommand,
+    MonthlyReportCommand,
+    ReportCommand,
+    WeeklyReportCommand,
+)
 from .tag import (
     AddTagCommand,
     DeleteTagCommand,
@@ -44,6 +50,7 @@ if TYPE_CHECKING:
 class HelpCommand(Command):
     """Help command for general hints."""
 
+    # REFACTOR: This could be automated.
     HINT_COMMANDS: dict[str, type[Command]] = {
         ContinueCommand.PREFIX: ContinueCommand,
         ListCommand.PREFIX: ListCommand,
@@ -68,6 +75,10 @@ class HelpCommand(Command):
         TagCommand.PREFIX + " " + AddTagCommand.PREFIX: AddTagCommand,
         TagCommand.PREFIX + " " + DeleteTagCommand.PREFIX: DeleteTagCommand,
         TagCommand.PREFIX + " " + EditTagCommand.PREFIX: EditTagCommand,
+        ReportCommand.PREFIX: ReportCommand,
+        ReportCommand.PREFIX + " " + DailyReportCommand.PREFIX: DailyReportCommand,
+        ReportCommand.PREFIX + " " + WeeklyReportCommand.PREFIX: WeeklyReportCommand,
+        ReportCommand.PREFIX + " " + MonthlyReportCommand.PREFIX: MonthlyReportCommand,
     }
 
     PREFIX = "help"
