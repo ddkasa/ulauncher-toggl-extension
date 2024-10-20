@@ -24,10 +24,15 @@
 8. Refresh - Whether to a refresh a list of values or not. Add **refresh** to the command to refresh cache. Most of the commands support this.
 9. Client - ID of the client to use starting with an **$** sign e.g. **$3512351**. <sup>1</sup>
 10. Private/Active/Distinct - Inverted boolean flags, so if set the will return as False e.g. **private**, **active**, **distinct**.
+11. Path - File path to a folder for exporting reports start with a tilde **~** e.g. **~/reports**. <sup>3</sup><sup>4</sup>
 
 <sup>1</sup> _Autocomplete is supplied._
 
 <sup>2</sup> Supported formats are: _YYYY-MM-DDTHH:MM:SS_, _HH:MM_, _HH:MM:SS_, _YYYY-MM-DD_ plus the 12 hour equivalents with AM/PM added e.g. **>10:10 PM**. If just using time the date will default to the current date.
+
+<sup>3</sup> Filename will default to current date and scope of report._:MM:SS_, _YYYY-MM-DD_ plus the 12 hour equivalents with AM/PM added e.g. **>10:10 PM**. If just using time the date will default to the current date.
+
+<sup>4</sup> _Folder structure will be created if not present._
 
 ## Command Overview
 
