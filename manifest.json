@@ -11,8 +11,8 @@
     {
       "id": "keyword",
       "type": "keyword",
-      "name": "Extension Keyword",
-      "description": "Keyword for triggering the toggl extension",
+      "name": "Toggl",
+      "description": "Toggl Extension",
       "default_value": "tgl"
     },
     {
