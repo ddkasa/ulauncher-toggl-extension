@@ -1,6 +1,6 @@
 # Usage Guide
 
-### Default Extension Trigger
+## Default Extension Trigger
 
 **tgl** - Adjust as needed in Ulauncher preferences.
 
@@ -34,16 +34,18 @@
 
 <sup>4</sup> _Folder structure will be created if not present._
 
-## Command Overview
+## Commands
 
-1. **Continue**
+### **Continue**
 
 - Description: Continue the last tracker or a tracker selected from the provided list.
 - Alt-Option: List alternative trackers to continue from cache.
 - Aliases: continue, cnt, cont, c
 - Optional Arguments: _Start Time, Tracker ID_
 
-2. **Start**
+---
+
+### **Start**
 
 - Description: Start a new tracker. <sup>1</sup>
 - Alt-Option: List trackers a pre-fill options to be edited before starting.
@@ -51,134 +53,192 @@
 - Required Arguments: _Description_
 - Optional Arguments: _Project, Start Time, Tags_
 
-3. **Stop**
+---
+
+### **Stop**
 
 - Description: Stop the current tracker.
 - Aliases: stop, end, stp
 - Optional Arguments: _End Time_
 
-4. **Edit**
+---
+
+### **Edit**
 
 - Description: Edit the current trackers attributes. <sup>1</sup>
 - Aliases: edit, change, amend, ed
 - Optional Arguments: _Description, Project, Start Time, Tags, End Time_
 
-5. **Add**
+---
+
+### **Add**
 
 - Description: Add a new tracker with given attributes. <sup>1</sup>
 - Alt-Option: Select a tracker from cache to be used as a pre-fill option.
 - Aliases: add, a, insert
 - Required Arguments: _Start Time, End Time, Description_
 
-6. **Delete**
+---
+
+### **Delete**
 
 - Description: Delete the selected tracker selected from a provided list.
 - Aliases: delete, remove, del
 
-7. **List**
+---
+
+### **List**
 
 - Description: Display a list of trackers. Use one of the listed trackers for more options and details.
 - Alt-Option: Refresh cache and fetch new trackers.
 - Aliases: list, ls, lst
 
-8. **Current**
+---
+
+### **Current**
 
 - Description: Display the current tracker.
 - Aliases: current, now, running
 
-9. **Projects**
+---
+
+### **Projects**
 
 - Description: Display a list of subcommands related to projects.
 - Aliases: proj, p
-- **Subcommands**:
-  1. **List**
-  - Description: Display a list of projects. Select a project for more options/details.
-  - Alt-Option: Refresh cache and fetch new projects.
-  - Aliases: list, ls, l
-  2. **Add**
-  - Description: Add a new project. <sup>2</sup>
-  - Alt-Option: Use a list of projects as pre-fill options.
-  - Aliases: add, a, create, insert
-  - Required Arguments: _Description_
-  - Optional Arguments: _Color_, _Client_, _active_, _private_
-  3. **Edit**
-  - Description: Edit an existing project. <sup>2</sup>
-  - Aliases: edit, e, change, amend
-  - Optional Arguments: _Description_, _Color_, _Client_, _active_, _private_
-  4. **Delete**
-  - Description: Delete a project. Provides a list of projects to select from.
-  - Aliases: delete, rm, d, del
 
-10. **Clients**
+#### **Subcommands**:
+
+##### **List**
+
+- Description: Display a list of projects. Select a project for more options/details.
+- Alt-Option: Refresh cache and fetch new projects.
+- Aliases: list, ls, l
+
+##### **Add**
+
+- Description: Add a new project. <sup>2</sup>
+- Alt-Option: Use a list of projects as pre-fill options.
+- Aliases: add, a, create, insert
+- Required Arguments: _Description_
+- Optional Arguments: _Color_, _Client_, _active_, _private_
+
+##### **Edit**
+
+- Description: Edit an existing project. <sup>2</sup>
+- Aliases: edit, e, change, amend
+- Optional Arguments: _Description_, _Color_, _Client_, _active_, _private_
+
+##### **Delete**
+
+- Description: Delete a project. Provides a list of projects to select from.
+- Aliases: delete, rm, d, del
+
+---
+
+### **Clients**
 
 - Description: Display a list of subcommands related to clients.
 - Aliases: clients, c, cli
-- **Subcommands**:
-  1. **List**
-  - Description: Display a list of clients. Select a client for more options/details.
-  - Alt-Option: Refresh cache and fetch new clients.
-  - Aliases: list, ls, l
-  2. **Add**
-  - Description: Add a new client. <sup>3</sup>
-  - Alt-Option: Use a list of clients as pre-fill options.
-  - Aliases: add, a, create, insert
-  - Required Arguments: _Description_
-  3. **Edit**
-  - Description: Edit an existing client. <sup>3</sup>
-  - Aliases: edit, e, change, amend
-  - Optional Arguments: _Description_
-  4. **Delete**
-  - Description: Delete a client. Provides a list of clients to select from.
-  - Aliases: delete, rm, d, del, remove
 
-11. **Tags**
+#### **Subcommands**:
+
+##### **List**
+
+- Description: Display a list of clients. Select a client for more options/details.
+- Alt-Option: Refresh cache and fetch new clients.
+- Aliases: list, ls, l
+
+##### **Add**
+
+- Description: Add a new client. <sup>3</sup>
+- Alt-Option: Use a list of clients as pre-fill options.
+- Aliases: add, a, create, insert
+- Required Arguments: _Description_
+
+##### **Edit**
+
+- Description: Edit an existing client. <sup>3</sup>
+- Aliases: edit, e, change, amend
+- Optional Arguments: _Description_
+
+##### **Delete**
+
+- Description: Delete a client. Provides a list of clients to select from.
+- Aliases: delete, rm, d, del, remove
+
+---
+
+### **Tags**
 
 - Description: Display a list of subcommands related to tags.
 - Aliases: tag, t, tags
-- **Subcommands**:
-  1. **List**
-  - Description: Display a list of tags. Select a tag for more options/details.
-  - Alt-Option: Refresh cache and fetch new tags.
-  - Aliases: list, ls, l
-  2. **Add**
-  - Description: Add a new tag. <sup>4</sup>
-  - Alt-Option: Use a list of tags as pre-fill options.
-  - Aliases: add, a, create
-  - Required Arguments: _Description_
-  3. **Edit**
-  - Description: Edit an existing tag. <sup>4</sup>
-  - Aliases: edit, e, amend
-  - Optional Arguments: _Description_
-  4. **Delete**
-  - Description: Delete a tag. Provides a list of tags to select from.
-  - Aliases: delete, rm, d, del, remove
 
-12. **Reports**
+#### **Subcommands**:
+
+##### **List**
+
+- Description: Display a list of tags. Select a tag for more options/details.
+- Alt-Option: Refresh cache and fetch new tags.
+- Aliases: list, ls, l
+
+##### **Add**
+
+- Description: Add a new tag. <sup>4</sup>
+- Alt-Option: Use a list of tags as pre-fill options.
+- Aliases: add, a, create
+- Required Arguments: _Description_
+
+##### **Edit**
+
+- Description: Edit an existing tag. <sup>4</sup>
+- Aliases: edit, e, amend
+- Optional Arguments: _Description_
+
+##### **Delete**
+
+- Description: Delete a tag. Provides a list of tags to select from.
+- Aliases: delete, rm, d, del, remove
+
+---
+
+### **Reports**
 
 - Description: Export & view reports on a daily, weekly or monthly basis.
 - Aliases: report, stats, rep
-- **Subcommands**:
-  1. **Day**
-  - Description: View daily tracked stats and export a pdf or csv report.
-  - Alt-Option: Directly export a daily report.
-  - Aliases: day, daily, d
-  - Optional Arguments: _start, path_
-  2. **Week**
-  - Description: View weekly tracked stats and export a pdf or csv report.
-  - Alt-Option: Directly export a weekly report.
-  - Aliases: week, weekly, w
-  - Optional Arguments: _start, path_
-  3. **Month**
-  - Description: View monthly tracked stats and export a pdf or csv report.
-  - Alt-Option: Directly export a monthly report.
-  - Aliases: month, monthly, m
-  - Optional Arguments: _start, path_
 
-13. **Help**
+#### **Subcommands**:
+
+##### **Day**
+
+- Description: View daily tracked stats and export a pdf or csv report.
+- Alt-Option: Directly export a daily report.
+- Aliases: day, daily, d
+- Optional Arguments: _start, path_
+
+##### **Week**
+
+- Description: View weekly tracked stats and export a pdf or csv report.
+- Alt-Option: Directly export a weekly report.
+- Aliases: week, weekly, w
+- Optional Arguments: _start, path_
+
+##### **Month**
+
+- Description: View monthly tracked stats and export a pdf or csv report.
+- Alt-Option: Directly export a monthly report.
+- Aliases: month, monthly, m
+- Optional Arguments: _start, path_
+
+---
+
+### **Help**
 
 - Description: Find out more about extensions commands.
 - Usage: `tgl help <command>`
 - Aliases: help, guide, hint, h
+
+---
 
 ### Notes
 
