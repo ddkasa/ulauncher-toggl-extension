@@ -119,3 +119,19 @@ def test_report_break_down(cmd, result, load_model_data, httpx_mock, dummy_ext):
     cmd = cmd(dummy_ext)
     outcome = cmd.break_down(date(2024, 10, 14))
     assert sum(outcome) == result
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("cmd", "result"),
+    [
+        (DailyReportCommand, 12),
+        (WeeklyReportCommand, 2),
+        (MonthlyReportCommand, 4),
+    ],
+)
+def test_report_summary(cmd, result, load_model_data, httpx_mock, dummy_ext):
+    httpx_mock.add_response(json=load_model_data)
+    cmd = cmd(dummy_ext)
+    outcome = cmd.summary(date(2024, 10, 14))
+    assert len(outcome) == result
