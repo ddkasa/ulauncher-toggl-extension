@@ -63,6 +63,7 @@ class PreferencesEventListener(EventListener):
             event.preferences["api_token"],
         )
         extension.expiration = self.parse_expiration(event.preferences["expiration"])
+        extension.report_format = event.preferences["report_format"]
 
     @staticmethod
     def authentication(

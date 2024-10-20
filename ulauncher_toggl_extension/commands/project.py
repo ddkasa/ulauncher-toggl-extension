@@ -15,6 +15,7 @@ from ulauncher_toggl_extension.images import (
     DELETE_IMG,
     EDIT_IMG,
 )
+from ulauncher_toggl_extension.utils import quote_member
 
 from .client import ClientCommand
 from .meta import ACTION_TYPE, QueryParameters, SubCommand
@@ -32,6 +33,7 @@ class ProjectCommand(SubCommand):
     ALIASES = ("p", "proj")
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
+    OPTIONS = ()
 
     def process_model(
         self,
@@ -44,10 +46,12 @@ class ProjectCommand(SubCommand):
     ) -> list[QueryParameters]:
         cmd = ClientCommand(self)
         client = cmd.get_client(model.client)
+
+        model_name = quote_member(self.PREFIX, model.name)
         results = [
             QueryParameters(
                 self.get_icon(model),
-                fmt_str.format(prefix=self.PREFIX.title(), name=model.name),
+                fmt_str.format(prefix=self.PREFIX.title(), name=model_name),
                 f"${client.name if client else model.client}" if model.client else "",
                 action,
                 alt_action,
@@ -79,8 +83,7 @@ class ProjectCommand(SubCommand):
         try:
             projects = user.collect(refresh=kwargs.get("refresh", False))
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return []
 
         if kwargs.get("active", True):
@@ -96,12 +99,12 @@ class ProjectCommand(SubCommand):
     ) -> TogglProject | None:
         if project_id is None:
             return None
+
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
         try:
             project = endpoint.get(project_id, refresh=refresh)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return None
 
         return project
@@ -196,6 +199,7 @@ class ListProjectCommand(ProjectCommand):
     PREFIX = "list"
     ALIASES = ("ls", "l")
     ICON = BROWSER_IMG
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -230,7 +234,7 @@ class ListProjectCommand(ProjectCommand):
                 for project in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
 
 class AddProjectCommand(ProjectCommand):
@@ -239,6 +243,7 @@ class AddProjectCommand(ProjectCommand):
     PREFIX = "add"
     ALIASES = ("a", "create", "insert")
     ICON = ADD_IMG
+    OPTIONS = ("refresh", "#", "$", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -271,7 +276,7 @@ class AddProjectCommand(ProjectCommand):
                 for project in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             self.preview(query, **kwargs),
@@ -297,6 +302,7 @@ class AddProjectCommand(ProjectCommand):
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
         client = kwargs.get("client")
         color = kwargs.get("tags", [None])[0]
+
         if isinstance(color, str):
             color = "#" + color
 
@@ -313,8 +319,7 @@ class AddProjectCommand(ProjectCommand):
         try:
             proj = endpoint.add(body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if proj is None:
@@ -332,6 +337,7 @@ class EditProjectCommand(ProjectCommand):
     ALIASES = ("e", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", "#", "$", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -366,7 +372,7 @@ class EditProjectCommand(ProjectCommand):
                 for project in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             self.preview(query, **kwargs),
@@ -404,8 +410,7 @@ class EditProjectCommand(ProjectCommand):
         try:
             proj = endpoint.edit(model, body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if proj is None:
@@ -423,6 +428,7 @@ class DeleteProjectCommand(ProjectCommand):
     ALIASES = ("rm", "d", "del")
     ICON = DELETE_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -456,7 +462,7 @@ class DeleteProjectCommand(ProjectCommand):
                 for project in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             self.preview(query, **kwargs),
@@ -476,14 +482,14 @@ class DeleteProjectCommand(ProjectCommand):
         model = kwargs.get("model") or kwargs.get("project")
         if not isinstance(model, TogglProject | int):
             return False
+
         if isinstance(model, int):
             model = TogglProject(model, "")
 
         try:
             endpoint.delete(model)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         self.notification(msg=f"Deleted project {model.name}!")

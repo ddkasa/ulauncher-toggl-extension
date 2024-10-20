@@ -26,15 +26,15 @@ class TagCommand(SubCommand):
     ALIASES = ("t", "tags")
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
+    OPTIONS = ()
 
     def get_models(self, **kwargs) -> list[TogglTag]:
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
         try:
             tags = endpoint.collect(refresh=kwargs.get("refresh", False))
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
-            return []
+            self.handle_error(err)
+            tags = endpoint.collect()
 
         tags.sort(key=lambda x: x.timestamp, reverse=True)
         return tags
@@ -46,6 +46,7 @@ class ListTagCommand(TagCommand):
     PREFIX = "list"
     ALIASES = ("l", "ls")
     ICON = BROWSER_IMG
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -78,7 +79,7 @@ class ListTagCommand(TagCommand):
                 )
                 data.append(mdl[0])
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
 
 class AddTagCommand(TagCommand):
@@ -87,6 +88,7 @@ class AddTagCommand(TagCommand):
     PREFIX = "add"
     ALIASES = ("a", "add", "create")
     ICON = ADD_IMG
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -118,7 +120,7 @@ class AddTagCommand(TagCommand):
                 for tag in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -142,8 +144,7 @@ class AddTagCommand(TagCommand):
         try:
             tag = endpoint.add(name)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if not tag:
@@ -160,6 +161,7 @@ class EditTagCommand(TagCommand):
     ALIASES = ("e", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -193,7 +195,7 @@ class EditTagCommand(TagCommand):
                 for tag in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -220,8 +222,7 @@ class EditTagCommand(TagCommand):
         try:
             tag = endpoint.edit(model)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if not tag:
@@ -239,6 +240,7 @@ class DeleteTagCommand(TagCommand):
     ALIASES = ("d", "rm", "remove", "del")
     ICON = DELETE_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -271,7 +273,7 @@ class DeleteTagCommand(TagCommand):
                 for tag in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -288,8 +290,7 @@ class DeleteTagCommand(TagCommand):
         try:
             endpoint.delete(model)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         self.notification(msg=f"Deleted tag {model.name}!")
