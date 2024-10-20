@@ -27,15 +27,15 @@ class ClientCommand(SubCommand):
     ALIASES = ("c", "cli")
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
+    OPTIONS = ()
 
     def get_models(self, **kwargs) -> list[TogglClient]:
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
         try:
             clients = endpoint.collect(refresh=kwargs.get("refresh", False))
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
-            return []
+            self.handle_error(err)
+            clients = endpoint.collect()
 
         clients.sort(key=lambda x: x.timestamp, reverse=True)
         return clients
@@ -52,8 +52,7 @@ class ClientCommand(SubCommand):
         try:
             client = endpoint.get(client_id, refresh=refresh)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return None
 
         return client
@@ -65,6 +64,7 @@ class ListClientCommand(ClientCommand):
     PREFIX = "list"
     ALIASES = ("l", "ls")
     ICON = BROWSER_IMG
+    OPTIONS = ("refresh",)
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -99,7 +99,7 @@ class ListClientCommand(ClientCommand):
                 for client in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
 
 class AddClientCommand(ClientCommand):
@@ -108,6 +108,7 @@ class AddClientCommand(ClientCommand):
     PREFIX = "add"
     ALIASES = ("a", "add", "create", "insert")
     ICON = ADD_IMG
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -137,7 +138,7 @@ class AddClientCommand(ClientCommand):
                 )
                 data.append(mdl[0])
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -163,8 +164,7 @@ class AddClientCommand(ClientCommand):
         try:
             client = endpoint.add(body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if not client:
@@ -181,6 +181,7 @@ class DeleteClientCommand(ClientCommand):
     ALIASES = ("d", "del", "rm", "remove")
     ICON = DELETE_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -213,7 +214,7 @@ class DeleteClientCommand(ClientCommand):
                 for client in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
     def handle(self, query: list[str], **kwargs) -> bool:
         del query
@@ -227,8 +228,7 @@ class DeleteClientCommand(ClientCommand):
         try:
             endpoint.delete(model)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         self.notification(msg=f"Deleted client {model}!")
@@ -242,6 +242,7 @@ class EditClientCommand(ClientCommand):
     ALIASES = ("e", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", '"')
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -274,7 +275,7 @@ class EditClientCommand(ClientCommand):
                 for client in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -299,8 +300,7 @@ class EditClientCommand(ClientCommand):
         try:
             client = endpoint.edit(model, body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
             return False
 
         if not client:

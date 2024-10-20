@@ -1,8 +1,43 @@
 from __future__ import annotations
 
+import enum
 import time
+from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from functools import cache
+from typing import Final
+
+NOON: Final[int] = 12
+
+
+class TimeFrame(enum.Enum):
+    DAY = enum.auto()
+    WEEK = enum.auto()
+    MONTH = enum.auto()
+
+
+@dataclass(frozen=True)
+class DateTimeFrame:
+    start: datetime = field()
+    end: datetime = field()
+    frame: TimeFrame = field()
+
+    @classmethod
+    def from_date(cls, day: date, frame: TimeFrame) -> DateTimeFrame:
+        start, end = get_caps(day, frame)
+        return cls(start, end, frame)
+
+
+WEEKDAYS: tuple[str, ...] = (
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+)
+
 
 TIME_FORMAT = frozenset({"AM", "PM", "am", "pm"})
 
@@ -91,6 +126,60 @@ def localize_timezone(ts: datetime) -> datetime:
         second=ts.second,
         tzinfo=get_local_tz(),
     )
+
+
+def get_caps(date_obj: date, frame: TimeFrame) -> tuple[datetime, datetime]:
+    if isinstance(date_obj, datetime):
+        date_obj = date_obj.date()
+
+    if frame == TimeFrame.DAY:
+        start = datetime.combine(
+            date_obj,
+            datetime.min.time(),
+            tzinfo=timezone.utc,
+        )
+        stop = datetime.combine(
+            date_obj,
+            datetime.max.time(),
+            tzinfo=timezone.utc,
+        )
+    elif frame == TimeFrame.WEEK:
+        start_date = date_obj - timedelta(days=date_obj.weekday())
+        start = datetime.combine(
+            start_date,
+            datetime.min.time(),
+            tzinfo=timezone.utc,
+        )
+        stop = datetime.combine(
+            start_date + timedelta(days=7),
+            datetime.max.time(),
+            tzinfo=timezone.utc,
+        )
+    elif frame == TimeFrame.MONTH:
+        start = datetime.combine(
+            date_obj.replace(day=1),
+            datetime.min.time(),
+            tzinfo=timezone.utc,
+        )
+        stop = datetime.combine(
+            date(date_obj.year, (date_obj.month % 12) + 1, 1) - timedelta(days=1),
+            datetime.max.time(),
+            tzinfo=timezone.utc,
+        )
+    else:
+        msg = "Target timeframe is not supported!"
+        raise NotImplementedError(msg)
+
+    tday = date.today()  # noqa: DTZ011
+    if tday.month == stop.month and tday.year == stop.year:
+        stop = stop.replace(day=min(tday.day, stop.day))
+
+    return start, stop
+
+
+def format_seconds(total_seconds: int) -> str:
+    hours, minutes = divmod(total_seconds, 3600)
+    return f"{hours}:{minutes // 60}"
 
 
 if __name__ == "__main__":

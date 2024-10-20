@@ -45,6 +45,7 @@ from ulauncher_toggl_extension.commands import (
     ListCommand,
     ProjectCommand,
     QueryParameters,
+    ReportCommand,
     StartCommand,
     StopCommand,
     TagCommand,
@@ -89,6 +90,7 @@ class TogglExtension(Extension):
             ProjectCommand.PREFIX: ProjectCommand,
             ClientCommand.PREFIX: ClientCommand,
             TagCommand.PREFIX: TagCommand,
+            ReportCommand.PREFIX: ReportCommand,
             HelpCommand.PREFIX: HelpCommand,
         },
     )
@@ -111,6 +113,7 @@ class TogglExtension(Extension):
         "hints",
         "max_results",
         "prefix",
+        "report_format",
         "workspace_id",
     )
 
@@ -140,6 +143,7 @@ class TogglExtension(Extension):
         self.auth = None
         self.workspace_id = None
         self.expiration = None
+        self.report_format = "pdf"
 
     def default_results(
         self,
@@ -257,7 +261,7 @@ class TogglExtension(Extension):
         """
         results = []
 
-        i = 0
+        i: float = 0.0
         for item in actions:
             on_enter = self.create_action(item.on_enter)
             alt_enter = self.create_action(item.on_alt_enter)
@@ -286,7 +290,7 @@ class TogglExtension(Extension):
 
             results.append(action)
 
-            i += 0.5 if item.small else 1
+            i += 0.5 if item.small else 1.0
 
             if i >= self.max_results:
                 break
@@ -371,7 +375,7 @@ class KeywordQueryEventListener(EventListener):
                 if i + 1 < len(args) and args[i + 1] in TIME_FORMAT:
                     item += " " + args[i + 1]
                 try:
-                    arguments["stop"] = parse_datetime(item)
+                    arguments["stop"] = parse_datetime(item).astimezone(tz=timezone.utc)
                 except ValueError:
                     continue
             elif item == "refresh":
@@ -382,6 +386,8 @@ class KeywordQueryEventListener(EventListener):
                 arguments["private"] = False
             elif item == "distinct":
                 arguments["distinct"] = False
+            elif item[0] == "~":
+                arguments["path"] = Path.home() / Path(item[1:].lstrip("/"))
 
         return arguments
 

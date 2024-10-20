@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from faker import Faker
 from toggl_api import JSONCache, TogglTracker, TrackerEndpoint
 
 from ulauncher_toggl_extension.commands import (
@@ -67,7 +68,15 @@ def test_list_command(dummy_ext):
 
 
 @pytest.mark.integration
-def test_start_command(dummy_ext, faker):
+@pytest.mark.parametrize(
+    "description",
+    [
+        r"😃",
+        Faker().name(),
+        r"&",
+    ],
+)
+def test_start_command(dummy_ext, description):
     cmd = StartCommand(dummy_ext)
 
     query = []
@@ -76,7 +85,10 @@ def test_start_command(dummy_ext, faker):
 
     assert cmd.preview(query)
     assert isinstance(cmd.view(query), list)
-    assert cmd.handle(query, description=faker.name())
+    assert cmd.handle(query, description=description)
+
+    cmd = CurrentTrackerCommand(dummy_ext)
+    assert cmd.get_current_tracker().name == description
 
 
 @pytest.mark.integration

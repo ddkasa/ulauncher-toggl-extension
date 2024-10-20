@@ -7,12 +7,12 @@ from dataclasses import dataclass
 from datetime import timedelta
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Sequence
 
 from toggl_api import JSONCache
 
 from ulauncher_toggl_extension.images import APP_IMG, TIP_IMAGES, TipSeverity
-from ulauncher_toggl_extension.utils import show_notification
+from ulauncher_toggl_extension.utils import quote_member, show_notification
 
 if TYPE_CHECKING:
     from httpx import BasicAuth
@@ -40,6 +40,17 @@ class ActionEnum(enum.Enum):
 
 
 ACTION_TYPE = Optional[ActionEnum | Callable | str]
+
+
+OPTION_DESCRIPTIONS: dict[str, str] = {
+    '"': "Description",
+    "#": "Tags or Color",
+    "@": "Project",
+    ">": "Start Time",
+    "<": "End Time",
+    "$": "Client",
+    "~": "Path",
+}
 
 
 @dataclass(frozen=True)
@@ -78,10 +89,11 @@ class Command(metaclass=Singleton):
         process_model: Generates a viewable query from a Toggl object.
         call_pickle: Calls a pickled command.
         pagination: Helper method for creating paginated results.
+        handler_error: Helper method for handling and dispatching consistent errors.
 
     Attributes:
-        SPECIAL_SYMBOLS: Special symbols that can be used to trigger auto
-            complete and set various values.
+        OPTIONS: Special symbols that can be used to trigger auto complete and
+            set various values.
         PREFIX: Prefix of the command.
         ALIASES: Alternate prefixes of the command.
         EXPIRATION: Invalidation time of the cache.
@@ -92,13 +104,13 @@ class Command(metaclass=Singleton):
         prefix: User set application prefix. Usually defaults to "tgl".
     """
 
-    SPECIAL_SYMBOLS: tuple[str] = ('"', "#", "@", ">", "<", "$")
-    MIN_ARGS: int = 2
-    PREFIX: str = ""
-    ALIASES: tuple[str]
-    EXPIRATION: timedelta = timedelta(weeks=1)
-    ICON: Path = APP_IMG
-    ESSENTIAL: bool = False
+    OPTIONS: ClassVar[tuple[str, ...]]
+    MIN_ARGS: ClassVar[int] = 2
+    PREFIX: ClassVar[str] = ""
+    ALIASES: ClassVar[tuple[str, ...]]
+    EXPIRATION: ClassVar[timedelta] = timedelta(weeks=1)
+    ICON: ClassVar[Path] = APP_IMG
+    ESSENTIAL: ClassVar[bool] = False
 
     __slots__ = (
         "auth",
@@ -214,17 +226,18 @@ class Command(metaclass=Singleton):
     ) -> list[QueryParameters]:
         """Helper method to create result content."""
         del advanced
+        model_name = quote_member(self.PREFIX, model.name)
         return [
             QueryParameters(
                 self.ICON,
-                fmt_str.format(prefix=self.PREFIX.title(), name=model.name),
+                fmt_str.format(prefix=self.PREFIX.title(), name=model_name),
                 "",
                 action,
                 alt_action,
             ),
         ]
 
-    def paginator(
+    def _paginator(
         self,
         query: list[str],
         data: list[partial] | list[QueryParameters],
@@ -319,6 +332,10 @@ class Command(metaclass=Singleton):
     ) -> None:
         show_notification(msg, self.ICON.absolute(), on_close=on_close)
 
+    def handle_error(self, error: Exception) -> None:
+        log.error("%s", error)
+        self.notification(str(error))
+
     @property
     def cache(self) -> JSONCache:
         return JSONCache(self.cache_path, self.EXPIRATION)
@@ -327,13 +344,12 @@ class Command(metaclass=Singleton):
     def check_autocmp(cls, query: list[str]) -> bool:
         """Simple helper for verfying if a autocomplet can be used."""
         return len(query) >= cls.MIN_ARGS and any(
-            query[-1][0] == x for x in cls.SPECIAL_SYMBOLS
+            query[-1][0] == x for x in cls.OPTIONS
         )
 
     @classmethod
     def hint(cls) -> list[QueryParameters]:
         """Returns a list of hints for the command."""
-        # TODO: Integrate special arguments.
         desc = cls.__doc__.split(".")[0] + "." if cls.__doc__ else ""
         hints: list[QueryParameters] = [
             QueryParameters(
@@ -352,6 +368,15 @@ class Command(metaclass=Singleton):
                 ", ".join(cls.ALIASES),
             ),
         ]
+        if cls.OPTIONS:
+            hints.append(
+                QueryParameters(
+                    TIP_IMAGES[TipSeverity.INFO],
+                    "Accepts Options",
+                    ", ".join(cls.OPTIONS),
+                ),
+            )
+
         return hints
 
     @abstractmethod
@@ -394,7 +419,8 @@ class SubCommand(Command):
         get_cmd: Generate the command for the subcommand
     """
 
-    MIN_ARGS: int = 3
+    MIN_ARGS: ClassVar[int] = 3
+    OPTIONS = ()
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del query, kwargs

@@ -58,6 +58,10 @@
   2. Adding tags
   3. Editing tags
   4. Deleting tags
+- **Reports**
+  1. View & export daily breakdown
+  2. View & export weekly breakdown
+  3. View & export monthly breakdown
 
 # Contributing
 

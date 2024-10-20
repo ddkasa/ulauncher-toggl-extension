@@ -28,6 +28,7 @@ from ulauncher_toggl_extension.images import (
     TIP_IMAGES,
     TipSeverity,
 )
+from ulauncher_toggl_extension.utils import quote_member
 
 from .meta import ACTION_TYPE, ActionEnum, Command, QueryParameters
 from .project import ProjectCommand
@@ -52,7 +53,9 @@ class TrackerCommand(Command):
         advanced: bool = False,
         fmt_str: str = "{prefix} {name}",
     ) -> list[QueryParameters]:
-        name = fmt_str.format(prefix=self.PREFIX.title(), name=model.name)
+        model_name = quote_member(self.PREFIX, model.name)
+        name = fmt_str.format(prefix=self.PREFIX.title(), name=model_name)
+
         cmd = ProjectCommand(self)
         project = cmd.get_project(model.project)
         path = self.get_icon(project)
@@ -73,7 +76,7 @@ class TrackerCommand(Command):
             dates = self.format_datetime(model)
             total_time = (
                 model.duration
-                if isinstance(model.duration, timedelta | int)
+                if isinstance(model.duration, timedelta)
                 else datetime.now(timezone.utc) - model.start
             )
 
@@ -136,20 +139,23 @@ class TrackerCommand(Command):
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
         try:
             trackers = user.collect(
-                kwargs.get("start"),
-                kwargs.get("stop"),
+                kwargs.get("since"),
+                kwargs.get("before"),
                 kwargs.get("end_date"),
                 kwargs.get("start_date"),
                 refresh=kwargs.get("refresh", False),
             )
         except ValueError as err:
-            self.notification(str(err))
-            log.exception("%s")
+            self.handle_error(err)
             trackers = user.collect(kwargs.get("refresh", False))
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
-            trackers = user.collect()
+            self.handle_error(err)
+            trackers = user.collect(
+                kwargs.get("since"),
+                kwargs.get("before"),
+                kwargs.get("end_date"),
+                kwargs.get("start_date"),
+            )
 
         trackers.sort(
             key=lambda x: (x.stop or datetime.now(tz=timezone.utc), x.start),
@@ -182,8 +188,7 @@ class TrackerCommand(Command):
         try:
             return user.current(refresh=refresh)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
 
         return None
 
@@ -274,6 +279,7 @@ class CurrentTrackerCommand(TrackerCommand):
     ALIASES = ("now", "running")
     EXPIRATION = timedelta(seconds=10)
     ICON = APP_IMG
+    OPTIONS = ("refresh",)
 
     __slots__ = ("_tracker", "_ts")
 
@@ -328,6 +334,7 @@ class CurrentTrackerCommand(TrackerCommand):
                     "tgl ",
                 ),
             ]
+
         return self.process_model(
             tracker,
             partial(
@@ -357,6 +364,8 @@ class ListCommand(TrackerCommand):
     PREFIX = "list"
     ALIASES = ("ls", "lst")
     ICON = BROWSER_IMG
+
+    OPTIONS = ("refresh", "distinct")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -391,7 +400,7 @@ class ListCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
 
 class ContinueCommand(TrackerCommand):
@@ -401,6 +410,8 @@ class ContinueCommand(TrackerCommand):
     ALIASES = ("c", "cnt", "cont")
     ICON = CONTINUE_IMG
     ESSENTIAL = True
+
+    OPTIONS = ("refresh", "distinct", ">")
 
     def can_continue(self, **kwargs) -> bool:
         return not isinstance(
@@ -466,7 +477,7 @@ class ContinueCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             data,
             static=self.preview(query, **kwargs),
@@ -510,8 +521,7 @@ class ContinueCommand(TrackerCommand):
         try:
             cmd.tracker = endpoint.add(body)
         except (HTTPStatusError, TypeError) as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             self.notification(msg=f"Continuing {tracker.name}!")
             return True
@@ -528,6 +538,7 @@ class StartCommand(TrackerCommand):
     PREFIX = "start"
     ALIASES = ("stt", "begin")
     ICON = START_IMG
+    OPTIONS = ("refresh", "distinct", ">", '"', "@", "#")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -560,7 +571,7 @@ class StartCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             static=self.preview(query, **kwargs),
@@ -598,9 +609,8 @@ class StartCommand(TrackerCommand):
 
         try:
             cmd.tracker = endpoint.add(body)
-        except (HTTPStatusError, ValueError) as err:
-            log.exception("%s")
-            self.notification(str(err))
+        except (HTTPStatusError, TypeError) as err:
+            self.handle_error(err)
         else:
             if not cmd.tracker:
                 return False
@@ -616,6 +626,7 @@ class StopCommand(TrackerCommand):
     PREFIX = "stop"
     ALIASES = ("end", "stp")
     ICON = STOP_IMG
+    OPTIONS = ("refresh", "distinct", ">", '"', "@", "#", "<")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -687,13 +698,17 @@ class StopCommand(TrackerCommand):
         if not isinstance(current_tracker, TogglTracker):
             return False
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
-
         cmd = CurrentTrackerCommand(self)
+
+        stop = kwargs.get("stop")
+
         try:
-            endpoint.stop(current_tracker)
+            current_tracker = endpoint.stop(current_tracker) or current_tracker
+            if isinstance(stop, datetime) and stop > current_tracker.start:
+                body = TrackerBody(stop=stop)
+                endpoint.edit(current_tracker, body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             cmd.tracker = None
             self.notification(msg=f"Stopped {current_tracker.name}!")
@@ -707,6 +722,7 @@ class AddCommand(TrackerCommand):
     PREFIX = "add"
     ALIASES = ("a", "insert")
     ICON = ADD_IMG
+    OPTIONS = ("refresh", "distinct", ">", '"', "@", "#", "<")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -739,7 +755,7 @@ class AddCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             static=self.preview(query, **kwargs),
@@ -777,8 +793,7 @@ class AddCommand(TrackerCommand):
         try:
             tracker = endpoint.add(body)
         except (HTTPStatusError, TypeError) as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             if tracker is None:
                 return False
@@ -795,6 +810,8 @@ class EditCommand(TrackerCommand):
     ALIASES = ("ed", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
+
+    OPTIONS = ("refresh", "distinct", ">", "<", '"', "@", "#")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -830,7 +847,7 @@ class EditCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(
+        return self._paginator(
             query,
             cmp or data,
             static=self.preview(query, **kwargs),
@@ -869,8 +886,7 @@ class EditCommand(TrackerCommand):
         try:
             tracker = endpoint.edit(tracker, body)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
             if tracker is None:
                 return False
@@ -887,6 +903,7 @@ class DeleteCommand(TrackerCommand):
     ALIASES = ("rm", "del", "remove")
     ICON = DELETE_IMG
     ESSENTIAL = True
+    OPTIONS = ("refresh", "distinct")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         del kwargs
@@ -920,20 +937,24 @@ class DeleteCommand(TrackerCommand):
                 for tracker in self.get_models(**kwargs)
             ]
 
-        return self.paginator(query, data, page=kwargs.get("page", 0))
+        return self._paginator(query, data, page=kwargs.get("page", 0))
 
     def handle(self, query: list[str], **kwargs) -> bool:
         del query
         tracker = kwargs.get("model")
         if tracker is None:
             return False
+
         endpoint = TrackerEndpoint(self.workspace_id, self.auth, self.cache)
         try:
             endpoint.delete(tracker)
         except HTTPStatusError as err:
-            log.exception("%s")
-            self.notification(str(err))
+            self.handle_error(err)
         else:
+            current_cmd = CurrentTrackerCommand(self)
+            current_tracker = current_cmd.get_current_tracker()
+            if current_tracker and tracker.id == current_tracker.id:
+                current_cmd.current_tracker = None
             self.notification(msg=f"Removed {tracker.name}!")
             return True
 
