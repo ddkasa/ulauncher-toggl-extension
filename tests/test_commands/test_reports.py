@@ -103,3 +103,19 @@ def test_report_dump(command, fmt, dummy_ext, tmp_path):
     assert (
         tmp_path / f"{now.date().isoformat()}_{cmd.FRAME.name.lower()}_report.{fmt}"
     ).exists()
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("cmd", "result"),
+    [
+        (DailyReportCommand, 25773),
+        (WeeklyReportCommand, 25773),
+        (MonthlyReportCommand, 25773),
+    ],
+)
+def test_report_break_down(cmd, result, load_model_data, httpx_mock, dummy_ext):
+    httpx_mock.add_response(json=load_model_data)
+    cmd = cmd(dummy_ext)
+    outcome = cmd.break_down(date(2024, 10, 14))
+    assert sum(outcome) == result
