@@ -227,7 +227,7 @@ class DailyReportCommand(ReportCommand):
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.DAY
-    OPTIONS = (">",)
+    OPTIONS = (">", "~")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         start = kwargs.get("start") or datetime.now(tz=timezone.utc)
@@ -336,7 +336,7 @@ class WeeklyReportCommand(ReportCommand):
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
     ENDPOINT = WeeklyReportEndpoint
     FRAME = TimeFrame.WEEK
-    OPTIONS = (">",)
+    OPTIONS = (">", "~")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)
@@ -442,7 +442,7 @@ class MonthlyReportCommand(ReportCommand):
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.MONTH
-    OPTIONS = (">",)
+    OPTIONS = (">", "~")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
         self.amend_query(query)

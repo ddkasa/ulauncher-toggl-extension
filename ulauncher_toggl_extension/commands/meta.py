@@ -49,6 +49,7 @@ OPTION_DESCRIPTIONS: dict[str, str] = {
     ">": "Start Time",
     "<": "End Time",
     "$": "Client",
+    "~": "Path",
 }
 
 
