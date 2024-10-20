@@ -148,7 +148,28 @@
   - Description: Delete a tag. Provides a list of tags to select from.
   - Aliases: delete, rm, d, del, remove
 
-12. **Help**
+12. **Reports**
+
+- Description: Export & view reports on a daily, weekly or monthly basis.
+- Aliases: report, stats, rep
+- **Subcommands**:
+  1. **Day**
+  - Description: View daily tracked stats and export a pdf or csv report.
+  - Alt-Option: Directly export a daily report.
+  - Aliases: day, daily, d
+  - Optional Arguments: _start, path_
+  2. **Week**
+  - Description: View weekly tracked stats and export a pdf or csv report.
+  - Alt-Option: Directly export a weekly report.
+  - Aliases: week, weekly, w
+  - Optional Arguments: _start, path_
+  3. **Month**
+  - Description: View monthly tracked stats and export a pdf or csv report.
+  - Alt-Option: Directly export a monthly report.
+  - Aliases: month, monthly, m
+  - Optional Arguments: _start, path_
+
+13. **Help**
 
 - Description: Find out more about extensions commands.
 - Usage: `tgl help <command>`
