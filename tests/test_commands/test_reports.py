@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+import json
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,13 @@ from ulauncher_toggl_extension.commands.report import (
     WeeklyReportCommand,
 )
 from ulauncher_toggl_extension.date_time import DateTimeFrame, TimeFrame
+
+
+@pytest.fixture
+def load_model_data():
+    local_path = Path.cwd() / "tests/data/detailed_response.json"
+    with local_path.open("r", encoding="utf-8") as file:
+        return json.load(file)
 
 
 @pytest.mark.unit
