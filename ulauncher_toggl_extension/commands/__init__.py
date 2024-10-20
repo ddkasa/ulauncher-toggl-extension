@@ -37,8 +37,10 @@ Classes:
         - Edit Tag
         - Delete Tag
         - Search Tags (Not implemented yet)
-
-
+    - ReportCommands:
+        - Daily Report
+        - Weekly Report
+        - Monthly Report
 """
 
 from .client import AddClientCommand, ClientCommand, DeleteClientCommand
