@@ -12,7 +12,7 @@ jobs:
       max-parallel: 1
       fail-fast: true
       matrix:
-        python-version: ["3.12", "3.11", "3.10"]
+        python-version: ["3.12", "3.11", "3.10", "3.13"]
     env:
       TOGGL_WORKSPACE_ID: ${{ secrets.TOGGL_WORKSPACE_ID }}
       TOGGL_API_TOKEN: ${{ secrets.TOGGL_API_TOKEN }}
