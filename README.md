@@ -1,6 +1,7 @@
 # Ulauncher Toggl Time Tracker Extension
 
 ![GitHub Tag](https://img.shields.io/github/v/tag/ddkasa/ulauncher-toggl-extension?style=for-the-badge)
+<img alt="Static Badge" src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue?style=for-the-badge&label=python">
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ddkasa/ulauncher-toggl-extension/.github%2Fworkflows%2Ftests.yaml?style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fddkasa%2Fulauncher-toggl-extension%2Factions%2Fworkflows%2Ftests.yaml)
 
 > Extension for [Ulauncher](https://github.com/Ulauncher/Ulauncher/) heavily inspired by [Flow Toggl Plugin](https://github.com/JamesNZL/flow-toggl-plugin).
@@ -10,7 +11,7 @@
 ### Pre Requisites
 
 1. [Ulauncher](https://github.com/Ulauncher/Ulauncher/) with 2.0 API
-2. Tested on Python 3.10, 3.11, 3.12
+2. Tested on Python 3.10, 3.11, 3.12, 3.13
 
 ### Installation
 
