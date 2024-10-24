@@ -28,7 +28,7 @@ class DateTimeFrame:
         return cls(start, end, frame)
 
 
-WEEKDAYS: tuple[str, ...] = (
+WEEKDAYS: Final[tuple[str, ...]] = (
     "Monday",
     "Tuesday",
     "Wednesday",
@@ -39,9 +39,9 @@ WEEKDAYS: tuple[str, ...] = (
 )
 
 
-TIME_FORMAT = frozenset({"AM", "PM", "am", "pm"})
+TIME_FORMAT: Final[frozenset[str]] = frozenset({"AM", "PM", "am", "pm"})
 
-DT_FORMATS: tuple[str, ...] = (
+DT_FORMATS: Final[tuple[str, ...]] = (
     "%Y-%m-%dT%I:%M:%S %p",
     "%Y-%m-%dT%I:%M %p",
     "%I:%M:%S %p",
@@ -55,7 +55,7 @@ DT_FORMATS: tuple[str, ...] = (
     "%dT%I:%M %p",
 )
 
-TIME_SUFFIX: dict[str, str] = {
+TIME_SUFFIX: Final[dict[str, str]] = {
     "h": "hours",
     "m": "minutes",
     "s": "seconds",
@@ -65,7 +65,7 @@ TIME_SUFFIX: dict[str, str] = {
     "y": "years",
 }
 
-ORDINALS: dict[int, str] = {
+ORDINALS: Final[dict[int, str]] = {
     1: "st",
     2: "nd",
     3: "rd",
