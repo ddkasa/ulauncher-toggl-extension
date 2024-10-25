@@ -72,8 +72,15 @@ ORDINALS: Final[dict[int, str]] = {
 }
 
 
+def get_ordinal(number: int) -> str:
+    if number in {11, 12, 13}:
+        return "th"
+
+    return ORDINALS.get(number % 10, "th")
+
+
 def display_dt(ts: datetime) -> str:
-    ordinal = ORDINALS.get(ts.day % 10, "th")
+    ordinal = get_ordinal(ts.day)
     return ts.astimezone(get_local_tz()).strftime(f"%H:%M %A, %-d{ordinal} of %B %Y")
 
 
