@@ -90,6 +90,8 @@ class PreferencesEventListener(EventListener):
                 try:
                     auth = use_togglrc()
                 except AuthenticationError:
+                    msg = "Authentication is not setup correctly."
+                    show_notification(msg, TIP_IMAGES[TipSeverity.ERROR])
                     log.exception("Authentication is missing.")
                     raise
 
