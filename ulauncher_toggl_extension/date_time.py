@@ -151,7 +151,7 @@ def get_caps(date_obj: date, frame: TimeFrame) -> tuple[datetime, datetime]:
             tzinfo=timezone.utc,
         )
         stop = datetime.combine(
-            start_date + timedelta(days=7),
+            start_date + timedelta(days=6),
             datetime.max.time(),
             tzinfo=timezone.utc,
         )
