@@ -7,6 +7,7 @@ import pytest
 from ulauncher_toggl_extension.date_time import (
     DT_FORMATS,
     display_dt,
+    get_ordinal,
     localize_timezone,
     parse_datetime,
     parse_timedelta,
@@ -20,6 +21,7 @@ from ulauncher_toggl_extension.date_time import (
         (datetime(2024, 6, 2, 5, 2), "05:02 Sunday, 2nd of June 2024"),
         (datetime(2024, 6, 3, 5, 2), "05:02 Monday, 3rd of June 2024"),
         (datetime(2024, 6, 4, 5, 2), "05:02 Tuesday, 4th of June 2024"),
+        (datetime(2024, 6, 13, 5, 2), "05:02 Thursday, 13th of June 2024"),
     ],
 )
 @pytest.mark.unit
@@ -76,3 +78,21 @@ def test_parse_localize(get_tz):
     now = datetime.now(tz=timezone.utc)
 
     assert localize_timezone(now).tzinfo == get_tz
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (1, "st"),
+        (2, "nd"),
+        (3, "rd"),
+        (4, "th"),
+        (11, "th"),
+        (12, "th"),
+        (13, "th"),
+        (25, "th"),
+    ],
+)
+def test_ordinal(value, expected):
+    assert get_ordinal(value) == expected
