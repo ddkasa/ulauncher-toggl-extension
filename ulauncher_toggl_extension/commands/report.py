@@ -425,7 +425,7 @@ class WeeklyReportCommand(ReportCommand):
             ),
         ]
         results += self.summary(start)
-        results.extend(self.paginate_report(query, start))
+        results += self.paginate_report(query, start)
         return results
 
     @classmethod
