@@ -18,11 +18,11 @@ from toggl_api.reports import (
 
 from ulauncher_toggl_extension.date_time import (
     NOON,
-    ORDINALS,
     WEEKDAYS,
     DateTimeFrame,
     TimeFrame,
     get_local_tz,
+    get_ordinal,
 )
 from ulauncher_toggl_extension.images import REPORT_IMG
 
@@ -324,8 +324,9 @@ class DailyReportCommand(ReportCommand):
 
     @classmethod
     def format_datetime(cls, day: date) -> str:
-        ordinal = ORDINALS.get(day.day % 10, "th")
-        return day.astimezone(get_local_tz()).strftime(f"%-d{ordinal} of %B %Y")
+        if isinstance(day, datetime):
+            day = day.astimezone(get_local_tz())
+        return day.strftime(f"%-d{get_ordinal(day.day)} of %B %Y")
 
 
 class WeeklyReportCommand(ReportCommand):
@@ -425,13 +426,15 @@ class WeeklyReportCommand(ReportCommand):
             ),
         ]
         results += self.summary(start)
-        results.extend(self.paginate_report(query, start))
+        results += self.paginate_report(query, start)
         return results
 
     @classmethod
     def format_datetime(cls, day: date) -> str:
+        if isinstance(day, datetime):
+            day = day.astimezone(get_local_tz())
         week = day.isocalendar().week
-        return f"{week}{ORDINALS.get(week % 10, 'th')} week of {day.year}"
+        return f"{week}{get_ordinal(week)} week of {day.year}"
 
 
 class MonthlyReportCommand(ReportCommand):
@@ -534,4 +537,6 @@ class MonthlyReportCommand(ReportCommand):
 
     @classmethod
     def format_datetime(cls, day: date) -> str:
+        if isinstance(day, datetime):
+            day = day.astimezone(get_local_tz())
         return day.strftime("%B %Y")

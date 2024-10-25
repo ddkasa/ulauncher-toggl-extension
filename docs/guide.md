@@ -7,7 +7,7 @@
 ## Arguments
 
 1. Description - Description/Name of the item enclosed in double quotes e.g. **"Time Tracker"**. <sup>1</sup>
-2. Project - ID of the project to use starting with an **@** sign e.g. **@3512351**. <sup>1</sup>
+2. Project - ID of the project to use starting with a **@** sign e.g. **@3512351**. <sup>1</sup>
 3. Start Time - Start time of the tracker starting with a greater than sign e.g. **>10:10**. <sup>2</sup>
 4. End Time - End time of the tracker starting with a lesser than sign e.g. **<10:20**. <sup>2</sup>
 5. Duration - Duration of the tracker surrounded by a lesser than and greater than sign e.g. **>1h<**.
@@ -22,7 +22,7 @@
 6. Tags - Comma separated list of tags starting with a pound sign e.g. **#tag1,tag2,tag3**. <sup>1</sup>
 7. Color - Hex code of color e.g. **#ffffff**. If using non-premium only the supplied colors will work. <sup>1</sup>
 8. Refresh - Whether to a refresh a list of values or not. Add **refresh** to the command to refresh cache. Most of the commands support this.
-9. Client - ID of the client to use starting with an **$** sign e.g. **$3512351**. <sup>1</sup>
+9. Client - ID of the client to use starting with a **$** sign e.g. **$3512351**. <sup>1</sup>
 10. Private/Active/Distinct - Inverted boolean flags, so if set the will return as False e.g. **private**, **active**, **distinct**.
 11. Path - File path to a folder for exporting reports start with a tilde **~** e.g. **~/reports**. <sup>3</sup><sup>4</sup>
 
@@ -175,7 +175,7 @@
 ##### **Edit**
 
 - Description: Edit an existing client. <sup>3</sup>
-- Usage: `tgl client add "Example Client Edit"`
+- Usage: `tgl client edit "Example Client Edit"`
 - Aliases: edit, e, change, amend
 - Optional Arguments: _Description_
 

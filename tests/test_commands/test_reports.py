@@ -142,3 +142,20 @@ def test_report_summary(cmd, result, load_model_data, httpx_mock, dummy_ext):
     cmd = cmd(dummy_ext)
     outcome = cmd.summary(date(2024, 10, 14))
     assert len(outcome) == result
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("ts", "expected", "cmd"),
+    [
+        (date(2024, 10, 14), "14th of October 2024", DailyReportCommand),
+        (date(2024, 10, 11), "11th of October 2024", DailyReportCommand),
+        (date(2024, 10, 21), "21st of October 2024", DailyReportCommand),
+        (date(2024, 10, 21), "43rd week of 2024", WeeklyReportCommand),
+        (date(2024, 10, 10), "41st week of 2024", WeeklyReportCommand),
+        (date(2025, 3, 28), "13th week of 2025", WeeklyReportCommand),
+        (date(2025, 3, 28), "March 2025", MonthlyReportCommand),
+    ],
+)
+def test_format_datetime(ts, expected, cmd):
+    assert cmd.format_datetime(ts) == expected
