@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.10"
 pycairo = "^1.26.1"
 pygobject = "^3.48.2"
-toggl-api-wrapper = "^1.0.2"
+toggl-api-wrapper = "^1.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"

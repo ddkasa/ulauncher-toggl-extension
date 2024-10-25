@@ -574,13 +574,13 @@ files = [
 
 [[package]]
 name = "toggl-api-wrapper"
-version = "1.0.4"
+version = "1.1.1"
 description = "Simple Toggl API wrapper for non-premium features."
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "toggl_api_wrapper-1.0.4-py3-none-any.whl", hash = "sha256:997a64db206da3d5a952bd4ef6e5919c14a2a7d742bfa0516776a4caa76852c7"},
-    {file = "toggl_api_wrapper-1.0.4.tar.gz", hash = "sha256:c83ad289698089934bfba768c7ccdec3020756f7cb50ee454b741827ca1dff4b"},
+    {file = "toggl_api_wrapper-1.1.1-py3-none-any.whl", hash = "sha256:695eb56bc1f3396b8d16b5fb0ed383f939abefbe999e12aa1cc4e07446d08820"},
+    {file = "toggl_api_wrapper-1.1.1.tar.gz", hash = "sha256:5a07d7640679f47ebe41d182508c195a95df77ba8ce7cc531d2e1f9f60901362"},
 ]
 
 [package.dependencies]
@@ -678,4 +678,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "a8b0ca24e4a54ba4d3e5ddd479616503ff04f536de1f644d0ffa4462c88baecd"
+content-hash = "c3a6b9e9ef28034a35d1e1a8d59f78827d96a62a05671132480ecd819cc46c22"
