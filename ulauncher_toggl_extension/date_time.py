@@ -72,8 +72,15 @@ ORDINALS: Final[dict[int, str]] = {
 }
 
 
+def get_ordinal(number: int) -> str:
+    if number in {11, 12, 13}:
+        return "th"
+
+    return ORDINALS.get(number % 10, "th")
+
+
 def display_dt(ts: datetime) -> str:
-    ordinal = ORDINALS.get(ts.day % 10, "th")
+    ordinal = get_ordinal(ts.day)
     return ts.astimezone(get_local_tz()).strftime(f"%H:%M %A, %-d{ordinal} of %B %Y")
 
 
@@ -151,7 +158,7 @@ def get_caps(date_obj: date, frame: TimeFrame) -> tuple[datetime, datetime]:
             tzinfo=timezone.utc,
         )
         stop = datetime.combine(
-            start_date + timedelta(days=7),
+            start_date + timedelta(days=6),
             datetime.max.time(),
             tzinfo=timezone.utc,
         )
