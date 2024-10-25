@@ -1,12 +1,15 @@
 # ruff: noqa: DTZ001
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from unittest.mock import patch
 
 import pytest
 
 from ulauncher_toggl_extension.date_time import (
     DT_FORMATS,
+    TimeFrame,
     display_dt,
+    get_caps,
     get_ordinal,
     localize_timezone,
     parse_datetime,
@@ -96,3 +99,24 @@ def test_parse_localize(get_tz):
 )
 def test_ordinal(value, expected):
     assert get_ordinal(value) == expected
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("frame", "ts", "start", "end"),
+    [
+        (TimeFrame.DAY, 27, 27, 27),
+        (TimeFrame.WEEK, 27, 21, 27),
+        (TimeFrame.WEEK, 22, 21, 22),
+        (TimeFrame.MONTH, 25, 1, 25),
+        (TimeFrame.MONTH, 31, 1, 31),
+    ],
+)
+def test_get_caps(frame, ts, start, end):
+    with patch("ulauncher_toggl_extension.date_time.date") as mock_date:
+        mock_date.today.return_value = date(2024, 10, ts)
+        mock_date.side_effect = date
+
+        s, e = get_caps(date(2024, 10, ts), frame)
+        assert s.day == start
+        assert e.day == end
