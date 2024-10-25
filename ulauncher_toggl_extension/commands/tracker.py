@@ -335,7 +335,7 @@ class CurrentTrackerCommand(TrackerCommand):
                 ),
             ]
 
-        return self.process_model(
+        details = self.process_model(
             tracker,
             partial(
                 self.call_pickle,
@@ -347,6 +347,31 @@ class CurrentTrackerCommand(TrackerCommand):
             advanced=True,
             fmt_str="{name}",
         )
+        details.append(
+            QueryParameters(
+                StopCommand.ICON,
+                f"Stop {tracker.name}",
+                on_enter=partial(StopCommand(self).handle, query, **kwargs),
+                small=True,
+            ),
+        )
+        return details
+
+    def handle(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        result: list[QueryParameters] = super().handle(query, **kwargs)
+        model = self.get_current_tracker()
+        if not model:
+            return result
+
+        result.append(
+            QueryParameters(
+                StopCommand.ICON,
+                f"Stop {model.name}",
+                on_enter=partial(StopCommand(self).handle, query, **kwargs),
+                small=True,
+            ),
+        )
+        return result
 
     @property
     def tracker(self) -> TogglTracker | None:

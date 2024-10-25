@@ -6,7 +6,7 @@ from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, Optional
 
-from httpx import HTTPStatusError
+from httpx import HTTPStatusError, codes
 from toggl_api.reports import (
     DetailedReportEndpoint,
     PaginationOptions,
@@ -127,9 +127,15 @@ class ReportCommand(SubCommand, ReportMixin):
 
         try:
             report = self.endpoint.export_report(body, suffix)
-        except (HTTPStatusError, ValueError) as err:
+        except ValueError as err:
             self.handle_error(err)
             return False
+        except HTTPStatusError as err:
+            self.handle_error(err)
+            return (
+                err.response.status_code == codes.BAD_REQUEST
+                and err.response.text == '"Summary data is empty"'
+            )
 
         self.save_report(report, start, suffix, kwargs.get("path"))
 
