@@ -523,11 +523,16 @@ class ContinueCommand(TrackerCommand):
             )
 
             if isinstance(tracker, int):
-                tracker = user_endpoint.get_tracker(tracker)
+                tracker = user_endpoint.get(tracker)
 
             if tracker is None:
-                start = datetime.now(tz=timezone.utc) - timedelta(days=7)
-                tracker = user_endpoint.collect(since=start, refresh=True)[0]
+                tracker = user_endpoint.collect(refresh=kwargs.get("refresh", False))
+                if not tracker:
+                    msg = "No recent trackers available!"
+                    log.warning(msg)
+                    self.notification(msg)
+                    return False
+                tracker = tracker[0]
 
         if tracker is None:
             return False

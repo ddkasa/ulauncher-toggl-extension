@@ -13,7 +13,6 @@ from toggl_api.reports import (
     ReportBody,
     ReportEndpoint,
     SummaryReportEndpoint,
-    WeeklyReportEndpoint,
 )
 
 from ulauncher_toggl_extension.date_time import (
@@ -341,11 +340,13 @@ class WeeklyReportCommand(ReportCommand):
     PREFIX = "week"
     ALIASES = ("weekly", "w")
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
-    ENDPOINT = WeeklyReportEndpoint
+    ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.WEEK
     OPTIONS = (">", "~")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        start = kwargs.get("start", datetime.now(tz=timezone.utc))
+        kwargs["start"] = start
         self.amend_query(query)
         return [
             QueryParameters(
@@ -454,6 +455,8 @@ class MonthlyReportCommand(ReportCommand):
     OPTIONS = (">", "~")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        start = kwargs.get("start", datetime.now(tz=timezone.utc))
+        kwargs["start"] = start
         self.amend_query(query)
         return [
             QueryParameters(
