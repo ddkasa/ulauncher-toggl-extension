@@ -11,3 +11,5 @@ cache
 
 # images
 *.xcf
+coverage.xml
+.coverage

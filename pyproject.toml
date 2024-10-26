@@ -99,6 +99,7 @@ markers = [
     "slow: tests that include a long wait time.",
 ]
 testpaths = ["tests"]
+addopts = "--cov --cov-append  --cov-report xml"
 
 [tool.tox]
 legacy_tox_ini = """
