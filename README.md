@@ -3,6 +3,7 @@
 ![GitHub Tag](https://img.shields.io/github/v/tag/ddkasa/ulauncher-toggl-extension?style=for-the-badge)
 <img alt="Static Badge" src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue?style=for-the-badge&label=python">
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ddkasa/ulauncher-toggl-extension/.github%2Fworkflows%2Ftests.yaml?style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fddkasa%2Fulauncher-toggl-extension%2Factions%2Fworkflows%2Ftests.yaml)
+<a href="https://app.codecov.io/gh/ddkasa/ulauncher-toggl-extension/tree/main/ulauncher_toggl_extension"></a><img alt="Codecov" src="https://img.shields.io/codecov/c/github/ddkasa/ulauncher-toggl-extension?style=for-the-badge"></a>
 
 > Extension for [Ulauncher](https://github.com/Ulauncher/Ulauncher/) heavily inspired by [Flow Toggl Plugin](https://github.com/JamesNZL/flow-toggl-plugin).
 
