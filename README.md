@@ -7,14 +7,7 @@
 
 > Extension for [Ulauncher](https://github.com/Ulauncher/Ulauncher/) heavily inspired by [Flow Toggl Plugin](https://github.com/JamesNZL/flow-toggl-plugin).
 
-## Requirements & Installation
-
-### Pre Requisites
-
-1. [Ulauncher](https://github.com/Ulauncher/Ulauncher/) with 2.0 API
-2. Tested on Python 3.10, 3.11, 3.12, 3.13
-
-### Installation
+## Installation
 
 1. Install through Ulauncher GUI or clone the production branch into `~/.local/share/ulauncher/extensions/`
 2. Setup your authentication. It checks in order of:
