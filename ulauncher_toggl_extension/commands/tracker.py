@@ -523,7 +523,7 @@ class ContinueCommand(TrackerCommand):
             )
 
             if isinstance(tracker, int):
-                tracker = user_endpoint.get_tracker(tracker)
+                tracker = user_endpoint.get(tracker)
 
             if tracker is None:
                 start = datetime.now(tz=timezone.utc) - timedelta(days=7)
