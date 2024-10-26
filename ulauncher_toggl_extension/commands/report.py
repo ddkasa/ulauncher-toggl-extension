@@ -341,7 +341,7 @@ class WeeklyReportCommand(ReportCommand):
     PREFIX = "week"
     ALIASES = ("weekly", "w")
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
-    ENDPOINT = WeeklyReportEndpoint
+    ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.WEEK
     OPTIONS = (">", "~")
 
