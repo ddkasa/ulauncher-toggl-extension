@@ -179,7 +179,10 @@ class ReportCommand(SubCommand, ReportMixin):
             msg = "Target timeframe is not supported!"
             raise NotImplementedError(msg)
 
-        return next_date if next_date.date() <= date.today() else None  # noqa: DTZ011
+        if isinstance(day, datetime):
+            next_date = day.date()
+
+        return next_date if next_date <= date.today() else None  # noqa: DTZ011
 
     def paginate_report(self, query: list[str], day: date) -> list[QueryParameters]:
         report: list[QueryParameters] = []
