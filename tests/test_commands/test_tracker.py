@@ -1,10 +1,11 @@
+import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 from faker import Faker
-from toggl_api import JSONCache, TogglTracker, TrackerEndpoint
+from toggl_api import JSONCache, TogglTag, TogglTracker, TrackerEndpoint
 
 from ulauncher_toggl_extension.commands import (
     AddCommand,
@@ -31,6 +32,8 @@ def test_continue_command(dummy_ext, create_tracker):
 
     assert cmd.current_tracker().name == create_tracker.name
 
+    assert cmd.handle(query)
+
 
 @pytest.mark.integration
 @pytest.mark.slow
@@ -49,10 +52,13 @@ def test_current_command(
     time.sleep(5)
 
     assert cmd.get_current_tracker().id == create_tracker.id
+    assert cmd.view([])
 
     time.sleep(5)
 
     assert cmd.get_current_tracker() is None
+    assert not cmd.preview([])
+    assert not cmd.handle([])
 
 
 @pytest.mark.integration
@@ -130,6 +136,35 @@ def test_edit_command(dummy_ext, create_tracker, faker):
     assert cmd.preview(query)
     assert isinstance(cmd.view(query), list)
     assert cmd.handle(query, model=create_tracker, description=faker.name())
+
+
+@pytest.mark.unit
+def test_edit_command_gen_query(dummy_ext, faker, number, workspace):
+    cmd = EditCommand(dummy_ext)
+    model = TogglTracker(
+        number.randint(1, sys.maxsize),
+        faker.name(),
+        project=number.randint(1, sys.maxsize),
+        workspace=workspace,
+        stop=datetime.now(tz=timezone.utc),
+        tags=[TogglTag(number.randint(1, sys.maxsize), faker.name())],
+    )
+    assert cmd.generate_query(model).startswith(
+        f'{cmd.prefix} {cmd.PREFIX} "{model.name}"',
+    )
+
+
+@pytest.mark.unit
+def test_autocomplete(dummy_ext):
+    cmd = EditCommand(dummy_ext)
+
+    assert isinstance(cmd.autocomplete(["$"]), list)
+
+    assert isinstance(cmd.autocomplete(['"T']), list)
+
+    assert isinstance(cmd.autocomplete(["@"]), list)
+
+    assert isinstance(cmd.autocomplete(["#"]), list)
 
 
 @pytest.mark.integration
