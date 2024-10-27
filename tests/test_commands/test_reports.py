@@ -43,6 +43,29 @@ def test_get_totals(frame, dummy_ext, httpx_mock, number):
 
 
 @pytest.mark.unit
+def test_increment_date(dummy_ext):
+    cmd = DailyReportCommand(dummy_ext)
+
+    ts = date(2024, 10, 2)
+    assert cmd.increment_date(ts) == date(2024, 10, 3)
+    assert cmd.increment_date(ts, increment=False) == date(2024, 10, 1)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("ts", "result"),
+    [
+        (date(2024, 10, 2), 2),
+        (date.today(), 1),  # noqa: DTZ011
+    ],
+)
+def test_paginate_date(dummy_ext, ts, result):
+    cmd = DailyReportCommand(dummy_ext)
+
+    assert len(cmd.paginate_report([], ts)) == result
+
+
+@pytest.mark.unit
 def test_get_totals_error(dummy_ext, httpx_mock):
     cmd = ReportCommand(dummy_ext)
     httpx_mock.add_response(status_code=450)
