@@ -88,14 +88,7 @@ def test_fetch_break_down(frame, dummy_ext, httpx_mock, number):
     [
         (DailyReportCommand, "pdf"),
         (DailyReportCommand, "csv"),
-        pytest.param(
-            WeeklyReportCommand,
-            "pdf",
-            marks=pytest.mark.xfail(
-                reason="Issue with Toggl API",
-                raises=AssertionError,
-            ),
-        ),
+        (WeeklyReportCommand, "pdf"),
         (WeeklyReportCommand, "csv"),
         (MonthlyReportCommand, "pdf"),
         (MonthlyReportCommand, "csv"),
