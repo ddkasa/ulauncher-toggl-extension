@@ -20,11 +20,26 @@ from ulauncher_toggl_extension.date_time import (
 @pytest.mark.parametrize(
     ("date", "expected"),
     [
-        (datetime(2024, 6, 1, 5, 2), "05:02 Saturday, 1st of June 2024"),
-        (datetime(2024, 6, 2, 5, 2), "05:02 Sunday, 2nd of June 2024"),
-        (datetime(2024, 6, 3, 5, 2), "05:02 Monday, 3rd of June 2024"),
-        (datetime(2024, 6, 4, 5, 2), "05:02 Tuesday, 4th of June 2024"),
-        (datetime(2024, 6, 13, 5, 2), "05:02 Thursday, 13th of June 2024"),
+        (
+            datetime(2024, 6, 1, 5, 2, tzinfo=timezone.utc),
+            "05:02 Saturday, 1st of June 2024",
+        ),
+        (
+            datetime(2024, 6, 2, 5, 2, tzinfo=timezone.utc),
+            "05:02 Sunday, 2nd of June 2024",
+        ),
+        (
+            datetime(2024, 6, 3, 5, 2, tzinfo=timezone.utc),
+            "05:02 Monday, 3rd of June 2024",
+        ),
+        (
+            datetime(2024, 6, 4, 5, 2, tzinfo=timezone.utc),
+            "05:02 Tuesday, 4th of June 2024",
+        ),
+        (
+            datetime(2024, 6, 13, 5, 2, tzinfo=timezone(timedelta(hours=5))),
+            "00:02 Thursday, 13th of June 2024",
+        ),
     ],
 )
 @pytest.mark.unit

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import enum
-import time
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from functools import cache
@@ -117,10 +116,7 @@ def parse_datetime(ts_text: str) -> datetime:
 
 @cache
 def get_local_tz() -> timezone:
-    return timezone(
-        timedelta(hours=time.timezone + time.daylight),
-        name=time.tzname[time.daylight],
-    )
+    return datetime.now(timezone.utc).astimezone().tzinfo  # type: ignore[return-value]
 
 
 def localize_timezone(ts: datetime) -> datetime:
