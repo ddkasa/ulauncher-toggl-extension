@@ -1,6 +1,7 @@
 import sys
 import time
 from datetime import datetime, timezone
+from functools import partial
 from pathlib import Path
 
 import pytest
@@ -52,13 +53,25 @@ def test_current_command(
     time.sleep(5)
 
     assert cmd.get_current_tracker().id == create_tracker.id
-    assert cmd.view([])
 
     time.sleep(5)
 
     assert cmd.get_current_tracker() is None
     assert not cmd.preview([])
     assert not cmd.handle([])
+
+
+@pytest.mark.integration
+def test_current_command_stop(dummy_ext, create_tracker):
+    cmd = CurrentTrackerCommand(dummy_ext)
+    assert cmd.get_current_tracker(refresh=True).id == create_tracker.id
+    view = cmd.view([])
+    assert isinstance(view, list)
+    stop_command = view[3]
+    assert isinstance(stop_command.on_enter, partial)
+    assert stop_command.on_enter.func == StopCommand(dummy_ext).handle
+    stop_command.on_enter()
+    assert cmd.tracker is None
 
 
 @pytest.mark.integration

@@ -334,6 +334,7 @@ class CurrentTrackerCommand(TrackerCommand):
                     "tgl ",
                 ),
             ]
+        kwargs["model"] = tracker
 
         details = self.process_model(
             tracker,
