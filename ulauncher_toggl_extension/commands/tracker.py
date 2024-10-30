@@ -200,12 +200,12 @@ class TrackerCommand(Command):
             return autocomplete
 
         if query[-1][0] == '"' and query[-1][-1] != '"':
-            cmd = ProjectCommand(self)
+            pcmd = ProjectCommand(self)
             models = self.get_models(**kwargs)
 
             for tracker in models:
                 query[-1] = f'"{tracker.name}"'
-                project = cmd.get_project(tracker.project)
+                project = pcmd.get_project(tracker.project)
                 autocomplete.append(
                     QueryParameters(
                         self.get_icon(project),
@@ -216,13 +216,13 @@ class TrackerCommand(Command):
                 )
 
         elif query[-1][0] == "@" and len(query[-1]) < 4:  # noqa: PLR2004
-            cmd = ProjectCommand(self)
+            pcmd = ProjectCommand(self)
 
-            for project in cmd.get_models(**kwargs):
+            for project in pcmd.get_models(**kwargs):
                 query[-1] = f"@{project.id}"
                 autocomplete.append(
                     QueryParameters(
-                        cmd.get_icon(project),
+                        pcmd.get_icon(project),
                         project.name,
                         "Use this project.",
                         " ".join(query),
@@ -230,16 +230,16 @@ class TrackerCommand(Command):
                 )
 
         elif query[-1][0] == "#" and (len(query[-1]) < 3 or query[-1][-1] == ","):  # noqa: PLR2004
-            cmd = TagCommand(self)
+            tcmd = TagCommand(self)
 
-            for tag in cmd.get_models(**kwargs):
+            for tag in tcmd.get_models(**kwargs):
                 if "," in query[-1]:
                     query[-1] = query[-1][: query[-1].rfind(",")] + f",{tag.name}"
                 else:
                     query[-1] = f"#{tag.name}"
                 autocomplete.append(
                     QueryParameters(
-                        cmd.ICON,
+                        tcmd.ICON,
                         tag.name,
                         "Use this tag.",
                         " ".join(query),
@@ -334,6 +334,7 @@ class CurrentTrackerCommand(TrackerCommand):
                     "tgl ",
                 ),
             ]
+        kwargs["model"] = tracker
 
         details = self.process_model(
             tracker,
@@ -341,7 +342,6 @@ class CurrentTrackerCommand(TrackerCommand):
                 self.call_pickle,
                 "handle",
                 query=query,
-                model=tracker,
                 **kwargs,
             ),
             advanced=True,
@@ -358,7 +358,7 @@ class CurrentTrackerCommand(TrackerCommand):
         return details
 
     def handle(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        result: list[QueryParameters] = super().handle(query, **kwargs)
+        result: list[QueryParameters] = super().handle(query, **kwargs)  # type: ignore[assignment]
         model = self.get_current_tracker()
         if not model:
             return result
@@ -527,12 +527,13 @@ class ContinueCommand(TrackerCommand):
 
             if tracker is None:
                 tracker = user_endpoint.collect(refresh=kwargs.get("refresh", False))
+
                 if not tracker:
                     msg = "No recent trackers available!"
                     log.warning(msg)
                     self.notification(msg)
                     return False
-                tracker = tracker[0]
+                tracker = tracker[-1]
 
         if tracker is None:
             return False
@@ -984,7 +985,7 @@ class DeleteCommand(TrackerCommand):
             current_cmd = CurrentTrackerCommand(self)
             current_tracker = current_cmd.get_current_tracker()
             if current_tracker and tracker.id == current_tracker.id:
-                current_cmd.current_tracker = None
+                current_cmd.tracker = None
             self.notification(msg=f"Removed {tracker.name}!")
             return True
 
