@@ -358,7 +358,7 @@ class CurrentTrackerCommand(TrackerCommand):
         return details
 
     def handle(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        result: list[QueryParameters] = super().handle(query, **kwargs)
+        result: list[QueryParameters] = super().handle(query, **kwargs)  # type: ignore[assignment]
         model = self.get_current_tracker()
         if not model:
             return result
