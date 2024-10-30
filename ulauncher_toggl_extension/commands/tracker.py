@@ -342,7 +342,6 @@ class CurrentTrackerCommand(TrackerCommand):
                 self.call_pickle,
                 "handle",
                 query=query,
-                model=tracker,
                 **kwargs,
             ),
             advanced=True,
@@ -528,12 +527,13 @@ class ContinueCommand(TrackerCommand):
 
             if tracker is None:
                 tracker = user_endpoint.collect(refresh=kwargs.get("refresh", False))
+
                 if not tracker:
                     msg = "No recent trackers available!"
                     log.warning(msg)
                     self.notification(msg)
                     return False
-                tracker = tracker[0]
+                tracker = tracker[-1]
 
         if tracker is None:
             return False
