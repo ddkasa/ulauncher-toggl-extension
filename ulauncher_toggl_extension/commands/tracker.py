@@ -15,7 +15,7 @@ from toggl_api import (
     UserEndpoint,
 )
 
-from ulauncher_toggl_extension.date_time import display_dt, get_local_tz
+from ulauncher_toggl_extension.date_time import display_dt, format_seconds, get_local_tz
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
     APP_IMG,
@@ -91,7 +91,7 @@ class TrackerCommand(Command):
                 ),
                 QueryParameters(
                     APP_IMG,
-                    f"Duration: {round(total_time.total_seconds() / 3600, 2)}h",
+                    f"Duration: {format_seconds(int(total_time.total_seconds()))}",
                     on_enter=ActionEnum.DO_NOTHING,
                     small=True,
                 ),
