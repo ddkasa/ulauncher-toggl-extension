@@ -110,6 +110,14 @@
 
 ---
 
+### **Refresh** <sup>5</sup>
+
+- Description: Refresh a single tracker.
+- Usage: `tgl refresh`
+- Aliases: refresh, re, update
+
+---
+
 ### **Projects**
 
 - Description: Display a list of subcommands related to projects.
@@ -146,6 +154,12 @@
 - Description: Delete a project. Provides a list of projects to select from.
 - Usage: `tgl project delete`
 - Aliases: delete, rm, d, del
+
+##### **Refresh** <sup>5</sup>
+
+- Description: Refresh a single project model.
+- Usage: `tgl project refresh`
+- Aliases: refresh, re, update
 
 ---
 
@@ -184,6 +198,12 @@
 - Description: Delete a client. Provides a list of clients to select from.
 - Usage: `tgl client delete`
 - Aliases: delete, rm, d, del, remove
+
+##### **Refresh** <sup>5</sup>
+
+- Description: Refresh a single client model.
+- Usage: `tgl client refresh`
+- Aliases: refresh, re, update
 
 ---
 
@@ -278,3 +298,5 @@
 <sup>3</sup> _Will provide a list of older clients as pre fill options._
 
 <sup>4</sup> _Will provide a list of older tags as pre fill options._
+
+<sup>5</sup> _Will not appear unless a direct match._
