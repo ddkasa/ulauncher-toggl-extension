@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from httpx import HTTPStatusError
 from toggl_api import (
@@ -23,6 +23,7 @@ from ulauncher_toggl_extension.images import (
     CONTINUE_IMG,
     DELETE_IMG,
     EDIT_IMG,
+    REFRESH_IMG,
     START_IMG,
     STOP_IMG,
     TIP_IMAGES,
@@ -988,5 +989,58 @@ class DeleteCommand(TrackerCommand):
                 current_cmd.tracker = None
             self.notification(msg=f"Removed {tracker.name}!")
             return True
+
+        return False
+
+
+class RefreshCommand(TrackerCommand):
+    """Refresh specific trackers."""
+
+    PREFIX = "refresh"
+    ALIASES = ("re", "update")
+    ICON = REFRESH_IMG
+    ESSENTIAL = True
+
+    OPTIONS = ("refresh", "distinct")
+
+    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:  # noqa: PLR6301
+        del query, kwargs
+        return []
+
+    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        data: list[partial] = kwargs.get("data", [])
+        if not data:
+            kwargs["distinct"] = not kwargs.get("distinct", True)
+            data = [
+                partial(
+                    self.process_model,
+                    tracker,
+                    partial(
+                        self.call_pickle,
+                        method="handle",
+                        query=query,
+                        model=tracker,
+                        **kwargs,
+                    ),
+                    fmt_str="{name}",
+                )
+                for tracker in self.get_models(**kwargs)
+            ]
+
+        return self._paginator(query, data, page=kwargs.get("page", 0))
+
+    def handle(self, query: list[str], **kwargs) -> Literal[False]:  # noqa: ARG002
+        model = kwargs.get("model")
+        if model is None:
+            return False
+
+        endpoint = UserEndpoint(self.workspace_id, self.auth, self.cache)
+        try:
+            model = endpoint.get(model, refresh=True)
+        except HTTPStatusError as err:
+            self.handle_error(err)
+            return False
+
+        self.notification(f"Successfully refreshed tracker '{model.name}'!")
 
         return False

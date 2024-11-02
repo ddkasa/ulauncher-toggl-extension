@@ -1,4 +1,5 @@
 import sys
+from threading import _DummyThread
 import time
 from datetime import datetime, timezone
 from functools import partial
@@ -18,6 +19,7 @@ from ulauncher_toggl_extension.commands import (
     StartCommand,
     StopCommand,
 )
+from ulauncher_toggl_extension.commands.tracker import RefreshCommand
 
 
 @pytest.mark.integration
@@ -195,3 +197,23 @@ def test_stop_command(dummy_ext, create_tracker, helper):
     find = helper(create_tracker.name, cmd)
     assert isinstance(find, TogglTracker)
     assert isinstance(find.stop, datetime)
+
+
+@pytest.mark.integration
+def test_refresh_command(dummy_ext, create_tracker, faker):
+    endpoint = TrackerEndpoint(
+        dummy_ext.workspace_id,
+        dummy_ext.auth,
+        JSONCache(dummy_ext.cache_path),
+    )
+    old_name = create_tracker.name
+    create_tracker.name = faker.name()
+    endpoint.cache.update_entries(create_tracker)
+
+    cmd = RefreshCommand(dummy_ext)
+
+    assert endpoint.cache.find_entry(create_tracker).name == create_tracker.name
+
+    cmd.handle([], model=create_tracker)
+
+    assert endpoint.cache.find_entry(create_tracker).name == old_name

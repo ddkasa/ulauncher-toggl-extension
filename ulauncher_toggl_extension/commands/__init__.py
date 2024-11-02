@@ -56,6 +56,7 @@ from .tracker import (
     DeleteCommand,
     EditCommand,
     ListCommand,
+    RefreshCommand,
     StartCommand,
     StopCommand,
 )
@@ -79,6 +80,7 @@ __all__ = (
     "ListCommand",
     "ProjectCommand",
     "QueryParameters",
+    "RefreshCommand",
     "ReportCommand",
     "StartCommand",
     "StopCommand",

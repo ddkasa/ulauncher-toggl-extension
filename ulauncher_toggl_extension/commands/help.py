@@ -39,6 +39,7 @@ from .tracker import (
     DeleteCommand,
     EditCommand,
     ListCommand,
+    RefreshCommand,
     StartCommand,
     StopCommand,
 )
@@ -61,6 +62,7 @@ class HelpCommand(Command):
         EditCommand.PREFIX: EditCommand,
         DeleteCommand.PREFIX: DeleteCommand,
         ProjectCommand.PREFIX: ProjectCommand,
+        RefreshCommand.PREFIX: RefreshCommand,
         ProjectCommand.PREFIX + " " + ListProjectCommand.PREFIX: ListProjectCommand,
         ProjectCommand.PREFIX + " " + AddProjectCommand.PREFIX: AddProjectCommand,
         ProjectCommand.PREFIX + " " + DeleteProjectCommand.PREFIX: DeleteProjectCommand,
