@@ -1,4 +1,5 @@
 import pytest
+from toggl_api import JSONCache, ProjectEndpoint
 
 from ulauncher_toggl_extension.commands.project import (
     AddProjectCommand,
@@ -6,7 +7,29 @@ from ulauncher_toggl_extension.commands.project import (
     EditProjectCommand,
     ListProjectCommand,
     ProjectCommand,
+    RefreshProjectCommand,
 )
+
+
+@pytest.mark.integration
+def test_refresh_project_command(dummy_ext, create_project, faker):
+    endpoint = ProjectEndpoint(
+        dummy_ext.workspace_id,
+        dummy_ext.auth,
+        JSONCache(dummy_ext.cache_path),
+    )
+    old_name = create_project.name
+    create_project.name = faker.name()
+    endpoint.cache.update_entries(create_project)
+    endpoint.cache.commit()
+
+    cmd = RefreshProjectCommand(dummy_ext)
+
+    assert endpoint.cache.find_entry(create_project).name == create_project.name
+
+    cmd.handle([], model=create_project)
+
+    assert endpoint.cache.find_entry(create_project).name == old_name
 
 
 @pytest.mark.unit

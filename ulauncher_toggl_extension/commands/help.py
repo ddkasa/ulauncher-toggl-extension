@@ -18,6 +18,7 @@ from .project import (
     EditProjectCommand,
     ListProjectCommand,
     ProjectCommand,
+    RefreshProjectCommand,
 )
 from .report import (
     DailyReportCommand,
@@ -67,6 +68,9 @@ class HelpCommand(Command):
         ProjectCommand.PREFIX + " " + AddProjectCommand.PREFIX: AddProjectCommand,
         ProjectCommand.PREFIX + " " + DeleteProjectCommand.PREFIX: DeleteProjectCommand,
         ProjectCommand.PREFIX + " " + EditProjectCommand.PREFIX: EditProjectCommand,
+        ProjectCommand.PREFIX
+        + " "
+        + RefreshProjectCommand.PREFIX: RefreshProjectCommand,
         ClientCommand.PREFIX: ClientCommand,
         ClientCommand.PREFIX + " " + ListClientCommand.PREFIX: ListClientCommand,
         ClientCommand.PREFIX + " " + AddClientCommand.PREFIX: AddClientCommand,
