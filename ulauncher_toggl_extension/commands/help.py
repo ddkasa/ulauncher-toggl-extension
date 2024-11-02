@@ -10,6 +10,7 @@ from .client import (
     DeleteClientCommand,
     EditClientCommand,
     ListClientCommand,
+    RefreshClientCommand,
 )
 from .meta import Command, QueryParameters
 from .project import (
@@ -76,6 +77,7 @@ class HelpCommand(Command):
         ClientCommand.PREFIX + " " + AddClientCommand.PREFIX: AddClientCommand,
         ClientCommand.PREFIX + " " + DeleteClientCommand.PREFIX: DeleteClientCommand,
         ClientCommand.PREFIX + " " + EditClientCommand.PREFIX: EditClientCommand,
+        ClientCommand.PREFIX + " " + RefreshClientCommand.PREFIX: RefreshClientCommand,
         TagCommand.PREFIX: TagCommand,
         TagCommand.PREFIX + " " + ListTagCommand.PREFIX: ListTagCommand,
         TagCommand.PREFIX + " " + AddTagCommand.PREFIX: AddTagCommand,
