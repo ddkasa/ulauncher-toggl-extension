@@ -111,6 +111,7 @@ class Command(metaclass=Singleton):
     EXPIRATION: ClassVar[timedelta] = timedelta(weeks=1)
     ICON: ClassVar[Path] = APP_IMG
     ESSENTIAL: ClassVar[bool] = False
+    # NOTE: This could be refactored into a method as some commands are situational.
 
     __slots__ = (
         "auth",

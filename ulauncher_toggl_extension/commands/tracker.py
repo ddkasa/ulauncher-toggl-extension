@@ -272,6 +272,17 @@ class TrackerCommand(Command):
     def cache(self) -> JSONCache:
         return JSONCache(self.cache_path, self.expiration)
 
+    def handle(self, query: list[str], **kwargs) -> bool | list[QueryParameters]:
+        handle = super().handle(query, **kwargs)
+        if not isinstance(handle, list):
+            return handle
+        model: TogglTracker = kwargs.get("model")
+        if model.running():
+            handle.pop(3)
+        elif CurrentTrackerCommand(self).get_current_tracker() is not None:
+            handle.pop(4)
+        return handle
+
 
 class CurrentTrackerCommand(TrackerCommand):
     """Retrieves and stores the current running tracker."""
