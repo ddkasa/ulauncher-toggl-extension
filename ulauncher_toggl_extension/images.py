@@ -32,6 +32,7 @@ CONTINUE_IMG = SVG_PATH / Path("continue.svg")
 REPORT_IMG = SVG_PATH / Path("reports.svg")
 BROWSER_IMG = SVG_PATH / Path("browser.svg")
 BLANK_IMG = SVG_PATH / Path("blank.svg")
+REFRESH_IMG = SVG_PATH / Path("refresh.svg")
 
 TIP_IMAGES = {
     TipSeverity.HINT: SVG_PATH / Path("tip.svg"),

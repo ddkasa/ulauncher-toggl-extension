@@ -45,9 +45,8 @@ def create_tracker(dummy_ext, faker):
     model = _find_model(desc, command)
     yield model
 
-    if _find_model(desc, command) is not None:
-        command = DeleteCommand(dummy_ext)
-        command.handle([], model=model)
+    command = DeleteCommand(dummy_ext)
+    command.handle([], model=model)
 
 
 @pytest.fixture
@@ -60,9 +59,8 @@ def create_project(dummy_ext, faker):
     model = _find_model(desc, command)
     yield model
 
-    if _find_model(desc, command) is not None:
-        command = DeleteProjectCommand(dummy_ext)
-        command.handle([], model=model)
+    command = DeleteProjectCommand(dummy_ext)
+    command.handle([], model=model)
 
 
 @pytest.fixture
@@ -75,9 +73,8 @@ def create_client(dummy_ext, faker):
     model = _find_model(desc, command)
     yield model
 
-    if _find_model(desc, command) is not None:
-        command = DeleteClientCommand(dummy_ext)
-        command.handle([], model=model)
+    command = DeleteClientCommand(dummy_ext)
+    command.handle([], model=model)
 
 
 @pytest.fixture
@@ -89,6 +86,6 @@ def create_tag(dummy_ext, faker):
 
     model = _find_model(desc, command)
     yield model
-    if _find_model(desc, command) is not None:
-        command = DeleteTagCommand(dummy_ext)
-        command.handle([], model=model)
+
+    command = DeleteTagCommand(dummy_ext)
+    command.handle([], model=model)
