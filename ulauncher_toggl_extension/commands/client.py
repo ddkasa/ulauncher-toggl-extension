@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from functools import partial
-from typing import Optional
+from typing import Literal, Optional
 
 from httpx import HTTPStatusError
 from toggl_api import ClientBody, ClientEndpoint, TogglClient
@@ -13,6 +13,7 @@ from ulauncher_toggl_extension.images import (
     BROWSER_IMG,
     DELETE_IMG,
     EDIT_IMG,
+    REFRESH_IMG,
 )
 
 from .meta import QueryParameters, SubCommand
@@ -309,3 +310,59 @@ class EditClientCommand(ClientCommand):
         self.notification(msg=f"Edited client {body.name}!")
 
         return True
+
+
+class RefreshClientCommand(ClientCommand):
+    """Refresh specific clients."""
+
+    PREFIX = "refresh"
+    ALIASES = ("re", "update")
+    ICON = REFRESH_IMG
+    ESSENTIAL = True
+
+    OPTIONS = ("refresh", "distinct")
+
+    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:  # noqa: PLR6301
+        del query, kwargs
+        return []
+
+    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        data: list[partial] = kwargs.get("data", [])
+        if not data:
+            kwargs["distinct"] = not kwargs.get("distinct", True)
+            data = [
+                partial(
+                    self.process_model,
+                    client,
+                    partial(
+                        self.call_pickle,
+                        method="handle",
+                        query=query,
+                        model=client,
+                        **kwargs,
+                    ),
+                    fmt_str="{name}",
+                )
+                for client in self.get_models(**kwargs)
+            ]
+
+        return self._paginator(query, data, page=kwargs.get("page", 0))
+
+    def handle(self, query: list[str], **kwargs) -> Literal[False]:  # noqa: ARG002
+        model = kwargs.get("model")
+        if model is None:
+            return False
+
+        endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
+        try:
+            model = endpoint.get(model, refresh=True)
+        except HTTPStatusError as err:
+            self.handle_error(err)
+            return False
+
+        if model is None:
+            return False
+
+        self.notification(f"Successfully refreshed client '{model.name}'!")
+
+        return False
