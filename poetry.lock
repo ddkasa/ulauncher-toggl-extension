@@ -421,12 +421,12 @@ pycairo = ">=1.16"
 
 [[package]]
 name = "pygobject-stubs"
-version = "2.11.0"
+version = "2.12.0"
 description = "Typing stubs for PyGObject"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "PyGObject-stubs-2.11.0.tar.gz", hash = "sha256:e1c7e32658213ae711d8afc5ea083a434231b8b588d1de23f50d5705a9c8eefe"},
+    {file = "pygobject_stubs-2.12.0.tar.gz", hash = "sha256:4dad2d876c070a16f604c249bb70e8cbc36373151a6731d826a8436c6a80b99d"},
 ]
 
 [package.extras]
@@ -574,13 +574,13 @@ files = [
 
 [[package]]
 name = "toggl-api-wrapper"
-version = "1.2.0"
+version = "1.3.1"
 description = "Simple Toggl API wrapper for non-premium features."
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "toggl_api_wrapper-1.2.0-py3-none-any.whl", hash = "sha256:a3c2654462d5e34e2e18c69afc58622df537a7b1adfcfcae993ced36fea8e0c8"},
-    {file = "toggl_api_wrapper-1.2.0.tar.gz", hash = "sha256:9a6903cb3750e3fa9ea9166a43f5d0b579fbf3007f40199a87d54f79801efe71"},
+    {file = "toggl_api_wrapper-1.3.1-py3-none-any.whl", hash = "sha256:591e7f224fc3263f1ffa7aacef6ff2d39cfc4d2220180a2074276fae68b648c1"},
+    {file = "toggl_api_wrapper-1.3.1.tar.gz", hash = "sha256:ece63160764dbcb579fc3f09a37e69959091a571c497b7ca7812b4cafb9a9e1b"},
 ]
 
 [package.dependencies]
@@ -657,13 +657,13 @@ files = [
 
 [[package]]
 name = "virtualenv"
-version = "20.27.0"
+version = "20.27.1"
 description = "Virtual Python Environment builder"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "virtualenv-20.27.0-py3-none-any.whl", hash = "sha256:44a72c29cceb0ee08f300b314848c86e57bf8d1f13107a5e671fb9274138d655"},
-    {file = "virtualenv-20.27.0.tar.gz", hash = "sha256:2ca56a68ed615b8fe4326d11a0dca5dfbe8fd68510fb6c6349163bed3c15f2b2"},
+    {file = "virtualenv-20.27.1-py3-none-any.whl", hash = "sha256:f11f1b8a29525562925f745563bfd48b189450f61fb34c4f9cc79dd5aa32a1f4"},
+    {file = "virtualenv-20.27.1.tar.gz", hash = "sha256:142c6be10212543b32c6c45d3d3893dff89112cc588b7d0879ae5a1ec03a47ba"},
 ]
 
 [package.dependencies]
@@ -678,4 +678,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "c3a6b9e9ef28034a35d1e1a8d59f78827d96a62a05671132480ecd819cc46c22"
+content-hash = "0b02103af712311fa5dff88595b7fdbf94e51ebb930efc2a4e3ac405430346cf"
