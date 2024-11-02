@@ -10,6 +10,7 @@ from .client import (
     DeleteClientCommand,
     EditClientCommand,
     ListClientCommand,
+    RefreshClientCommand,
 )
 from .meta import Command, QueryParameters
 from .project import (
@@ -18,6 +19,7 @@ from .project import (
     EditProjectCommand,
     ListProjectCommand,
     ProjectCommand,
+    RefreshProjectCommand,
 )
 from .report import (
     DailyReportCommand,
@@ -39,6 +41,7 @@ from .tracker import (
     DeleteCommand,
     EditCommand,
     ListCommand,
+    RefreshCommand,
     StartCommand,
     StopCommand,
 )
@@ -61,15 +64,20 @@ class HelpCommand(Command):
         EditCommand.PREFIX: EditCommand,
         DeleteCommand.PREFIX: DeleteCommand,
         ProjectCommand.PREFIX: ProjectCommand,
+        RefreshCommand.PREFIX: RefreshCommand,
         ProjectCommand.PREFIX + " " + ListProjectCommand.PREFIX: ListProjectCommand,
         ProjectCommand.PREFIX + " " + AddProjectCommand.PREFIX: AddProjectCommand,
         ProjectCommand.PREFIX + " " + DeleteProjectCommand.PREFIX: DeleteProjectCommand,
         ProjectCommand.PREFIX + " " + EditProjectCommand.PREFIX: EditProjectCommand,
+        ProjectCommand.PREFIX
+        + " "
+        + RefreshProjectCommand.PREFIX: RefreshProjectCommand,
         ClientCommand.PREFIX: ClientCommand,
         ClientCommand.PREFIX + " " + ListClientCommand.PREFIX: ListClientCommand,
         ClientCommand.PREFIX + " " + AddClientCommand.PREFIX: AddClientCommand,
         ClientCommand.PREFIX + " " + DeleteClientCommand.PREFIX: DeleteClientCommand,
         ClientCommand.PREFIX + " " + EditClientCommand.PREFIX: EditClientCommand,
+        ClientCommand.PREFIX + " " + RefreshClientCommand.PREFIX: RefreshClientCommand,
         TagCommand.PREFIX: TagCommand,
         TagCommand.PREFIX + " " + ListTagCommand.PREFIX: ListTagCommand,
         TagCommand.PREFIX + " " + AddTagCommand.PREFIX: AddTagCommand,

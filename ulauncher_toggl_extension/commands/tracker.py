@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from httpx import HTTPStatusError
 from toggl_api import (
@@ -15,7 +15,7 @@ from toggl_api import (
     UserEndpoint,
 )
 
-from ulauncher_toggl_extension.date_time import display_dt, get_local_tz
+from ulauncher_toggl_extension.date_time import display_dt, format_seconds, get_local_tz
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
     APP_IMG,
@@ -23,6 +23,7 @@ from ulauncher_toggl_extension.images import (
     CONTINUE_IMG,
     DELETE_IMG,
     EDIT_IMG,
+    REFRESH_IMG,
     START_IMG,
     STOP_IMG,
     TIP_IMAGES,
@@ -90,7 +91,7 @@ class TrackerCommand(Command):
                 ),
                 QueryParameters(
                     APP_IMG,
-                    f"Duration: {round(total_time.total_seconds() / 3600, 2)}h",
+                    f"Duration: {format_seconds(int(total_time.total_seconds()))}",
                     on_enter=ActionEnum.DO_NOTHING,
                     small=True,
                 ),
@@ -270,6 +271,17 @@ class TrackerCommand(Command):
     @property
     def cache(self) -> JSONCache:
         return JSONCache(self.cache_path, self.expiration)
+
+    def handle(self, query: list[str], **kwargs) -> bool | list[QueryParameters]:
+        handle = super().handle(query, **kwargs)
+        if not isinstance(handle, list):
+            return handle
+        model: TogglTracker = kwargs.get("model")
+        if model.running():
+            handle.pop(3)
+        elif CurrentTrackerCommand(self).get_current_tracker() is not None:
+            handle.pop(4)
+        return handle
 
 
 class CurrentTrackerCommand(TrackerCommand):
@@ -988,5 +1000,58 @@ class DeleteCommand(TrackerCommand):
                 current_cmd.tracker = None
             self.notification(msg=f"Removed {tracker.name}!")
             return True
+
+        return False
+
+
+class RefreshCommand(TrackerCommand):
+    """Refresh specific trackers."""
+
+    PREFIX = "refresh"
+    ALIASES = ("re", "update")
+    ICON = REFRESH_IMG
+    ESSENTIAL = True
+
+    OPTIONS = ("refresh", "distinct")
+
+    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:  # noqa: PLR6301
+        del query, kwargs
+        return []
+
+    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+        data: list[partial] = kwargs.get("data", [])
+        if not data:
+            kwargs["distinct"] = not kwargs.get("distinct", True)
+            data = [
+                partial(
+                    self.process_model,
+                    tracker,
+                    partial(
+                        self.call_pickle,
+                        method="handle",
+                        query=query,
+                        model=tracker,
+                        **kwargs,
+                    ),
+                    fmt_str="{name}",
+                )
+                for tracker in self.get_models(**kwargs)
+            ]
+
+        return self._paginator(query, data, page=kwargs.get("page", 0))
+
+    def handle(self, query: list[str], **kwargs) -> Literal[False]:  # noqa: ARG002
+        model = kwargs.get("model")
+        if model is None:
+            return False
+
+        endpoint = UserEndpoint(self.workspace_id, self.auth, self.cache)
+        try:
+            model = endpoint.get(model, refresh=True)
+        except HTTPStatusError as err:
+            self.handle_error(err)
+            return False
+
+        self.notification(f"Successfully refreshed tracker '{model.name}'!")
 
         return False
