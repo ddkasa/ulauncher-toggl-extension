@@ -10,7 +10,7 @@ Utility Dataclasses:
     - ActionEnum
 
 Classes:
-    - CurrentTracker
+    - CurrentTrackerCommand
     - ContinueCommand
     - StartCommand
     - AddCommand
@@ -18,29 +18,32 @@ Classes:
     - EditCommand
     - StopCommand
     - ListTrackerCommand
+    - RefreshCommand
     - Search Trackers (Not implemented yet)
-    - ProjectCommands
-        - List Projects
-        - Add Project
-        - Edit Project
-        - Delete Project
+    - ProjectCommand
+        - ListProjectCommand
+        - AddProjectCommand
+        - EditProjectCommand
+        - DeleteProjectCommand
+        - RefreshProjectCommand
         - Search Projects (Not implemented yet)
-    - ClientCommands
-        - List Clients
-        - Add Client
-        - Edit Client
-        - Delete Client
+    - ClientCommand
+        - ListClientCommand
+        - AddClientCommand
+        - EditClientCommand
+        - DeleteClientCommand
+        - RefreshClientCommand
         - Search Clients (Not implemented yet)
-    - TagCommands:
-        - List Tags
-        - Add Tag
-        - Edit Tag
-        - Delete Tag
-        - Search Tags (Not implemented yet)
-    - ReportCommands:
-        - Daily Report
-        - Weekly Report
-        - Monthly Report
+    - TagCommand:
+        - ListTagCommand
+        - AddTagCommand
+        - EditTagCommand
+        - DeleteTagCommand
+        - SearchTags (Not implemented yet)
+    - ReportCommand:
+        - DailyReportCommand
+        - WeeklyReportCommand
+        - MonthlyReportCommand
 """
 
 from .client import AddClientCommand, ClientCommand, DeleteClientCommand
