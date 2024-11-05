@@ -181,7 +181,7 @@ class ReportCommand(SubCommand, ReportMixin):
             raise NotImplementedError(msg)
 
         if isinstance(day, datetime):
-            next_date = day.date()
+            next_date = next_date.date()
 
         return next_date if next_date <= date.today() else None  # noqa: DTZ011
 
