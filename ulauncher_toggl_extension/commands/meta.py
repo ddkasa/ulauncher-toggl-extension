@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import logging
+import math
 from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import timedelta
@@ -261,8 +262,11 @@ class Command(metaclass=Singleton):
         """
         page_data: list[QueryParameters] = list(static)
 
-        results_per_page = self.max_results - (len(static) + 1)
-        total_pages = len(data) // (self.max_results - len(static))
+        extra = len(page_data) + 1
+
+        results_per_page = self.max_results - extra
+        total_pages = math.floor(len(data) / results_per_page)
+
         next_page = len(data) > self.max_results and page < total_pages
         prev_page = page > 0
 

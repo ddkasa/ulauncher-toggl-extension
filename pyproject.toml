@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ulauncher-toggl-extension"
-version = "2.6.3"
+version = "2.7.1"
 description = "Toggl time tracker extension for Ulauncher."
 authors = ["David Kasakaitis <davidkasakaitis@proton.me>"]
 readme = "README.md"
@@ -139,6 +139,21 @@ allowlist_externals = ruff, poetry
 basepython = python3.12
 commands = ruff check ulauncher_toggl_extension/
 """
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*",
+    "*/.venv/*",
+    "*/.mypy_cache/*",
+    "*/.ruff_cache/*",
+    "*/.pytest_cache/*",
+    "docs/*",
+    "scripts/*",
+    "*/.github/*",
+    "*/.tox/*",
+    "*/.git/*",
+]
+
 
 [tool.coverage.report]
 exclude_also = [

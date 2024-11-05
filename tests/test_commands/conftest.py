@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
@@ -14,7 +15,7 @@ from ulauncher_toggl_extension.commands import (
     DeleteProjectCommand,
     DeleteTagCommand,
 )
-from ulauncher_toggl_extension.commands.meta import Command
+from ulauncher_toggl_extension.commands.meta import Command, QueryParameters
 
 if TYPE_CHECKING:
     from toggl_api.modules.models import TogglClass
@@ -89,3 +90,18 @@ def create_tag(dummy_ext, faker):
 
     command = DeleteTagCommand(dummy_ext)
     command.handle([], model=model)
+
+
+@pytest.fixture
+def dummy_query_parameters(faker, tmp_path):
+    def generate_params(total) -> list[QueryParameters]:
+        return [
+            QueryParameters(
+                Path(tmp_path),
+                name=faker.name(),
+                description=faker.name(),
+            )
+            for _ in range(total)
+        ]
+
+    return generate_params
