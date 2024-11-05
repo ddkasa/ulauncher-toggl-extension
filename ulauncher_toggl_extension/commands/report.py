@@ -174,7 +174,8 @@ class ReportCommand(SubCommand, ReportMixin):
         elif cls.FRAME == TimeFrame.WEEK:
             next_date = day + timedelta(weeks=diff)
         elif cls.FRAME == TimeFrame.MONTH:
-            next_date = day.replace(month=day.month + diff)
+            _, month = calendar.monthrange(day.year, day.month)
+            next_date = day + timedelta(days=month * diff)
         else:
             msg = "Target timeframe is not supported!"
             raise NotImplementedError(msg)
