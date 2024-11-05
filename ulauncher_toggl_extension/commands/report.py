@@ -174,13 +174,14 @@ class ReportCommand(SubCommand, ReportMixin):
         elif cls.FRAME == TimeFrame.WEEK:
             next_date = day + timedelta(weeks=diff)
         elif cls.FRAME == TimeFrame.MONTH:
-            next_date = day.replace(month=day.month + diff)
+            _, month = calendar.monthrange(day.year, day.month)
+            next_date = day + timedelta(days=month * diff)
         else:
             msg = "Target timeframe is not supported!"
             raise NotImplementedError(msg)
 
         if isinstance(day, datetime):
-            next_date = day.date()
+            next_date = next_date.date()
 
         return next_date if next_date <= date.today() else None  # noqa: DTZ011
 
@@ -348,7 +349,7 @@ class WeeklyReportCommand(ReportCommand):
     OPTIONS = (">", "~")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        start = kwargs.get("start", datetime.now(tz=timezone.utc))
+        start = kwargs.get("start") or datetime.now(tz=timezone.utc)
         kwargs["start"] = start
         self.amend_query(query)
         return [
@@ -412,7 +413,7 @@ class WeeklyReportCommand(ReportCommand):
         return result
 
     def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        start = kwargs.get("start", datetime.now(tz=timezone.utc))
+        start = kwargs.get("start") or datetime.now(tz=timezone.utc)
         kwargs["start"] = start
         suffix = kwargs.get("format", self.report_format)
         kwargs["format"] = suffix
@@ -458,7 +459,7 @@ class MonthlyReportCommand(ReportCommand):
     OPTIONS = (">", "~")
 
     def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        start = kwargs.get("start", datetime.now(tz=timezone.utc))
+        start = kwargs.get("start") or datetime.now(tz=timezone.utc)
         kwargs["start"] = start
         self.amend_query(query)
         return [
