@@ -140,6 +140,21 @@ basepython = python3.12
 commands = ruff check ulauncher_toggl_extension/
 """
 
+[tool.coverage.run]
+omit = [
+    "*/tests/*",
+    "*/.venv/*",
+    "*/.mypy_cache/*",
+    "*/.ruff_cache/*",
+    "*/.pytest_cache/*",
+    "docs/*",
+    "scripts/*",
+    "*/.github/*",
+    "*/.tox/*",
+    "*/.git/*",
+]
+
+
 [tool.coverage.report]
 exclude_also = [
     "def __repr__",
