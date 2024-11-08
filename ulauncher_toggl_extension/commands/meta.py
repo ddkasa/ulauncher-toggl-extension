@@ -43,17 +43,6 @@ class ActionEnum(enum.Enum):
 ACTION_TYPE = Optional[ActionEnum | Callable | str]
 
 
-OPTION_DESCRIPTIONS: dict[str, str] = {
-    '"': "Description",
-    "#": "Tags or Color",
-    "@": "Project",
-    ">": "Start Time",
-    "<": "End Time",
-    "$": "Client",
-    "~": "Path",
-}
-
-
 @dataclass(frozen=True)
 class QueryParameters:
     icon: Path = APP_IMG
