@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import logging
 from functools import partial
+from typing import TYPE_CHECKING, Any
 
 from httpx import HTTPStatusError
-from toggl_api import TagEndpoint, TogglTag
+from toggl_api import TagEndpoint, TogglQuery, TogglTag
 
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
@@ -15,6 +16,9 @@ from ulauncher_toggl_extension.images import (
 )
 
 from .meta import QueryParameters, SubCommand
+
+if TYPE_CHECKING:
+    from ulauncher_toggl_extension.query import Query
 
 log = logging.getLogger(__name__)
 
@@ -28,16 +32,33 @@ class TagCommand(SubCommand):
     EXPIRATION = None
     OPTIONS = ()
 
-    def get_models(self, **kwargs) -> list[TogglTag]:
+    def get_models(self, query: Query, **_) -> list[TogglTag]:
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
         try:
-            tags = endpoint.collect(refresh=kwargs.get("refresh", False))
+            tags = endpoint.collect(refresh=query.refresh)
         except HTTPStatusError as err:
             self.handle_error(err)
             tags = endpoint.collect()
 
-        tags.sort(key=lambda x: x.timestamp, reverse=True)
+        tags.sort(key=lambda x: x.timestamp, reverse=query.sort_order)
         return tags
+
+    def get_model(self, model: int | str | TogglTag | None) -> TogglTag | None:
+        if model is None or isinstance(model, TogglTag):
+            return model
+
+        endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
+
+        query = list(
+            endpoint.query(
+                TogglQuery("id" if isinstance(model, int) else "name", model),
+                distinct=True,
+            ),
+        )
+        if query:
+            return query[0]
+
+        return None
 
 
 class ListTagCommand(TagCommand):
@@ -48,9 +69,8 @@ class ListTagCommand(TagCommand):
     ICON = BROWSER_IMG
     OPTIONS = ("refresh",)
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        del kwargs
-        self.amend_query(query)
+    def preview(self, query: Query, **_) -> list[QueryParameters]:
+        self.amend_query(query.raw_args)
         return [
             QueryParameters(
                 self.ICON,
@@ -61,20 +81,19 @@ class ListTagCommand(TagCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+        if query.id:
+            kwargs["model"] = self.get_model(query.id)
+            if kwargs["model"]:
+                return self.handle(query, **kwargs)  # type: ignore[return-value]
+
+        self.amend_query(query.raw_args)
         data: list[QueryParameters] = kwargs.get("data", [])
         if not data:
-            for project in self.get_models(**kwargs):
+            for tag in self.get_models(query, **kwargs):
                 mdl = self.process_model(
-                    project,
-                    partial(
-                        self.call_pickle,
-                        method="handle",
-                        query=query,
-                        model=project,
-                        **kwargs,
-                    ),
+                    tag,
+                    self.get_cmd() + f" :{tag.id}",
                     fmt_str="{name}",
                 )
                 data.append(mdl[0])
@@ -90,8 +109,8 @@ class AddTagCommand(TagCommand):
     ICON = ADD_IMG
     OPTIONS = ("refresh", '"')
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+        self.amend_query(query.raw_args)
         return [
             QueryParameters(
                 self.ICON,
@@ -107,7 +126,7 @@ class AddTagCommand(TagCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
@@ -117,7 +136,7 @@ class AddTagCommand(TagCommand):
                     tag,
                     self.generate_query(tag),
                 )
-                for tag in self.get_models(**kwargs)
+                for tag in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(
@@ -134,15 +153,13 @@ class AddTagCommand(TagCommand):
 
         return query
 
-    def handle(self, query: list[str], **kwargs) -> bool:
-        del query
-        name = kwargs.get("description")
-        if not isinstance(name, str):
+    def handle(self, query: Query, **_) -> bool:
+        if not isinstance(query.name, str):
             return False
 
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
         try:
-            tag = endpoint.add(name)
+            tag = endpoint.add(query.name)
         except HTTPStatusError as err:
             self.handle_error(err)
             return False
@@ -150,7 +167,7 @@ class AddTagCommand(TagCommand):
         if not tag:
             return False
 
-        self.notification(msg=f"Created a new tag: {name}!")
+        self.notification(msg=f"Created a new tag: {query.name}!")
         return True
 
 
@@ -161,11 +178,10 @@ class EditTagCommand(TagCommand):
     ALIASES = ("e", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
-    OPTIONS = ("refresh", '"')
+    OPTIONS = ("refresh", '"', ":")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        del kwargs
-        self.amend_query(query)
+    def preview(self, query: Query, **_) -> list[QueryParameters]:
+        self.amend_query(query.raw_args)
         return [
             QueryParameters(
                 self.ICON,
@@ -175,7 +191,7 @@ class EditTagCommand(TagCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
@@ -192,7 +208,7 @@ class EditTagCommand(TagCommand):
                     ),
                     self.generate_query(tag),
                 )
-                for tag in self.get_models(**kwargs)
+                for tag in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(
@@ -209,18 +225,16 @@ class EditTagCommand(TagCommand):
 
         return query
 
-    def handle(self, query: list[str], **kwargs) -> bool:
-        del query
-        model = kwargs.get("model")
-        name = kwargs.get("description")
-        if not isinstance(model, TogglTag) or not isinstance(name, str):
+    def handle(self, query: Query, **kwargs: Any) -> bool:
+        model = self.get_model(kwargs.get("model", query.id))
+
+        if not isinstance(model, TogglTag) or not isinstance(query.name, str):
             return False
-        old_name = model.name
-        model.name = name
 
         endpoint = TagEndpoint(self.workspace_id, self.auth, self.cache)
+
         try:
-            tag = endpoint.edit(model)
+            tag = endpoint.edit(model.id, query.name)
         except HTTPStatusError as err:
             self.handle_error(err)
             return False
@@ -228,7 +242,7 @@ class EditTagCommand(TagCommand):
         if not tag:
             return False
 
-        self.notification(f"Updated tag {old_name} with a new name {name}!")
+        self.notification(f"Updated tag {model.name} with a new name {query.name}!")
 
         return True
 
@@ -242,9 +256,9 @@ class DeleteTagCommand(TagCommand):
     ESSENTIAL = True
     OPTIONS = ("refresh",)
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
         del kwargs
-        self.amend_query(query)
+        self.amend_query(query.raw_args)
         return [
             QueryParameters(
                 self.ICON,
@@ -254,7 +268,7 @@ class DeleteTagCommand(TagCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
@@ -270,7 +284,7 @@ class DeleteTagCommand(TagCommand):
                         **kwargs,
                     ),
                 )
-                for tag in self.get_models(**kwargs)
+                for tag in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(
@@ -280,9 +294,9 @@ class DeleteTagCommand(TagCommand):
             page=kwargs.get("page", 0),
         )
 
-    def handle(self, query: list[str], **kwargs) -> bool:
-        del query
-        model = kwargs.get("model")
+    def handle(self, query: Query, **kwargs: Any) -> bool:
+        model = self.get_model(kwargs.get("model", query.id))
+
         if not isinstance(model, TogglTag):
             return False
 
