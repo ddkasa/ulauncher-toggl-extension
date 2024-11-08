@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from toggl_api.modules.models import TogglClass
 
     from ulauncher_toggl_extension.extension import TogglExtension
+    from ulauncher_toggl_extension.query import Query
 
 log = logging.getLogger(__name__)
 
@@ -121,13 +122,13 @@ class Command(metaclass=Singleton):
         self.expiration: timedelta = extension.expiration or self.EXPIRATION
 
     @abstractmethod
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
         """Preview method of the command to show up as the extension prefix is
         called by the user.
         """
 
     @abstractmethod
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
         """View method as the method is called by the user.
 
         Essentially a method for a user calling the alt modifier.
@@ -138,7 +139,7 @@ class Command(metaclass=Singleton):
         Some children might not need this to be implemented.
         """
 
-    def handle(self, query: list[str], **kwargs) -> bool | list[QueryParameters]:
+    def handle(self, query: Query, **kwargs: Any) -> bool | list[QueryParameters]:
         """Executes the actual command logic.
 
         Some children might not need this to be implemented.
@@ -230,7 +231,7 @@ class Command(metaclass=Singleton):
 
     def _paginator(
         self,
-        query: list[str],
+        query: Query,
         data: list[partial] | list[QueryParameters],
         static: Sequence[QueryParameters] = (),
         *,
@@ -374,7 +375,7 @@ class Command(metaclass=Singleton):
         return hints
 
     @abstractmethod
-    def get_models(self, **kwargs) -> list[TogglClass]:
+    def get_models(self, query: Query, **kwargs: Any) -> list[TogglClass]:
         """Method that collects a list of Toggl objects.
 
         Will usually apply some sort of sorting and filtering before returning.
@@ -382,6 +383,10 @@ class Command(metaclass=Singleton):
         Returns:
             list: A selection of models that were gathered.
         """
+
+    @abstractmethod
+    def get_model(self, model: TogglClass | int | str | None) -> TogglClass | None:
+        """Abstract method for querying for a single model."""
 
 
 # TODO: Might not need this as a seperate subclass, but could also just be
@@ -398,7 +403,7 @@ class SearchCommand(Command):
     ALIASES = ("find", "locate")
 
     @abstractmethod
-    def query(self, query: str) -> TogglClass:
+    def query(self, query: Query) -> TogglClass:
         pass
 
 
@@ -416,7 +421,7 @@ class SubCommand(Command):
     MIN_ARGS: ClassVar[int] = 3
     OPTIONS = ()
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
         del query, kwargs
         return [
             QueryParameters(
@@ -427,13 +432,14 @@ class SubCommand(Command):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+        self.amend_query(query.raw_args)
         preview: list[QueryParameters] = []
         for sub in self.__class__.__subclasses__():
             cmd = sub(self)
-            if len(query) >= self.MIN_ARGS - 1 and (
-                query[1] == cmd.PREFIX or any(x == query[1] for x in cmd.ALIASES)
+            if query.subcommand and (
+                query.subcommand == cmd.PREFIX
+                or any(x == query.subcommand for x in cmd.ALIASES)
             ):
                 return cmd.view(query, **kwargs)
             prev = cmd.preview(query, **kwargs)

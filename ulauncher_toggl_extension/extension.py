@@ -167,11 +167,11 @@ class TogglExtension(Extension):
             query (list[str]) | Callable: List of query terms to display.
         """
 
-        if not query.raw_args:
+        if not query.command:
             return self.generate_results(self.default_results(query))
 
-        match = self.COMMANDS.get(query.raw_args[0]) or self.match_aliases(
-            query.raw_args[0],
+        match = self.COMMANDS.get(query.command) or self.match_aliases(
+            query.command,
         )
 
         if match is None:
