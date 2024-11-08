@@ -3,11 +3,9 @@ from __future__ import annotations
 
 import contextlib
 import logging
-import re
 from collections import OrderedDict
-from datetime import timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
+from typing import TYPE_CHECKING, Callable, Final, Iterable, Optional
 
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -51,11 +49,7 @@ from ulauncher_toggl_extension.commands import (
     StopCommand,
     TagCommand,
 )
-from ulauncher_toggl_extension.date_time import (
-    TIME_FORMAT,
-    parse_datetime,
-    parse_timedelta,
-)
+from ulauncher_toggl_extension.query import Query, QueryParser
 
 from .preferences import (
     PreferencesEventListener,
@@ -63,6 +57,7 @@ from .preferences import (
 )
 
 if TYPE_CHECKING:
+    from toggl_api.reports.reports import REPORT_FORMATS
     from ulauncher.api.shared.action.BaseAction import BaseAction
 
 log = logging.getLogger(__name__)
@@ -145,11 +140,11 @@ class TogglExtension(Extension):
         self.auth = None
         self.workspace_id = None
         self.expiration = None
-        self.report_format = "pdf"
+        self.report_format: REPORT_FORMATS = "pdf"
 
     def default_results(
         self,
-        query: list[str],
+        query: Query,
         **kwargs,
     ) -> list[QueryParameters]:
         log.debug("Loading Default Results!")
@@ -159,11 +154,7 @@ class TogglExtension(Extension):
             results.extend(cmd.preview(query, **kwargs))
         return results
 
-    def process_query(
-        self,
-        query: list[str],
-        **kwargs,
-    ) -> list[ExtensionResultItem]:
+    def process_query(self, query: Query) -> list[ExtensionResultItem]:
         """Main method that handles querying for functionality.
 
         Could be refactored to be more readable as needed if more functions are
@@ -176,16 +167,18 @@ class TogglExtension(Extension):
             query (list[str]) | Callable: List of query terms to display.
         """
 
-        if not query:
-            return self.generate_results(self.default_results(query, **kwargs))
+        if not query.raw_args:
+            return self.generate_results(self.default_results(query))
 
-        match = self.COMMANDS.get(query[0]) or self.match_aliases(query[0])
+        match = self.COMMANDS.get(query.raw_args[0]) or self.match_aliases(
+            query.raw_args[0],
+        )
 
         if match is None:
-            return self.generate_results(self.match_results(query, **kwargs))
+            return self.generate_results(self.match_results(query))
 
         cmd = match(self)
-        results = cmd.view(query, **kwargs)
+        results = cmd.view(query)
 
         return self.generate_results(results)
 
@@ -208,7 +201,7 @@ class TogglExtension(Extension):
 
     def match_results(
         self,
-        query: list[str],
+        query: Query,
         **kwargs,
     ) -> list[QueryParameters]:
         """Fuzzy matches query terms against a dictionary of functions using
@@ -227,7 +220,7 @@ class TogglExtension(Extension):
         """
         results: list[QueryParameters] = []
         for trg, fn in self.COMMANDS.items():
-            if self.match_query(query[0], trg):
+            if self.match_query(query.raw_args[0], trg):
                 cmd = fn(self)
                 with contextlib.suppress(IndexError):
                     results.append(cmd.preview(query, **kwargs)[0])
@@ -301,97 +294,35 @@ class TogglExtension(Extension):
 
 
 class KeywordQueryEventListener(EventListener):
-    """Event listener for keyword query events.
+    """Event listener for keyword query events."""
 
-    Args:
-        parse_query: Parses query into a dictionary of arguments useable by the
-            rest of the extension.
-    """
+    SUBCOMMANDS: Final[frozenset[str]] = frozenset(
+        (
+            ProjectCommand.PREFIX,
+            ClientCommand.PREFIX,
+            HelpCommand.PREFIX,
+            TagCommand.PREFIX,
+            *ProjectCommand.ALIASES,
+            *ClientCommand.ALIASES,
+            *HelpCommand.ALIASES,
+            *TagCommand.ALIASES,
+        ),
+    )
 
     def on_event(
         self,
         event: KeywordQueryEvent,
         extension: TogglExtension,
     ) -> None:
-        args = event.get_argument()
-        if args:
-            query = args.split(" ")
-            arguments = self.parse_query(args, query)
-            log.debug("Query Action: %s", query[0])
-            log.debug("Arguments: %s", arguments)
-        else:
-            query = []
-            arguments = {}
+        raw_args = event.get_query()
+        query = QueryParser(
+            extension.prefix,
+            extension.report_format,
+            self.SUBCOMMANDS,
+        ).parse(raw_args)
 
-        processed_query = extension.process_query(query, **arguments)
-
+        processed_query = extension.process_query(query)
         return RenderResultListAction(processed_query)
-
-    @staticmethod
-    def parse_query(query: str, args: list[str]) -> dict[str, Any]:  # noqa: C901, PLR0912
-        """Parses query into a dictionary of arguments useable by the rest of
-        the extension.
-
-        Args:
-            query (list[str]): List of query terms to parse.
-
-        Returns:
-            dict: Dictionary of query terms and values usea
-        """
-        arguments = {}  # REFACTOR: Turn this into a dataclass
-        desc_patt = r'(?P<desc>(?<=")(.*?)+(?="))'
-        desc = re.search(desc_patt, query)
-        if desc:
-            arguments["description"] = desc.group("desc")
-        # TODO: Implement target model id option -> or =>
-        for i, item in enumerate(args[1:], start=1):
-            if not item:
-                continue
-            if item[0] == "#":
-                arguments["tags"] = item[1:].split(",")
-                # TODO: Implement add + remove tag option
-            elif item[0] == "@":
-                item = item[1:]
-                with contextlib.suppress(ValueError):
-                    item = int(item)  # mypy: ignore [operator]
-                arguments["project"] = item
-            elif item[0] == "$":
-                arguments["client"] = item[1:]
-            elif item[0] == ">" and item[-1] == "<":
-                try:
-                    arguments["duration"] = parse_timedelta(item[1:-1])
-                except ValueError:
-                    continue
-            elif item[0] == ">":
-                item = item[1:]
-                if i + 1 < len(args) and args[i + 1] in TIME_FORMAT:
-                    item += " " + args[i + 1]
-                try:
-                    arguments["start"] = parse_datetime(item).astimezone(
-                        tz=timezone.utc,
-                    )
-                except ValueError:
-                    continue
-            elif item[0] == "<":
-                item = item[1:]
-                if i + 1 < len(args) and args[i + 1] in TIME_FORMAT:
-                    item += " " + args[i + 1]
-                try:
-                    arguments["stop"] = parse_datetime(item).astimezone(tz=timezone.utc)
-                except ValueError:
-                    continue
-            elif item == "refresh":
-                arguments["refresh"] = True
-            elif item == "active":
-                arguments["active"] = False
-            elif item == "private":
-                arguments["private"] = False
-            elif item == "distinct":
-                arguments["distinct"] = False
-            elif item[0] == "~":
-                arguments["path"] = Path.home() / Path(item[1:].lstrip("/"))
-
-        return arguments
 
 
 class ItemEnterEventListener(EventListener):
