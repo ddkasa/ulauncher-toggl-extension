@@ -35,6 +35,7 @@ log = logging.getLogger(__name__)
 
 
 def quote_member(text: str, member: str) -> str:
+    text, member = str(text), str(member)
     if member.lower() in text.lower():
         return f'"{text}"'
     return member
