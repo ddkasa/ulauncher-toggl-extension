@@ -19,7 +19,7 @@ from ulauncher_toggl_extension.images import (
 from ulauncher_toggl_extension.utils import quote_member
 
 from .client import ClientCommand
-from .meta import ACTION_TYPE, QueryParameters, SubCommand
+from .meta import ACTION_TYPE, QueryResults, SubCommand
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -46,13 +46,13 @@ class ProjectCommand(SubCommand):
         *,
         advanced: bool = False,
         fmt_str: str = "{prefix} {name}",
-    ) -> list[QueryParameters]:
+    ) -> list[QueryResults]:
         cmd = ClientCommand(self)
         client = cmd.get_model(model.client)
 
         model_name = quote_member(self.PREFIX, model.name)
         results = [
-            QueryParameters(
+            QueryResults(
                 self.get_icon(model),
                 fmt_str.format(prefix=self.PREFIX.title(), name=model_name),
                 f"${client.name if client else model.client}" if model.client else "",
@@ -64,13 +64,13 @@ class ProjectCommand(SubCommand):
         if advanced:
             results.extend(
                 (
-                    QueryParameters(
+                    QueryResults(
                         self.ICON,
                         f"{model.name} is{' not' if not model.active else ''} active.",
                         "",
                         small=True,
                     ),
-                    QueryParameters(
+                    QueryResults(
                         self.get_icon(model),
                         "Color",
                         model.color,
@@ -116,7 +116,7 @@ class ProjectCommand(SubCommand):
             self.handle_error(err)
             return None
 
-    def autocomplete(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def autocomplete(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         raw_args = query.raw_args.copy()
         autocomplete: list[QueryResults] = []
         if not self.check_autocmp(raw_args):
@@ -128,7 +128,7 @@ class ProjectCommand(SubCommand):
             for model in models:
                 raw_args[-1] = f'"{model.name}"'
                 autocomplete.append(
-                    QueryParameters(
+                    QueryResults(
                         self.get_icon(model),
                         model.name,
                         "Use this project name.",
@@ -145,7 +145,7 @@ class ProjectCommand(SubCommand):
                 if not icon.exists():
                     self.create_color(icon, color)
                 autocomplete.append(
-                    QueryParameters(
+                    QueryResults(
                         icon,
                         name.title(),
                         color,
@@ -159,7 +159,7 @@ class ProjectCommand(SubCommand):
             for model in cmd.get_models(query, **kwargs):
                 raw_args[-1] = f'$"{model.name}"'
                 autocomplete.append(
-                    QueryParameters(
+                    QueryResults(
                         cmd.ICON,
                         model.name,
                         "Use this client.",
@@ -203,11 +203,11 @@ class ListProjectCommand(ProjectCommand):
     ICON = BROWSER_IMG
     OPTIONS = ("refresh", ":")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "List Projects.",
@@ -216,7 +216,7 @@ class ListProjectCommand(ProjectCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         if query.id:
             kwargs["model"] = self.get_model(query.id)
             if kwargs["model"]:
@@ -246,10 +246,10 @@ class AddProjectCommand(ProjectCommand):
     ICON = ADD_IMG
     OPTIONS = ("refresh", "#", "$", '"', ">", "<")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "Add a new project.",
@@ -263,7 +263,7 @@ class AddProjectCommand(ProjectCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         cmp = self.autocomplete(query, **kwargs)
         data = kwargs.get("data", [])
@@ -335,11 +335,11 @@ class EditProjectCommand(ProjectCommand):
     ESSENTIAL = True
     OPTIONS = ("refresh", "#", "$", '"', ":")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -347,7 +347,7 @@ class EditProjectCommand(ProjectCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         cmp = self.autocomplete(query, **kwargs)
         data = kwargs.get("data", [])
@@ -423,11 +423,11 @@ class DeleteProjectCommand(ProjectCommand):
     ESSENTIAL = True
     OPTIONS = ("refresh", ":", "^-")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -435,7 +435,7 @@ class DeleteProjectCommand(ProjectCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         cmp = self.autocomplete(query, **kwargs)
         data = kwargs.get("data", [])
@@ -499,11 +499,11 @@ class RefreshProjectCommand(ProjectCommand):
 
     OPTIONS = ("refresh", "distinct", ":", "^-")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:  # noqa: PLR6301
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:  # noqa: PLR6301
         del query, kwargs
         return []
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
         if not data:
             data = [

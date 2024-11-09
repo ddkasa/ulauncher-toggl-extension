@@ -15,7 +15,7 @@ from ulauncher_toggl_extension.images import (
     EDIT_IMG,
 )
 
-from .meta import QueryParameters, SubCommand
+from .meta import QueryResults, SubCommand
 
 if TYPE_CHECKING:
     from ulauncher_toggl_extension.query import Query
@@ -69,10 +69,10 @@ class ListTagCommand(TagCommand):
     ICON = BROWSER_IMG
     OPTIONS = ("refresh",)
 
-    def preview(self, query: Query, **_) -> list[QueryParameters]:
+    def preview(self, query: Query, **_) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -81,14 +81,14 @@ class ListTagCommand(TagCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         if query.id:
             kwargs["model"] = self.get_model(query.id)
             if kwargs["model"]:
                 return self.handle(query, **kwargs)  # type: ignore[return-value]
 
         self.amend_query(query.raw_args)
-        data: list[QueryParameters] = kwargs.get("data", [])
+        data: list[QueryResults] = kwargs.get("data", [])
         if not data:
             for tag in self.get_models(query, **kwargs):
                 mdl = self.process_model(
@@ -109,10 +109,10 @@ class AddTagCommand(TagCommand):
     ICON = ADD_IMG
     OPTIONS = ("refresh", '"')
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -126,7 +126,7 @@ class AddTagCommand(TagCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
@@ -180,10 +180,10 @@ class EditTagCommand(TagCommand):
     ESSENTIAL = True
     OPTIONS = ("refresh", '"', ":")
 
-    def preview(self, query: Query, **_) -> list[QueryParameters]:
+    def preview(self, query: Query, **_) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -191,7 +191,7 @@ class EditTagCommand(TagCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
@@ -256,11 +256,11 @@ class DeleteTagCommand(TagCommand):
     ESSENTIAL = True
     OPTIONS = ("refresh",)
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -268,7 +268,7 @@ class DeleteTagCommand(TagCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
 
         if not data:

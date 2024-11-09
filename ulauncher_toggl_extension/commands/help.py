@@ -12,7 +12,7 @@ from .client import (
     ListClientCommand,
     RefreshClientCommand,
 )
-from .meta import Command, QueryParameters
+from .meta import Command, QueryResults
 from .project import (
     AddProjectCommand,
     DeleteProjectCommand,
@@ -104,7 +104,7 @@ class HelpCommand(Command):
         super().__init__(extension)
         self.hints = extension.hints
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         if not self.hints:
             return []
@@ -112,7 +112,7 @@ class HelpCommand(Command):
         self.amend_query(query.raw_args)
 
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "Show help.",
@@ -120,7 +120,7 @@ class HelpCommand(Command):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         if query.subcommand == "help":
@@ -135,12 +135,12 @@ class HelpCommand(Command):
             return hints.hint()
 
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 "Usage",
                 "tgl help <command>",
             ),
-            QueryParameters(
+            QueryResults(
                 TIP_IMAGES[TipSeverity.ERROR],
                 "Go Back",
                 "Go back to the default command.",

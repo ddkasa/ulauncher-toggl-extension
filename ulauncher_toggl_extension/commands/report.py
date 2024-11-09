@@ -25,7 +25,7 @@ from ulauncher_toggl_extension.date_time import (
 )
 from ulauncher_toggl_extension.images import REPORT_IMG
 
-from .meta import Command, QueryParameters, SubCommand
+from .meta import Command, QueryResults, SubCommand
 
 if TYPE_CHECKING:
     from toggl_api.reports.reports import REPORT_FORMATS
@@ -182,13 +182,13 @@ class ReportCommand(SubCommand, ReportMixin):
 
         return next_date if next_date <= date.today() else None  # noqa: DTZ011
 
-    def paginate_report(self, query: Query, day: date) -> list[QueryParameters]:
-        report: list[QueryParameters] = []
+    def paginate_report(self, query: Query, day: date) -> list[QueryResults]:
+        report: list[QueryResults] = []
 
         previous_date = self.increment_date(day, increment=False)
         if previous_date:
             report.append(
-                QueryParameters(
+                QueryResults(
                     self.ICON,
                     f"View {self.format_datetime(previous_date)}",
                     None,
@@ -204,7 +204,7 @@ class ReportCommand(SubCommand, ReportMixin):
         next_date = self.increment_date(day)
         if next_date:
             report.append(
-                QueryParameters(
+                QueryResults(
                     self.ICON,
                     f"View {self.format_datetime(next_date)}",
                     None,
@@ -234,12 +234,12 @@ class DailyReportCommand(ReportCommand):
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.DAY
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         start = query.start or datetime.now(tz=timezone.utc)
         kwargs["start"] = start
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -277,10 +277,10 @@ class DailyReportCommand(ReportCommand):
 
         return hours
 
-    def summary(self, day: date) -> list[QueryParameters]:
+    def summary(self, day: date) -> list[QueryResults]:
         hours = self.break_down(day)
         results = [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 f"{h}{'pm' if h >= NOON else 'am'}: {min(60, t // 60)}min",
                 small=True,
@@ -290,7 +290,7 @@ class DailyReportCommand(ReportCommand):
         ]
 
         results.append(
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 "Total Hours",
                 f"{round(sum(hours) / 3600, 2)} hours",
@@ -300,15 +300,15 @@ class DailyReportCommand(ReportCommand):
 
         return results
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         query.start = query.start or datetime.now(tz=timezone.utc)
         results = [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.format_datetime(query.start),
                 "Daily Breakdown",
             ),
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 "Export Report",
                 f"Export report in {query.report_format} format.",
@@ -340,11 +340,11 @@ class WeeklyReportCommand(ReportCommand):
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.WEEK
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         query.start = query.start or datetime.now(tz=timezone.utc)
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -382,10 +382,10 @@ class WeeklyReportCommand(ReportCommand):
 
         return days
 
-    def summary(self, day: date) -> list[QueryParameters]:
+    def summary(self, day: date) -> list[QueryResults]:
         days = self.break_down(day)
         result = [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 f"{WEEKDAYS[weekday]}: {round(d / 3600, 2)} hours",
                 small=True,
@@ -394,7 +394,7 @@ class WeeklyReportCommand(ReportCommand):
             if d
         ]
         result.append(
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 f"Total: {sum(days) // 3600} hours",
                 small=True,
@@ -403,16 +403,16 @@ class WeeklyReportCommand(ReportCommand):
 
         return result
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         query.start = query.start or datetime.now(tz=timezone.utc)
 
         results = [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.format_datetime(query.start),
                 "Weekly Breakdown",
             ),
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 "Export Report",
                 f"Export report in {query.report_format} format.",
@@ -445,11 +445,11 @@ class MonthlyReportCommand(ReportCommand):
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.MONTH
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         query.start = query.start or datetime.now(tz=timezone.utc)
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -480,42 +480,42 @@ class MonthlyReportCommand(ReportCommand):
 
         return first, second
 
-    def summary(self, day: date) -> list[QueryParameters]:
+    def summary(self, day: date) -> list[QueryResults]:
         frame = self.get_frame(day)
         first_half, second_half = self.break_down(day)
         total_hours = (first_half + second_half) / 3600
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 "Total Hours",
                 f"{total_hours:.2f} hours",
             ),
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 "Average Hours Per Day",
                 f"{(total_hours / frame.end.day):.2f} hours",
             ),
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 f"First Half: {(first_half / 3600):.2f} hours",
                 small=True,
             ),
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 f"Second Half: {(second_half / 3600):.2f} hours",
                 small=True,
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         query.start = query.start or datetime.now(tz=timezone.utc)
         results = [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.format_datetime(query.start),
                 "Monthly Breakdown",
             ),
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 "Export Report",
                 f"Export report in {query.report_format} format.",

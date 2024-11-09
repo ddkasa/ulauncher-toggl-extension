@@ -32,7 +32,7 @@ from ulauncher_toggl_extension.images import (
 )
 from ulauncher_toggl_extension.utils import quote_member
 
-from .meta import ACTION_TYPE, ActionEnum, Command, QueryParameters
+from .meta import ACTION_TYPE, ActionEnum, Command, QueryResults
 from .project import ProjectCommand
 from .tag import TagCommand
 
@@ -56,7 +56,7 @@ class TrackerCommand(Command):
         *,
         advanced: bool = False,
         fmt_str: str = "{prefix} {name}",
-    ) -> list[QueryParameters]:
+    ) -> list[QueryResults]:
         model_name = quote_member(self.PREFIX, model.name)
         name = fmt_str.format(prefix=self.PREFIX.title(), name=model_name)
 
@@ -68,7 +68,7 @@ class TrackerCommand(Command):
             description += f" #{','.join(tag.name for tag in model.tags)}"
 
         queries = [
-            QueryParameters(
+            QueryResults(
                 path,
                 name,
                 description,
@@ -85,14 +85,14 @@ class TrackerCommand(Command):
             )
 
             extra = [
-                QueryParameters(
+                QueryResults(
                     START_IMG,
                     dates[0],
                     "",
                     on_enter=ActionEnum.DO_NOTHING,
                     small=True,
                 ),
-                QueryParameters(
+                QueryResults(
                     APP_IMG,
                     f"Duration: {format_seconds(int(total_time.total_seconds()))}",
                     on_enter=ActionEnum.DO_NOTHING,
@@ -103,7 +103,7 @@ class TrackerCommand(Command):
             if dates[1]:
                 extra.insert(
                     1,
-                    QueryParameters(
+                    QueryResults(
                         STOP_IMG,
                         dates[1],
                         "",
@@ -196,7 +196,7 @@ class TrackerCommand(Command):
 
         return None
 
-    def autocomplete(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def autocomplete(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         raw_args = query.raw_args.copy()
         autocomplete: list[QueryResults] = []
         if not self.check_autocmp(raw_args):
@@ -210,7 +210,7 @@ class TrackerCommand(Command):
                 raw_args[-1] = f'"{tracker.name}"'
                 project = pcmd.get_model(tracker.project)
                 autocomplete.append(
-                    QueryParameters(
+                    QueryResults(
                         self.get_icon(project),
                         tracker.name,
                         "Use this tracker description.",
@@ -224,7 +224,7 @@ class TrackerCommand(Command):
             for project in pcmd.get_models(query, **kwargs):
                 raw_args[-1] = f"@{project.id}"
                 autocomplete.append(
-                    QueryParameters(
+                    QueryResults(
                         pcmd.get_icon(project),
                         project.name,
                         "Use this project.",
@@ -245,7 +245,7 @@ class TrackerCommand(Command):
                 else:
                     raw_args[-1] = f"#{tag.name}"
                 autocomplete.append(
-                    QueryParameters(
+                    QueryResults(
                         tcmd.ICON,
                         tag.name,
                         "Use this tag.",
@@ -263,7 +263,7 @@ class TrackerCommand(Command):
     def cache(self) -> JSONCache:
         return JSONCache(self.cache_path, self.expiration)
 
-    def handle(self, query: Query, **kwargs: Any) -> bool | list[QueryParameters]:
+    def handle(self, query: Query, **kwargs: Any) -> bool | list[QueryResults]:
         handle = super().handle(query, **kwargs)
         if not isinstance(handle, list):
             return handle
@@ -323,7 +323,7 @@ class CurrentTrackerCommand(TrackerCommand):
             self.tracker = super().get_current_tracker(refresh=True)
         return self.tracker
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         tracker = self.get_current_tracker()
         if tracker is None:
@@ -342,14 +342,14 @@ class CurrentTrackerCommand(TrackerCommand):
             fmt_str="Current: {name}",
         )
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         tracker = kwargs.get("model") or self.get_current_tracker(
             refresh=query.refresh,
         )
         if tracker is None:
             return [
-                QueryParameters(
+                QueryResults(
                     TIP_IMAGES[TipSeverity.ERROR],
                     "Not Running!",
                     "No tracker is currently running!",
@@ -370,7 +370,7 @@ class CurrentTrackerCommand(TrackerCommand):
             fmt_str="{name}",
         )
         details.append(
-            QueryParameters(
+            QueryResults(
                 StopCommand.ICON,
                 f"Stop {tracker.name}",
                 on_enter=partial(StopCommand(self).handle, query, **kwargs),
@@ -379,14 +379,14 @@ class CurrentTrackerCommand(TrackerCommand):
         )
         return details
 
-    def handle(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
-        result: list[QueryParameters] = super().handle(query, **kwargs)  # type: ignore[assignment]
+    def handle(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        result: list[QueryResults] = super().handle(query, **kwargs)  # type: ignore[assignment]
         model = self.get_current_tracker()
         if not model:
             return result
 
         result.append(
-            QueryParameters(
+            QueryResults(
                 StopCommand.ICON,
                 f"Stop {model.name}",
                 on_enter=partial(StopCommand(self).handle, query, **kwargs),
@@ -414,11 +414,11 @@ class ListCommand(TrackerCommand):
 
     OPTIONS = ("refresh", "distinct", "^-", ":")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "View all your trackers.",
@@ -427,7 +427,7 @@ class ListCommand(TrackerCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         if query.id:
             kwargs["model"] = self.get_model(query.id, refresh=query.refresh)
             if kwargs["model"]:
@@ -465,7 +465,7 @@ class ContinueCommand(TrackerCommand):
             TogglTracker,
         )
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
 
         if not self.can_continue(
@@ -474,7 +474,7 @@ class ContinueCommand(TrackerCommand):
             return []
 
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "Continue the last tracker.",
@@ -488,11 +488,11 @@ class ContinueCommand(TrackerCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
         if not self.get_models(query, **kwargs):
             return [
-                QueryParameters(
+                QueryResults(
                     TIP_IMAGES[TipSeverity.ERROR],
                     "Error",
                     "No trackers are available!",
@@ -501,7 +501,7 @@ class ContinueCommand(TrackerCommand):
             ]
         if not self.can_continue(refresh=query.refresh):
             return [
-                QueryParameters(
+                QueryResults(
                     TIP_IMAGES[TipSeverity.ERROR],
                     "Error",
                     "A tracker is currently running!",
@@ -587,10 +587,10 @@ class StartCommand(TrackerCommand):
     ICON = START_IMG
     OPTIONS = ("refresh", "distinct", ">", '"', "@", "#")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "Start a new tracker.",
@@ -604,7 +604,7 @@ class StartCommand(TrackerCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         cmp = self.autocomplete(query, **kwargs)
         data: list[partial] = kwargs.get("data", [])
 
@@ -672,13 +672,13 @@ class StopCommand(TrackerCommand):
     ICON = STOP_IMG
     OPTIONS = ("refresh", "distinct", "<")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
 
         current_tracker = self.current_tracker(refresh=query.refresh)
         if current_tracker is not None:
             return [
-                QueryParameters(
+                QueryResults(
                     self.ICON,
                     self.PREFIX.title(),
                     self.__doc__,
@@ -698,12 +698,12 @@ class StopCommand(TrackerCommand):
         cmd = CurrentTrackerCommand(self)
         return cmd.get_current_tracker(refresh=refresh)
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         current_tracker = kwargs.get("model") or self.current_tracker()
         if current_tracker is None:
             return [
-                QueryParameters(
+                QueryResults(
                     TIP_IMAGES[TipSeverity.ERROR],
                     "Error",
                     "No tracker is currently running!",
@@ -718,14 +718,14 @@ class StopCommand(TrackerCommand):
             **kwargs,
         )
 
-        results: list[QueryParameters] = self.process_model(
+        results: list[QueryResults] = self.process_model(
             current_tracker,
             handle,
             advanced=True,
         )[0:3]
 
         results.append(
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -765,10 +765,10 @@ class AddCommand(TrackerCommand):
     ICON = ADD_IMG
     OPTIONS = ("refresh", "distinct", ">", '"', "@", "#", "<")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "Add a new tracker.",
@@ -782,7 +782,7 @@ class AddCommand(TrackerCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         cmp = self.autocomplete(query, **kwargs)
         data: list[partial] = kwargs.get("data", [])
 
@@ -859,11 +859,11 @@ class EditCommand(TrackerCommand):
 
     OPTIONS = ("refresh", "distinct", ">", "<", '"', "@", "#")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "Edit a tracker.",
@@ -871,7 +871,7 @@ class EditCommand(TrackerCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         cmp = self.autocomplete(query, **kwargs)
         data: list[partial] = kwargs.get("data", [])
 
@@ -964,11 +964,11 @@ class DeleteCommand(TrackerCommand):
     ESSENTIAL = True
     OPTIONS = ("refresh", "distinct", ":")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "Delete a tracker.",
@@ -976,7 +976,7 @@ class DeleteCommand(TrackerCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
 
         if not data:
@@ -1033,11 +1033,11 @@ class RefreshCommand(TrackerCommand):
 
     OPTIONS = ("refresh", "distinct", "->")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:  # noqa: PLR6301
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:  # noqa: PLR6301
         del query, kwargs
         return []
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
         if not data:
             query.distinct = not query.distinct

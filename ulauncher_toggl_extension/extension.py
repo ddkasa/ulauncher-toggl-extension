@@ -42,7 +42,7 @@ from ulauncher_toggl_extension.commands import (
     HelpCommand,
     ListCommand,
     ProjectCommand,
-    QueryParameters,
+    QueryResults,
     RefreshCommand,
     ReportCommand,
     StartCommand,
@@ -146,9 +146,9 @@ class TogglExtension(Extension):
         self,
         query: Query,
         **kwargs,
-    ) -> list[QueryParameters]:
+    ) -> list[QueryResults]:
         log.debug("Loading Default Results!")
-        results: list[QueryParameters] = []
+        results: list[QueryResults] = []
         for obj in self.COMMANDS.values():
             cmd = obj(self)
             results.extend(cmd.preview(query, **kwargs))
@@ -203,7 +203,7 @@ class TogglExtension(Extension):
         self,
         query: Query,
         **kwargs,
-    ) -> list[QueryParameters]:
+    ) -> list[QueryResults]:
         """Fuzzy matches query terms against a dictionary of functions using
         the `match_query` method.
 
@@ -218,7 +218,7 @@ class TogglExtension(Extension):
             list: List of possible matches that are produced by matched
                 functions.
         """
-        results: list[QueryParameters] = []
+        results: list[QueryResults] = []
         for trg, fn in self.COMMANDS.items():
             if self.match_query(query.raw_args[0], trg):
                 cmd = fn(self)
@@ -244,7 +244,7 @@ class TogglExtension(Extension):
 
     def generate_results(
         self,
-        actions: Iterable[QueryParameters],
+        actions: Iterable[QueryResults],
     ) -> list[ExtensionResultItem]:
         """Generates results from pre defined parameters.
 

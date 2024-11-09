@@ -16,7 +16,7 @@ from ulauncher_toggl_extension.images import (
     REFRESH_IMG,
 )
 
-from .meta import QueryParameters, SubCommand
+from .meta import QueryResults, SubCommand
 
 if TYPE_CHECKING:
     from ulauncher_toggl_extension.query import Query
@@ -78,11 +78,11 @@ class ListClientCommand(ClientCommand):
     ICON = BROWSER_IMG
     OPTIONS = ("refresh", ":", "^-")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -91,7 +91,7 @@ class ListClientCommand(ClientCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         if query.id:
             kwargs["model"] = self.get_model(query.id, refresh=query.refresh)
             if kwargs["model"]:
@@ -121,10 +121,10 @@ class AddClientCommand(ClientCommand):
     ICON = ADD_IMG
     OPTIONS = ("refresh", '"', "^-")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -138,9 +138,9 @@ class AddClientCommand(ClientCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
-        data: list[QueryParameters] = kwargs.get("data", [])
+        data: list[QueryResults] = kwargs.get("data", [])
         if not data:
             for client in self.get_models(query, **kwargs):
                 mdl = self.process_model(
@@ -191,11 +191,11 @@ class DeleteClientCommand(ClientCommand):
     ESSENTIAL = True
     OPTIONS = ("refresh", ":", "^-")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -203,7 +203,7 @@ class DeleteClientCommand(ClientCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         data: list[partial] = kwargs.get("data", [])
         if not data:
@@ -254,11 +254,11 @@ class EditClientCommand(ClientCommand):
     ESSENTIAL = True
     OPTIONS = ("refresh", '"', ":", "^-")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -266,7 +266,7 @@ class EditClientCommand(ClientCommand):
             ),
         ]
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         self.amend_query(query.raw_args)
         data: list[partial] = kwargs.get("data", [])
         if not data:
@@ -328,11 +328,11 @@ class RefreshClientCommand(ClientCommand):
 
     OPTIONS = ("refresh", "distinct", ":")
 
-    def preview(self, query: Query, **kwargs: Any) -> list[QueryParameters]:  # noqa: PLR6301
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:  # noqa: PLR6301
         del query, kwargs
         return []
 
-    def view(self, query: Query, **kwargs: Any) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
         if not data:
             query.distinct = not query.distinct

@@ -15,7 +15,7 @@ from ulauncher_toggl_extension.commands import (
     DeleteProjectCommand,
     DeleteTagCommand,
 )
-from ulauncher_toggl_extension.commands.meta import Command, QueryParameters
+from ulauncher_toggl_extension.commands.meta import Command, QueryResults
 
 if TYPE_CHECKING:
     from toggl_api.modules.models import TogglClass
@@ -94,9 +94,9 @@ def create_tag(dummy_ext, faker):
 
 @pytest.fixture
 def dummy_query_parameters(faker, tmp_path):
-    def generate_params(total) -> list[QueryParameters]:
+    def generate_params(total) -> list[QueryResults]:
         return [
-            QueryParameters(
+            QueryResults(
                 Path(tmp_path),
                 name=faker.name(),
                 description=faker.name(),
