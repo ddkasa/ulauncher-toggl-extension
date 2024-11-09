@@ -142,8 +142,28 @@ class PreferencesUpdateEventListener(EventListener):
     def on_event(  # noqa: PLR6301
         self,
         event: PreferencesUpdateEvent,
-        extension: TogglExtension,
+        ext: TogglExtension,
     ) -> None:
-        new_preferences = extension.preferences.copy()
-        new_preferences[event.id] = event.new_value
-        extension.preferences = new_preferences
+        if event.id == "prefix":
+            ext.prefix = event.new_value or "tgl"
+        elif event.id == "cache":
+            ext.cache_path = event.new_value or Path.home() / (
+                ".cache/ulauncher_toggl_extension"
+            )
+        elif event.id == "max_search_results":
+            ext.max_results = PreferencesEventListener.max_results(event.new_value)
+        elif event.id == "workspace":
+            wid = PreferencesEventListener.workspace(
+                os.environ.get("TOGGL_WORKSPACE_ID") or event.new_value,
+            )
+            ext.workspace_id = wid
+        elif event.id == "hints":
+            ext.hints = event.new_value == "true"
+        elif event.id == "api_token":
+            ext.auth = PreferencesEventListener.authentication(event.new_value)
+        elif event.id == "expiration":
+            ext.expiration = PreferencesEventListener.parse_expiration(event.new_value)
+        elif event.id == "report_format":
+            ext.report_format = event.new_value
+
+        log.info("Updated %s preference!", event.id.replace("_", " "))
