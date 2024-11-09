@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Sequence
 from toggl_api import JSONCache
 
 from ulauncher_toggl_extension.images import APP_IMG, TIP_IMAGES, TipSeverity
+from ulauncher_toggl_extension.query import Query
 from ulauncher_toggl_extension.utils import quote_member, show_notification
 
 if TYPE_CHECKING:
@@ -20,7 +21,6 @@ if TYPE_CHECKING:
     from toggl_api.modules.models import TogglClass
 
     from ulauncher_toggl_extension.extension import TogglExtension
-    from ulauncher_toggl_extension.query import Query
 
 log = logging.getLogger(__name__)
 
@@ -369,8 +369,18 @@ class Command(metaclass=Singleton):
                     TIP_IMAGES[TipSeverity.INFO],
                     "Accepts Options",
                     ", ".join(cls.OPTIONS),
+                    small=True,
                 ),
             )
+            hints += [
+                QueryParameters(
+                    TIP_IMAGES[TipSeverity.INFO],
+                    label,
+                    desc,
+                    small=False,
+                )
+                for label, desc in Query.option_descriptions(frozenset(cls.OPTIONS))
+            ]
 
         return hints
 
