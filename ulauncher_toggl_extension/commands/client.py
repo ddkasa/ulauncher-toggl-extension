@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class ClientCommand(SubCommand):
+class ClientCommand(SubCommand[TogglClient]):
     """Subcommand for all client based tasks."""
 
     PREFIX = "client"

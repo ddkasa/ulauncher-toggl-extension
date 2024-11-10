@@ -45,7 +45,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class TrackerCommand(Command):
+class TrackerCommand(Command[TogglTracker]):
     """Base Tracker command setting up default methods."""
 
     def process_model(

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class ProjectCommand(SubCommand):
+class ProjectCommand(SubCommand[TogglProject]):
     """Subcommand for all project based tasks."""
 
     PREFIX = "project"

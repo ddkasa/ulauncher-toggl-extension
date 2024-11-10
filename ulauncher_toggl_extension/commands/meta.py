@@ -8,9 +8,19 @@ from dataclasses import dataclass
 from datetime import timedelta
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Optional,
+    Sequence,
+    TypeVar,
+)
 
 from toggl_api import JSONCache
+from toggl_api.models import TogglClass
 
 from ulauncher_toggl_extension.images import APP_IMG, TIP_IMAGES, TipSeverity
 from ulauncher_toggl_extension.query import Query
@@ -18,7 +28,6 @@ from ulauncher_toggl_extension.utils import quote_member, show_notification
 
 if TYPE_CHECKING:
     from httpx import BasicAuth
-    from toggl_api.modules.models import TogglClass
 
     from ulauncher_toggl_extension.extension import TogglExtension
 
@@ -63,7 +72,10 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class Command(metaclass=Singleton):
+T = TypeVar("T", bound=TogglClass)
+
+
+class Command(Generic[T], metaclass=Singleton):
     """General base class for all commands.
 
     Contains a few helper methods to build up a list of utilties to quickly
@@ -209,7 +221,7 @@ class Command(metaclass=Singleton):
 
     def process_model(
         self,
-        model: TogglClass,
+        model: T,
         action: ACTION_TYPE,
         alt_action: Optional[ACTION_TYPE] = None,
         *,
@@ -385,7 +397,7 @@ class Command(metaclass=Singleton):
         return hints
 
     @abstractmethod
-    def get_models(self, query: Query, **kwargs: Any) -> list[TogglClass]:
+    def get_models(self, query: Query, **kwargs: Any) -> list[T]:
         """Method that collects a list of Toggl objects.
 
         Will usually apply some sort of sorting and filtering before returning.
@@ -395,13 +407,13 @@ class Command(metaclass=Singleton):
         """
 
     @abstractmethod
-    def get_model(self, model: TogglClass | int | str | None) -> TogglClass | None:
+    def get_model(self, model: T | int | str | None) -> T | None:
         """Abstract method for querying for a single model."""
 
 
 # TODO: Might not need this as a seperate subclass, but could also just be
 # used as a mixin.
-class SearchCommand(Command):
+class SearchCommand(Command[T]):
     """Base class for all search commands.
 
     Methods:
@@ -413,11 +425,11 @@ class SearchCommand(Command):
     ALIASES = ("find", "locate")
 
     @abstractmethod
-    def query(self, query: Query) -> TogglClass:
+    def query(self, query: Query) -> T:
         pass
 
 
-class SubCommand(Command):
+class SubCommand(Command[T]):
     """Base class for all subcommands.
 
     Methods:

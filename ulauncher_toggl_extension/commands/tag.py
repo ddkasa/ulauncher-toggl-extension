@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class TagCommand(SubCommand):
+class TagCommand(SubCommand[TogglTag]):
     """Subcommand for all tag based tasks."""
 
     PREFIX = "tag"
