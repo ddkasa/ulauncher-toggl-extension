@@ -241,8 +241,7 @@ class DailyReportCommand(ReportCommand):
     FRAME = TimeFrame.DAY
 
     def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
-        start = query.start or datetime.now(tz=timezone.utc)
-        kwargs["start"] = start
+        query.start = self._find_start(query, **kwargs)
         self.amend_query(query.raw_args)
         return [
             QueryResults(
@@ -307,7 +306,7 @@ class DailyReportCommand(ReportCommand):
         return results
 
     def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
-        query.start = query.start or datetime.now(tz=timezone.utc)
+        query.start = self._find_start(query, **kwargs)
         results = [
             QueryResults(
                 self.ICON,
@@ -347,7 +346,7 @@ class WeeklyReportCommand(ReportCommand):
     FRAME = TimeFrame.WEEK
 
     def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
-        query.start = query.start or datetime.now(tz=timezone.utc)
+        query.start = self._find_start(query, **kwargs)
         self.amend_query(query.raw_args)
         return [
             QueryResults(
@@ -410,7 +409,7 @@ class WeeklyReportCommand(ReportCommand):
         return result
 
     def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
-        query.start = query.start or datetime.now(tz=timezone.utc)
+        query.start = self._find_start(query, **kwargs)
 
         results = [
             QueryResults(
@@ -452,7 +451,7 @@ class MonthlyReportCommand(ReportCommand):
     FRAME = TimeFrame.MONTH
 
     def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
-        query.start = query.start or datetime.now(tz=timezone.utc)
+        query.start = self._find_start(query, **kwargs)
         self.amend_query(query.raw_args)
         return [
             QueryResults(
@@ -483,7 +482,6 @@ class MonthlyReportCommand(ReportCommand):
                 first += time_data["seconds"]
             else:
                 second += time_data["seconds"]
-
         return first, second
 
     def summary(self, day: date) -> list[QueryResults]:
@@ -514,7 +512,7 @@ class MonthlyReportCommand(ReportCommand):
         ]
 
     def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
-        query.start = query.start or datetime.now(tz=timezone.utc)
+        query.start = self._find_start(query, **kwargs)
         results = [
             QueryResults(
                 self.ICON,
