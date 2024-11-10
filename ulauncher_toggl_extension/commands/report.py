@@ -224,6 +224,12 @@ class ReportCommand(SubCommand, ReportMixin):
         del day
         return ""
 
+    @classmethod
+    def _find_start(cls, query: Query, **kwargs) -> datetime:
+        start = kwargs.get("start") or query.start or datetime.now(tz=timezone.utc)
+        kwargs["start"] = start
+        return start
+
 
 class DailyReportCommand(ReportCommand):
     """View the daily breakdown."""
