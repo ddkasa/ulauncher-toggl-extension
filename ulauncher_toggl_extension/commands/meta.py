@@ -263,14 +263,10 @@ class Command(Generic[T], metaclass=Singleton):
             list: List of QueryParameters to display.
         """
         page_data: list[QueryResults] = list(static)
-
         extra = len(page_data) + 1
 
         results_per_page = self.max_results - extra
-        total_pages = math.floor(len(data) / results_per_page)
-
-        next_page = len(data) > self.max_results and page < total_pages
-        prev_page = page > 0
+        total_pages = (math.ceil(len(data) / results_per_page)) - 1
 
         for t in data[results_per_page * page : results_per_page * (page + 1)]:
             if isinstance(t, QueryResults):
@@ -278,7 +274,7 @@ class Command(Generic[T], metaclass=Singleton):
             else:
                 page_data.append(t()[0])
 
-        if next_page:
+        if len(data) > self.max_results and page < total_pages:
             page_data.append(
                 QueryResults(
                     self.ICON,  # TODO: Custom Icon
@@ -301,7 +297,7 @@ class Command(Generic[T], metaclass=Singleton):
                     small=True,
                 ),
             )
-        if prev_page:
+        if page > 0:
             page_data.append(
                 QueryResults(
                     self.ICON,  # TODO: Custom Icon
