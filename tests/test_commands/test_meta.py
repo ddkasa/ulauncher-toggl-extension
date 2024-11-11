@@ -1,6 +1,14 @@
+from __future__ import annotations
+
 import pytest
 
-from ulauncher_toggl_extension.commands.tracker import ListCommand
+from ulauncher_toggl_extension.commands import ListCommand
+from ulauncher_toggl_extension.commands.client import ClientCommand
+from ulauncher_toggl_extension.commands.help import HelpCommand
+from ulauncher_toggl_extension.commands.meta import Command, SubCommand
+from ulauncher_toggl_extension.commands.project import ProjectCommand
+from ulauncher_toggl_extension.commands.tag import TagCommand
+from ulauncher_toggl_extension.commands.tracker import TrackerCommand
 
 
 @pytest.mark.unit
@@ -28,3 +36,43 @@ def test_cmd_paginator(data, static, dummy_ext, dummy_query_parameters):
         page += 1
 
     assert total == data
+
+
+def parse_prefix(commands: list[type[Command]]) -> bool:
+    data = set()
+    for c in commands:
+        if not c.PREFIX:
+            continue
+        if c.PREFIX in data:
+            return False
+        data.add(c.PREFIX)
+
+        if not c.ALIASES:
+            continue
+
+        for x in c.ALIASES:
+            if x in data:
+                return False
+            data.add(x)
+
+    return True
+
+
+@pytest.mark.unit
+def test_cmd_collisions():
+    commands = (
+        Command.__subclasses__()
+        + SubCommand.__subclasses__()
+        + TrackerCommand.__subclasses__()
+    )
+    commands.remove(SubCommand)
+
+    assert parse_prefix(commands)
+
+    assert parse_prefix(ProjectCommand.__subclasses__())
+
+    assert parse_prefix(TagCommand.__subclasses__())
+
+    assert parse_prefix(ClientCommand.__subclasses__())
+
+    assert parse_prefix(HelpCommand.__subclasses__())
