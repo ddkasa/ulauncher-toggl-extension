@@ -38,7 +38,7 @@
 - Description: Continue the last tracker or a tracker selected from the provided list.
 - Usage: `tgl continue`
 - Alt-Option: List alternative trackers to continue from cache.
-- Aliases: continue, cnt, cont, c
+- Aliases: continue, cnt, cont, restart
 - Optional Arguments: _Start_, _ID_, _Distinct_,
 
 ---
@@ -77,7 +77,7 @@
 - Description: Add a new tracker with given attributes. <sup>1</sup>
 - Usage: `tgl add "Example Tracker" >11:42 <12:00`
 - Alt-Option: Select a tracker from cache to be used as a pre-fill option.
-- Aliases: add, a, insert
+- Aliases: add, insert, create
 - Required Arguments: _Start_, _Stop_, _Description_
 - Optional Arguments: _Duration_, _Project_, _Tags_, _Distinct_,
 
@@ -87,7 +87,7 @@
 
 - Description: Delete the selected tracker selected from a provided list.
 - Usage: `tgl delete`
-- Aliases: delete, remove, del
+- Aliases: delete, remove, del, rm
 - Optional Arguments: _Distinct_, _ID_,
 
 ---
@@ -123,7 +123,7 @@
 
 - Description: Display a list of subcommands related to projects.
 - Usage: `tgl project`
-- Aliases: projects, proj, p
+- Aliases: projects, proj
 
 #### **Subcommands**:
 
@@ -132,7 +132,7 @@
 - Description: Display a list of projects. Select a project for more options/details.
 - Usage: `tgl project list`
 - Alt-Option: Refresh cache and fetch new projects.
-- Aliases: list, ls, l
+- Aliases: list, ls, lst
 - Optional Arguments: _Active_, _ID_
 
 ##### **Add**
@@ -140,7 +140,7 @@
 - Description: Add a new project. <sup>2</sup>
 - Usage: `tgl project add "Example Project" #0b83d9`
 - Alt-Option: Use a list of projects as pre-fill options.
-- Aliases: add, a, create, insert
+- Aliases: add, create, insert
 - Required Arguments: _Description_
 - Optional Arguments: _Color_, _Client_, _Active_, _Private_
 
@@ -148,14 +148,14 @@
 
 - Description: Edit an existing project. <sup>2</sup>
 - Usage: `tgl project edit "Example Project Edit"`
-- Aliases: edit, e, change, amend
+- Aliases: edit, ed, change, amend
 - Optional Arguments: _Description_, _Color_, _Client_, _Active_, _Private_
 
 ##### **Delete**
 
 - Description: Delete a project. Provides a list of projects to select from.
 - Usage: `tgl project delete`
-- Aliases: delete, rm, d, del
+- Aliases: delete, rm, remove, del
 - Optional Arguments: _ID_
 
 ##### **Refresh** <sup>5</sup>
@@ -171,7 +171,7 @@
 
 - Description: Display a list of subcommands related to clients.
 - Usage: `tgl client`
-- Aliases: client, cli
+- Aliases: client, cli, clients
 
 #### **Subcommands**:
 
@@ -188,21 +188,21 @@
 - Description: Add a new client. <sup>3</sup>
 - Usage: `tgl client add "Example Client"`
 - Alt-Option: Use a list of clients as pre-fill options.
-- Aliases: add, a, create, insert
+- Aliases: add, create, insert
 - Required Arguments: _Description_
 
 ##### **Edit**
 
 - Description: Edit an existing client. <sup>3</sup>
 - Usage: `tgl client edit "Example Client Edit"`
-- Aliases: edit, e, change, amend
+- Aliases: edit, ed, change, amend
 - Optional Arguments: _Description_, _ID_
 
 ##### **Delete**
 
 - Description: Delete a client. Provides a list of clients to select from.
 - Usage: `tgl client delete`
-- Aliases: delete, rm, d, del, remove
+- Aliases: delete, rm, del, remove
 - Optional Arguments: _ID_
 
 ##### **Refresh** <sup>5</sup>
@@ -218,7 +218,7 @@
 
 - Description: Display a list of subcommands related to tags.
 - Usage: `tgl tag`
-- Aliases: tag, t, tags
+- Aliases: tag, tags
 
 #### **Subcommands**:
 
@@ -235,21 +235,21 @@
 - Description: Add a new tag. <sup>4</sup>
 - Usage: `tgl tag add "New Tag"`
 - Alt-Option: Use a list of tags as pre-fill options.
-- Aliases: add, a, create
+- Aliases: add, create, insert
 - Required Arguments: _Description_
 
 ##### **Edit**
 
 - Description: Edit an existing tag. <sup>4</sup>
 - Usage: `tgl tag edit "Edited Tag"`
-- Aliases: edit, e, amend
+- Aliases: edit, amend, ed, change
 - Optional Arguments: _Description_, _ID_
 
 ##### **Delete**
 
 - Description: Delete a tag. Provides a list of tags to select from.
 - Usage: `tgl tag delete`
-- Aliases: delete, rm, d, del, remove
+- Aliases: delete, rm, del, remove
 - Optional Arguments: _ID_
 
 ---
@@ -258,7 +258,7 @@
 
 - Description: Export & view reports on a daily, weekly or monthly basis.
 - Usage: `tgl report`
-- Aliases: report, stats, rep
+- Aliases: report, stats, rep, statistics
 
 #### **Subcommands**:
 
@@ -267,7 +267,7 @@
 - Description: View daily tracked stats and export a pdf or csv report.
 - Usage: `tgl report day`
 - Alt-Option: Directly export a daily report.
-- Aliases: day, daily, d
+- Aliases: day, daily
 - Optional Arguments: _Start_, _Path_, _Report Format_
 
 ##### **Week**
@@ -275,7 +275,7 @@
 - Description: View weekly tracked stats and export a pdf or csv report.
 - Usage: `tgl report week`
 - Alt-Option: Directly export a weekly report.
-- Aliases: week, weekly, w
+- Aliases: week, weekly
 - Optional Arguments: _Start_, _Path_, _Report Format_
 
 ##### **Month**
@@ -283,7 +283,7 @@
 - Description: View monthly tracked stats and export a pdf or csv report.
 - Usage: `tgl report month`
 - Alt-Option: Directly export a monthly report.
-- Aliases: month, monthly, m
+- Aliases: month, monthly
 - Optional Arguments: _Start_, _Path_, _Report Format_
 
 ---
@@ -292,7 +292,7 @@
 
 - Description: Find out more about extensions commands.
 - Usage: `tgl help <command>`
-- Aliases: help, guide, hint, h
+- Aliases: help, guide, hint
 
 ---
 
