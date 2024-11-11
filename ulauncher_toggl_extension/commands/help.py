@@ -93,7 +93,7 @@ class HelpCommand(Command):
     }
 
     PREFIX = "help"
-    ALIASES = ("h", "hint", "guide")
+    ALIASES = ("hint", "guide")
     ICON = TIP_IMAGES[TipSeverity.INFO]
 
     OPTIONS = ()

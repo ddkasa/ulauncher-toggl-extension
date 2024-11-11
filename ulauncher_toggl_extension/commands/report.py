@@ -96,7 +96,7 @@ class ReportCommand(SubCommand, ReportMixin):
     """Subcommand for all reports."""
 
     PREFIX = "report"
-    ALIASES = ("stats", "rep")
+    ALIASES = ("stats", "rep", "statistics")
     ICON = REPORT_IMG
     EXPIRATION = None  # NOTE: Report endpoints don't have cache.
     FRAME: ClassVar[TimeFrame]
@@ -235,7 +235,7 @@ class DailyReportCommand(ReportCommand):
     """View the daily breakdown."""
 
     PREFIX = "day"
-    ALIASES = ("daily", "d")
+    ALIASES = ("daily", "dy")
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.DAY
@@ -340,7 +340,7 @@ class WeeklyReportCommand(ReportCommand):
     """View the weekly breakdown."""
 
     PREFIX = "week"
-    ALIASES = ("weekly", "w")
+    ALIASES = ("weekly", "wk")
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.WEEK
@@ -445,7 +445,7 @@ class MonthlyReportCommand(ReportCommand):
     """View the monthly breakdown."""
 
     PREFIX = "month"
-    ALIASES = ("monthly", "m")
+    ALIASES = ("monthly",)
     ICON = REPORT_IMG  # TODO: Custom image for each type of report.
     ENDPOINT = SummaryReportEndpoint
     FRAME = TimeFrame.MONTH

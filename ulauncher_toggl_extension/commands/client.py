@@ -28,7 +28,7 @@ class ClientCommand(SubCommand[TogglClient]):
     """Subcommand for all client based tasks."""
 
     PREFIX = "client"
-    ALIASES = ("cli",)
+    ALIASES = ("cli", "clients")
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
     OPTIONS = ()
@@ -74,7 +74,7 @@ class ListClientCommand(ClientCommand):
     """List all clients."""
 
     PREFIX = "list"
-    ALIASES = ("l", "ls")
+    ALIASES = ("ls", "lst")
     ICON = BROWSER_IMG
     OPTIONS = ("refresh", ":", "^-")
 
@@ -117,7 +117,7 @@ class AddClientCommand(ClientCommand):
     """Create a new client."""
 
     PREFIX = "add"
-    ALIASES = ("a", "add", "create", "insert")
+    ALIASES = ("create", "insert")
     ICON = ADD_IMG
     OPTIONS = ("refresh", '"', "^-")
 
@@ -186,7 +186,7 @@ class DeleteClientCommand(ClientCommand):
     """Delete a client."""
 
     PREFIX = "delete"
-    ALIASES = ("d", "del", "rm", "remove")
+    ALIASES = ("del", "rm", "remove")
     ICON = DELETE_IMG
     ESSENTIAL = True
     OPTIONS = ("refresh", ":", "^-")
@@ -249,7 +249,7 @@ class EditClientCommand(ClientCommand):
     """Edit a client."""
 
     PREFIX = "edit"
-    ALIASES = ("e", "change", "amend")
+    ALIASES = ("ed", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
     OPTIONS = ("refresh", '"', ":", "^-")

@@ -453,7 +453,7 @@ class ContinueCommand(TrackerCommand):
     """Continue the last or selected tracker."""
 
     PREFIX = "continue"
-    ALIASES = ("c", "cnt", "cont")
+    ALIASES = ("cnt", "restart", "cont")
     ICON = CONTINUE_IMG
     ESSENTIAL = True
 
@@ -761,7 +761,7 @@ class AddCommand(TrackerCommand):
     """Add a new tracker."""
 
     PREFIX = "add"
-    ALIASES = ("a", "insert")
+    ALIASES = ("create", "insert")
     ICON = ADD_IMG
     OPTIONS = ("refresh", "distinct", ">", '"', "@", "#", "<")
 

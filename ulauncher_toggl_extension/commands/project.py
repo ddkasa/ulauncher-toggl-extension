@@ -33,7 +33,7 @@ class ProjectCommand(SubCommand[TogglProject]):
     """Subcommand for all project based tasks."""
 
     PREFIX = "project"
-    ALIASES = ("p", "proj")
+    ALIASES = ("proj", "projects")
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
     OPTIONS = ()
@@ -199,7 +199,7 @@ class ListProjectCommand(ProjectCommand):
     """List all projects."""
 
     PREFIX = "list"
-    ALIASES = ("ls", "l")
+    ALIASES = ("ls", "lst")
     ICON = BROWSER_IMG
     OPTIONS = ("refresh", ":")
 
@@ -242,7 +242,7 @@ class AddProjectCommand(ProjectCommand):
     """Create a new project."""
 
     PREFIX = "add"
-    ALIASES = ("a", "create", "insert")
+    ALIASES = ("create", "insert")
     ICON = ADD_IMG
     OPTIONS = ("refresh", "#", "$", '"', ">", "<")
 
@@ -330,7 +330,7 @@ class EditProjectCommand(ProjectCommand):
     """Edit a project."""
 
     PREFIX = "edit"
-    ALIASES = ("e", "change", "amend")
+    ALIASES = ("ed", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
     OPTIONS = ("refresh", "#", "$", '"', ":")
@@ -418,7 +418,7 @@ class DeleteProjectCommand(ProjectCommand):
     """Delete a project."""
 
     PREFIX = "delete"
-    ALIASES = ("rm", "d", "del")
+    ALIASES = ("rm", "del", "remove")
     ICON = DELETE_IMG
     ESSENTIAL = True
     OPTIONS = ("refresh", ":", "^-")

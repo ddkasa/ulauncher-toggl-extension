@@ -27,7 +27,7 @@ class TagCommand(SubCommand[TogglTag]):
     """Subcommand for all tag based tasks."""
 
     PREFIX = "tag"
-    ALIASES = ("t", "tags")
+    ALIASES = ("tags",)
     ICON = APP_IMG  # TODO: Need a custom image
     EXPIRATION = None
     OPTIONS = ()
@@ -65,9 +65,9 @@ class ListTagCommand(TagCommand):
     """List all tags."""
 
     PREFIX = "list"
-    ALIASES = ("l", "ls")
+    ALIASES = ("ls", "lst")
     ICON = BROWSER_IMG
-    OPTIONS = ("refresh",)
+    OPTIONS = ("refresh", "^-")
 
     def preview(self, query: Query, **_) -> list[QueryResults]:
         self.amend_query(query.raw_args)
@@ -105,7 +105,7 @@ class AddTagCommand(TagCommand):
     """Create a new tag."""
 
     PREFIX = "add"
-    ALIASES = ("a", "add", "create")
+    ALIASES = ("create", "insert")
     ICON = ADD_IMG
     OPTIONS = ("refresh", '"')
 
@@ -175,7 +175,7 @@ class EditTagCommand(TagCommand):
     """Edit an existing tag."""
 
     PREFIX = "edit"
-    ALIASES = ("e", "amend")
+    ALIASES = ("ed", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
     OPTIONS = ("refresh", '"', ":")
@@ -251,7 +251,7 @@ class DeleteTagCommand(TagCommand):
     """Delete an existing tag."""
 
     PREFIX = "delete"
-    ALIASES = ("d", "rm", "remove", "del")
+    ALIASES = ("rm", "del", "remove")
     ICON = DELETE_IMG
     ESSENTIAL = True
     OPTIONS = ("refresh",)
