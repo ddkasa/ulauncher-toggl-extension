@@ -344,7 +344,7 @@ class Command(Generic[T], metaclass=Singleton):
         self.notification(str(error))
 
     @property
-    def cache(self) -> JSONCache:
+    def cache(self) -> JSONCache[T]:
         return JSONCache(self.cache_path, self.EXPIRATION)
 
     @classmethod

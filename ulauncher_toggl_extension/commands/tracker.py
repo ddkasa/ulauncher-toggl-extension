@@ -260,7 +260,7 @@ class TrackerCommand(Command[TogglTracker]):
         return autocomplete
 
     @property
-    def cache(self) -> JSONCache:
+    def cache(self) -> JSONCache[TogglTracker]:
         return JSONCache(self.cache_path, self.expiration)
 
     def handle(self, query: Query, **kwargs: Any) -> bool | list[QueryResults]:
@@ -310,11 +310,7 @@ class CurrentTrackerCommand(TrackerCommand):
         self._ts: Optional[datetime] = None
         self._tracker: Optional[TogglTracker] = None
 
-    def get_current_tracker(
-        self,
-        *,
-        refresh: bool = False,
-    ) -> TogglTracker | None:
+    def get_current_tracker(self, *, refresh: bool = False) -> TogglTracker | None:
         if (
             self._ts is None
             or refresh
