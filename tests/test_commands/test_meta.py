@@ -76,3 +76,37 @@ def test_cmd_collisions():
     assert parse_prefix(ClientCommand.__subclasses__())
 
     assert parse_prefix(HelpCommand.__subclasses__())
+
+
+def _min_len(prefix) -> bool:
+    return 0 < len(prefix) < 2  # noqa: PLR2004
+
+
+def _check_min_prefix(command):
+    if hasattr(command, "PREFIX") and _min_len(command.PREFIX):
+        return False
+
+    if hasattr(command, "ALIASES") and any(_min_len(a) for a in command.ALIASES):  # noqa: SIM103
+        return False
+
+    return True
+
+
+def _min_alias_length(command: type[Command], done: set[type[Command]]) -> bool:
+    done.add(command)
+    if not _check_min_prefix(command):
+        return False
+
+    for cmd in command.__subclasses__():
+        if cmd in done:
+            continue
+        if not _min_alias_length(cmd, done):  # type: ignore[type-abstract]
+            return False
+
+    return True
+
+
+@pytest.mark.unit
+def test_alias_length():
+    commands = set()
+    assert _min_alias_length(Command, commands)
