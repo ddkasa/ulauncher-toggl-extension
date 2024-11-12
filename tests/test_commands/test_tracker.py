@@ -1,7 +1,6 @@
 import sys
-from threading import _DummyThread
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from pathlib import Path
 
@@ -23,12 +22,10 @@ from ulauncher_toggl_extension.commands.tracker import RefreshCommand
 
 
 @pytest.mark.integration
-def test_continue_command(dummy_ext, create_tracker):
+def test_continue_command(dummy_ext, create_tracker, query_parser):
     cmd = ContinueCommand(dummy_ext)
 
-    query = []
-    cmd.amend_query(query)
-    assert len(query) == 1
+    query = query_parser.parse("tgl continue")
 
     assert len(cmd.preview(query)) == 0
     assert len(cmd.view(query)) == 1
@@ -40,16 +37,15 @@ def test_continue_command(dummy_ext, create_tracker):
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_current_command(
-    dummy_ext,
-    create_tracker,
-    auth,
-    workspace,
-    tmp_path,
-):
+def test_current_command(dummy_ext, create_tracker, query_parser):
     cmd = CurrentTrackerCommand(dummy_ext)
     assert cmd.get_current_tracker(refresh=True).id == create_tracker.id
-    endpoint = TrackerEndpoint(workspace, auth, JSONCache(Path(tmp_path)))
+    endpoint = TrackerEndpoint(
+        dummy_ext.workspace_id,
+        dummy_ext.auth,
+        JSONCache(Path(dummy_ext.cache_path)),
+    )
+    query = query_parser.parse("tgl current")
     assert endpoint.stop(create_tracker).id == create_tracker.id
 
     time.sleep(5)
@@ -59,15 +55,17 @@ def test_current_command(
     time.sleep(5)
 
     assert cmd.get_current_tracker() is None
-    assert not cmd.preview([])
-    assert not cmd.handle([])
+    assert not cmd.preview(query)
+    assert not cmd.handle(query)
 
 
 @pytest.mark.integration
-def test_current_command_stop(dummy_ext, create_tracker):
+def test_current_command_stop(dummy_ext, create_tracker, query_parser):
     cmd = CurrentTrackerCommand(dummy_ext)
     assert cmd.get_current_tracker(refresh=True).id == create_tracker.id
-    view = cmd.view([])
+
+    query = query_parser.parse("tgl stop")
+    view = cmd.view(query)
     assert isinstance(view, list)
     stop_command = view[3]
     assert isinstance(stop_command.on_enter, partial)
@@ -77,12 +75,10 @@ def test_current_command_stop(dummy_ext, create_tracker):
 
 
 @pytest.mark.integration
-def test_list_command(dummy_ext):
+def test_list_command(dummy_ext, query_parser):
     cmd = ListCommand(dummy_ext)
 
-    query = []
-    cmd.amend_query(query)
-    assert len(query) == 1
+    query = query_parser.parse("tgl list")
 
     assert isinstance(cmd.preview(query), list)
     assert isinstance(cmd.view(query), list)
@@ -97,60 +93,78 @@ def test_list_command(dummy_ext):
         r"&",
     ],
 )
-def test_start_command(dummy_ext, description):
+def test_start_command(dummy_ext, description, query_parser):
     cmd = StartCommand(dummy_ext)
 
-    query = []
-    cmd.amend_query(query)
-    assert len(query) == 1
+    query = query_parser.parse(f'tgl start "{description}"')
 
     assert cmd.preview(query)
     assert isinstance(cmd.view(query), list)
-    assert cmd.handle(query, description=description)
+    assert cmd.handle(query)
 
     cmd = CurrentTrackerCommand(dummy_ext)
     assert cmd.get_current_tracker().name == description
 
 
 @pytest.mark.integration
-def test_add_command(dummy_ext, faker):
+def test_add_command(dummy_ext, faker, query_parser):
     cmd = AddCommand(dummy_ext)
 
-    query = []
-    cmd.amend_query(query)
-    assert len(query) == 1
+    name = faker.name()
+    query = query_parser.parse(f'tgl add "{name}"')
 
     assert cmd.preview(query)
     assert isinstance(cmd.view(query), list)
-    assert cmd.handle(query, description=faker.name())
+    assert cmd.handle(query)
+
+    assert cmd.get_model(name) is not None
 
 
 @pytest.mark.integration
-def test_delete_command(dummy_ext, create_tracker, helper):
+def test_delete_command(dummy_ext, create_tracker, query_parser):
     cmd = DeleteCommand(dummy_ext)
 
-    query = []
-    cmd.amend_query(query)
-    assert len(query) == 1
+    query = query_parser.parse("tgl delete")
 
     assert cmd.preview(query)
     assert isinstance(cmd.view(query), list)
 
     assert cmd.handle(query, model=create_tracker)
-    assert helper(create_tracker.name, cmd) is None
+    assert cmd.get_model(create_tracker.id) is None
 
 
 @pytest.mark.integration
-def test_edit_command(dummy_ext, create_tracker, faker):
+def test_edit_command(dummy_ext, create_tracker, faker, query_parser):
     cmd = EditCommand(dummy_ext)
 
-    query = []
-    cmd.amend_query(query)
-    assert len(query) == 1
+    now = datetime.now().astimezone()
+    stop = now + timedelta(hours=5)
+
+    name = faker.name()
+    query = query_parser.parse(
+        (
+            f'tgl edit :{create_tracker.id} "{name}" >{now.strftime("%H:%M")}'
+            f' <{stop.strftime("%H:%M")}'
+        ),
+    )
 
     assert cmd.preview(query)
     assert isinstance(cmd.view(query), list)
-    assert cmd.handle(query, model=create_tracker, description=faker.name())
+    assert cmd.handle(query)
+
+    model = cmd.get_model(name)
+    assert model is not None
+    assert model.name == name
+    start = model.start.astimezone()
+    assert start.date() == now.date()
+    assert start.hour == now.hour
+    assert start.minute == now.minute
+
+    comp_stop = model.stop.astimezone()
+    assert comp_stop.date() == stop.date()
+    assert comp_stop.hour == stop.hour
+    assert comp_stop.minute == stop.minute
+    assert model.duration == timedelta(hours=5)
 
 
 @pytest.mark.unit
@@ -170,37 +184,32 @@ def test_edit_command_gen_query(dummy_ext, faker, number, workspace):
 
 
 @pytest.mark.unit
-def test_autocomplete(dummy_ext):
+@pytest.mark.parametrize("symbol", ["$", '"T', "@", "#"])
+def test_autocomplete(dummy_ext, symbol, query_parser):
     cmd = EditCommand(dummy_ext)
 
-    assert isinstance(cmd.autocomplete(["$"]), list)
+    query = query_parser.parse("tgl edit " + symbol)
 
-    assert isinstance(cmd.autocomplete(['"T']), list)
-
-    assert isinstance(cmd.autocomplete(["@"]), list)
-
-    assert isinstance(cmd.autocomplete(["#"]), list)
+    assert isinstance(cmd.autocomplete(query), list)
 
 
 @pytest.mark.integration
-def test_stop_command(dummy_ext, create_tracker, helper):
+def test_stop_command(dummy_ext, create_tracker, query_parser):
     cmd = StopCommand(dummy_ext)
 
-    query = []
-    cmd.amend_query(query)
-    assert len(query) == 1
+    query = query_parser.parse("tgl stop")
 
     assert isinstance(cmd.preview(query), list)
     assert isinstance(cmd.view(query), list)
 
-    assert cmd.handle([], model=create_tracker)
-    find = helper(create_tracker.name, cmd)
+    assert cmd.handle(query, model=create_tracker)
+    find = cmd.get_model(create_tracker.name)
     assert isinstance(find, TogglTracker)
     assert isinstance(find.stop, datetime)
 
 
 @pytest.mark.integration
-def test_refresh_command(dummy_ext, create_tracker, faker):
+def test_refresh_command(dummy_ext, create_tracker, faker, query_parser):
     endpoint = TrackerEndpoint(
         dummy_ext.workspace_id,
         dummy_ext.auth,
@@ -211,9 +220,7 @@ def test_refresh_command(dummy_ext, create_tracker, faker):
     endpoint.cache.update_entries(create_tracker)
 
     cmd = RefreshCommand(dummy_ext)
-
     assert endpoint.cache.find_entry(create_tracker).name == create_tracker.name
 
-    cmd.handle([], model=create_tracker)
-
+    cmd.handle(query_parser.parse(f"tgl refresh :{create_tracker.id}"))
     assert endpoint.cache.find_entry(create_tracker).name == old_name

@@ -8,16 +8,32 @@ from dataclasses import dataclass
 from datetime import timedelta
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Optional,
+    Sequence,
+    TypeVar,
+)
 
 from toggl_api import JSONCache
+from toggl_api.models import TogglClass
 
-from ulauncher_toggl_extension.images import APP_IMG, TIP_IMAGES, TipSeverity
+from ulauncher_toggl_extension.images import (
+    APP_IMG,
+    PREV_IMG,
+    START_IMG,
+    TIP_IMAGES,
+    TipSeverity,
+)
+from ulauncher_toggl_extension.query import Query
 from ulauncher_toggl_extension.utils import quote_member, show_notification
 
 if TYPE_CHECKING:
     from httpx import BasicAuth
-    from toggl_api.modules.models import TogglClass
 
     from ulauncher_toggl_extension.extension import TogglExtension
 
@@ -43,19 +59,8 @@ class ActionEnum(enum.Enum):
 ACTION_TYPE = Optional[ActionEnum | Callable | str]
 
 
-OPTION_DESCRIPTIONS: dict[str, str] = {
-    '"': "Description",
-    "#": "Tags or Color",
-    "@": "Project",
-    ">": "Start Time",
-    "<": "End Time",
-    "$": "Client",
-    "~": "Path",
-}
-
-
 @dataclass(frozen=True)
-class QueryParameters:
+class QueryResults:
     icon: Path = APP_IMG
     name: str | None = ""
     description: str | None = ""
@@ -73,7 +78,10 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class Command(metaclass=Singleton):
+T = TypeVar("T", bound=TogglClass)
+
+
+class Command(Generic[T], metaclass=Singleton):
     """General base class for all commands.
 
     Contains a few helper methods to build up a list of utilties to quickly
@@ -132,13 +140,13 @@ class Command(metaclass=Singleton):
         self.expiration: timedelta = extension.expiration or self.EXPIRATION
 
     @abstractmethod
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         """Preview method of the command to show up as the extension prefix is
         called by the user.
         """
 
     @abstractmethod
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         """View method as the method is called by the user.
 
         Essentially a method for a user calling the alt modifier.
@@ -149,7 +157,7 @@ class Command(metaclass=Singleton):
         Some children might not need this to be implemented.
         """
 
-    def handle(self, query: list[str], **kwargs) -> bool | list[QueryParameters]:
+    def handle(self, query: Query, **kwargs: Any) -> bool | list[QueryResults]:
         """Executes the actual command logic.
 
         Some children might not need this to be implemented.
@@ -166,7 +174,7 @@ class Command(metaclass=Singleton):
         base = self.__class__.__base__
         if base is None or model is None:
             return False
-        results: list[QueryParameters] = self.process_model(
+        results: list[QueryResults] = self.process_model(
             model,
             partial(
                 self.call_pickle,
@@ -183,7 +191,7 @@ class Command(metaclass=Singleton):
                 continue
             cmd = item(self)
             results.append(
-                QueryParameters(
+                QueryResults(
                     cmd.ICON,
                     f"{cmd.PREFIX.title()} {model.name}",
                     "",
@@ -219,18 +227,18 @@ class Command(metaclass=Singleton):
 
     def process_model(
         self,
-        model: TogglClass,
+        model: T,
         action: ACTION_TYPE,
         alt_action: Optional[ACTION_TYPE] = None,
         *,
         advanced: bool = False,
         fmt_str: str = "{prefix} {name}",
-    ) -> list[QueryParameters]:
+    ) -> list[QueryResults]:
         """Helper method to create result content."""
         del advanced
         model_name = quote_member(self.PREFIX, model.name)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 fmt_str.format(prefix=self.PREFIX.title(), name=model_name),
                 "",
@@ -241,12 +249,12 @@ class Command(metaclass=Singleton):
 
     def _paginator(
         self,
-        query: list[str],
-        data: list[partial] | list[QueryParameters],
-        static: Sequence[QueryParameters] = (),
+        query: Query,
+        data: list[partial] | list[QueryResults],
+        static: Sequence[QueryResults] = (),
         *,
         page: int = 0,
-    ) -> list[QueryParameters]:
+    ) -> list[QueryResults]:
         """Helper method for creating paginated results.
 
         Inserts bookends with prev, next page commands and alternate commands
@@ -260,26 +268,22 @@ class Command(metaclass=Singleton):
         Returns:
             list: List of QueryParameters to display.
         """
-        page_data: list[QueryParameters] = list(static)
-
+        page_data: list[QueryResults] = list(static)
         extra = len(page_data) + 1
 
         results_per_page = self.max_results - extra
-        total_pages = math.floor(len(data) / results_per_page)
-
-        next_page = len(data) > self.max_results and page < total_pages
-        prev_page = page > 0
+        total_pages = (math.ceil(len(data) / results_per_page)) - 1
 
         for t in data[results_per_page * page : results_per_page * (page + 1)]:
-            if isinstance(t, QueryParameters):
+            if isinstance(t, QueryResults):
                 page_data.append(t)
             else:
                 page_data.append(t()[0])
 
-        if next_page:
+        if len(data) > self.max_results and page < total_pages:
             page_data.append(
-                QueryParameters(
-                    self.ICON,  # TODO: Custom Icon
+                QueryResults(
+                    START_IMG,
                     "Next Page",
                     f"{page + 2}/{total_pages + 1}",
                     partial(
@@ -299,10 +303,10 @@ class Command(metaclass=Singleton):
                     small=True,
                 ),
             )
-        if prev_page:
+        if page > 0:
             page_data.append(
-                QueryParameters(
-                    self.ICON,  # TODO: Custom Icon
+                QueryResults(
+                    PREV_IMG,
                     "Previous Page",
                     f"{page}/{total_pages + 1}",
                     partial(
@@ -342,7 +346,7 @@ class Command(metaclass=Singleton):
         self.notification(str(error))
 
     @property
-    def cache(self) -> JSONCache:
+    def cache(self) -> JSONCache[T]:
         return JSONCache(self.cache_path, self.EXPIRATION)
 
     @classmethod
@@ -353,21 +357,21 @@ class Command(metaclass=Singleton):
         )
 
     @classmethod
-    def hint(cls) -> list[QueryParameters]:
+    def hint(cls) -> list[QueryResults]:
         """Returns a list of hints for the command."""
         desc = cls.__doc__.split(".")[0] + "." if cls.__doc__ else ""
-        hints: list[QueryParameters] = [
-            QueryParameters(
+        hints: list[QueryResults] = [
+            QueryResults(
                 cls.ICON,
                 cls.PREFIX.title(),
                 desc,
             ),
-            QueryParameters(
+            QueryResults(
                 TIP_IMAGES[TipSeverity.INFO],
                 "Prefix",
                 cls.PREFIX,
             ),
-            QueryParameters(
+            QueryResults(
                 TIP_IMAGES[TipSeverity.INFO],
                 "Aliases",
                 ", ".join(cls.ALIASES),
@@ -375,17 +379,27 @@ class Command(metaclass=Singleton):
         ]
         if cls.OPTIONS:
             hints.append(
-                QueryParameters(
+                QueryResults(
                     TIP_IMAGES[TipSeverity.INFO],
                     "Accepts Options",
                     ", ".join(cls.OPTIONS),
+                    small=True,
                 ),
             )
+            hints += [
+                QueryResults(
+                    TIP_IMAGES[TipSeverity.INFO],
+                    label,
+                    desc,
+                    small=False,
+                )
+                for label, desc in Query.option_descriptions(frozenset(cls.OPTIONS))
+            ]
 
         return hints
 
     @abstractmethod
-    def get_models(self, **kwargs) -> list[TogglClass]:
+    def get_models(self, query: Query, **kwargs: Any) -> list[T]:
         """Method that collects a list of Toggl objects.
 
         Will usually apply some sort of sorting and filtering before returning.
@@ -394,26 +408,12 @@ class Command(metaclass=Singleton):
             list: A selection of models that were gathered.
         """
 
-
-# TODO: Might not need this as a seperate subclass, but could also just be
-# used as a mixin.
-class SearchCommand(Command):
-    """Base class for all search commands.
-
-    Methods:
-        query: Executes a query depending on the command.
-
-    """
-
-    PREFIX = "search"
-    ALIASES = ("find", "locate")
-
     @abstractmethod
-    def query(self, query: str) -> TogglClass:
-        pass
+    def get_model(self, model: T | int | str | None) -> T | None:
+        """Abstract method for querying for a single model."""
 
 
-class SubCommand(Command):
+class SubCommand(Command[T]):
     """Base class for all subcommands.
 
     Methods:
@@ -427,10 +427,10 @@ class SubCommand(Command):
     MIN_ARGS: ClassVar[int] = 3
     OPTIONS = ()
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del query, kwargs
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -438,13 +438,14 @@ class SubCommand(Command):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
-        preview: list[QueryParameters] = []
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        self.amend_query(query.raw_args)
+        preview: list[QueryResults] = []
         for sub in self.__class__.__subclasses__():
             cmd = sub(self)
-            if len(query) >= self.MIN_ARGS - 1 and (
-                query[1] == cmd.PREFIX or any(x == query[1] for x in cmd.ALIASES)
+            if query.subcommand and (
+                query.subcommand == cmd.PREFIX
+                or any(x == query.subcommand for x in cmd.ALIASES)
             ):
                 return cmd.view(query, **kwargs)
             prev = cmd.preview(query, **kwargs)

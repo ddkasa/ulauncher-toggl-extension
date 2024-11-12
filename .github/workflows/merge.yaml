@@ -1,0 +1,42 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  merge-branch:
+    name: Clean & Merge into Production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - run: git checkout main
+
+      - name: Clean Development Files
+        run: |
+          rm -r .github/
+          rm -r tests/
+          rm .pre-commit-config.yaml
+          rm pyproject.toml
+          rm poetry.lock
+          rm -r docs/
+          rm LICENSE.md
+          rm README.md
+
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          set +e
+          git commit -a -m "chore(release): clean ${{github.ref}}"
+
+      - name: Merge
+        run: |
+          git checkout production
+          git merge main
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git production

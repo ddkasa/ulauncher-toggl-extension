@@ -1,17 +1,30 @@
+from __future__ import annotations
+
 import os
 import time
 from dataclasses import dataclass
 from datetime import timedelta
-from pathlib import Path
 from random import Random
+from typing import TYPE_CHECKING, Final
 
 import pytest
 from faker import Faker
-from httpx import BasicAuth
 from toggl_api import generate_authentication
-from toggl_api.reports.reports import REPORT_FORMATS
 
+from ulauncher_toggl_extension.commands import (
+    ClientCommand,
+    HelpCommand,
+    ProjectCommand,
+    TagCommand,
+)
 from ulauncher_toggl_extension.date_time import get_local_tz
+from ulauncher_toggl_extension.query import QueryParser
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from httpx import BasicAuth
+    from toggl_api.reports.reports import REPORT_FORMATS
 
 
 @pytest.fixture(autouse=True)
@@ -74,3 +87,26 @@ class DummyExtension:
 @pytest.fixture
 def dummy_ext(auth, workspace, tmp_path):
     return DummyExtension(auth, workspace, tmp_path)
+
+
+SUBCOMMANDS: Final[frozenset[str]] = frozenset(
+    (
+        ProjectCommand.PREFIX,
+        ClientCommand.PREFIX,
+        HelpCommand.PREFIX,
+        TagCommand.PREFIX,
+        *ProjectCommand.ALIASES,
+        *ClientCommand.ALIASES,
+        *HelpCommand.ALIASES,
+        *TagCommand.ALIASES,
+    ),
+)
+
+
+@pytest.fixture
+def query_parser(dummy_ext):
+    return QueryParser(
+        dummy_ext.prefix,
+        dummy_ext.report_format,
+        SUBCOMMANDS,
+    )

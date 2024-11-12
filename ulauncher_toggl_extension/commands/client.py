@@ -2,76 +2,100 @@ from __future__ import annotations
 
 import logging
 from functools import partial
-from typing import Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from httpx import HTTPStatusError
-from toggl_api import ClientBody, ClientEndpoint, TogglClient
+from toggl_api import ClientBody, ClientEndpoint, TogglClient, TogglQuery
 
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
-    APP_IMG,
     BROWSER_IMG,
+    CLIENT_IMG,
     DELETE_IMG,
     EDIT_IMG,
     REFRESH_IMG,
 )
+from ulauncher_toggl_extension.utils import get_distance
 
-from .meta import QueryParameters, SubCommand
+from .meta import QueryResults, SubCommand
+
+if TYPE_CHECKING:
+    from ulauncher_toggl_extension.query import Query
 
 log = logging.getLogger(__name__)
 
 
-class ClientCommand(SubCommand):
+class ClientCommand(SubCommand[TogglClient]):
     """Subcommand for all client based tasks."""
 
     PREFIX = "client"
-    ALIASES = ("c", "cli")
-    ICON = APP_IMG  # TODO: Need a custom image
+    ALIASES = ("cli", "clients")
+    ICON = CLIENT_IMG
     EXPIRATION = None
     OPTIONS = ()
 
-    def get_models(self, **kwargs) -> list[TogglClient]:
+    def get_models(self, query: Query, **kwargs: Any) -> list[TogglClient]:
+        del kwargs
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
         try:
-            clients = endpoint.collect(refresh=kwargs.get("refresh", False))
+            clients = endpoint.collect(refresh=query.refresh)
         except HTTPStatusError as err:
             self.handle_error(err)
             clients = endpoint.collect()
 
-        clients.sort(key=lambda x: x.timestamp, reverse=True)
+        if isinstance(query.id, int):
+            clients.sort(
+                key=lambda x: get_distance(query.id, x.id),
+                reverse=query.sort_order,
+            )
+        elif isinstance(query.id, str):
+            clients.sort(
+                key=lambda x: get_distance(query.id, x.name),
+                reverse=query.sort_order,
+            )
+        else:
+            clients.sort(key=lambda x: x.timestamp, reverse=query.sort_order)
+
         return clients
 
-    def get_client(
+    def get_model(
         self,
-        client_id: Optional[int] = None,
+        client_id: Optional[int | TogglClient | str] = None,
         *,
         refresh: bool = False,
     ) -> TogglClient | None:
-        if client_id is None:
-            return None
+        if client_id is None or isinstance(client_id, TogglClient):
+            return client_id
+
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
+        if isinstance(client_id, str):
+            client = list(endpoint.query(TogglQuery("name", client_id)))
+            if client:
+                return client[0]
+            return None
+
         try:
             client = endpoint.get(client_id, refresh=refresh)
         except HTTPStatusError as err:
             self.handle_error(err)
             return None
 
-        return client
+        return client  # type: ignore[return-value]
 
 
 class ListClientCommand(ClientCommand):
     """List all clients."""
 
     PREFIX = "list"
-    ALIASES = ("l", "ls")
+    ALIASES = ("ls", "lst")
     ICON = BROWSER_IMG
-    OPTIONS = ("refresh",)
+    OPTIONS = ("refresh", ":", "^-")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
-        self.amend_query(query)
+        self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -80,24 +104,23 @@ class ListClientCommand(ClientCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        if query.id:
+            kwargs["model"] = self.get_model(query.id, refresh=query.refresh)
+            if kwargs["model"]:
+                return self.handle(query, **kwargs)  # type: ignore[return-value]
+
+        self.amend_query(query.raw_args)
         data: list[partial] = kwargs.get("data", [])
         if not data:
             data = [
                 partial(
                     self.process_model,
                     client,
-                    partial(
-                        self.call_pickle,
-                        method="handle",
-                        query=query,
-                        model=client,
-                        **kwargs,
-                    ),
+                    self.get_cmd() + f" :{client.id}",
                     fmt_str="{name}",
                 )
-                for client in self.get_models(**kwargs)
+                for client in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(query, data, page=kwargs.get("page", 0))
@@ -107,14 +130,14 @@ class AddClientCommand(ClientCommand):
     """Create a new client."""
 
     PREFIX = "add"
-    ALIASES = ("a", "add", "create", "insert")
+    ALIASES = ("create", "insert")
     ICON = ADD_IMG
-    OPTIONS = ("refresh", '"')
+    OPTIONS = ("refresh", '"', "^-")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -128,11 +151,11 @@ class AddClientCommand(ClientCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
-        data: list[QueryParameters] = kwargs.get("data", [])
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        self.amend_query(query.raw_args)
+        data: list[QueryResults] = kwargs.get("data", [])
         if not data:
-            for client in self.get_models(**kwargs):
+            for client in self.get_models(query, **kwargs):
                 mdl = self.process_model(
                     client,
                     self.generate_query(client),
@@ -152,14 +175,11 @@ class AddClientCommand(ClientCommand):
             query += ' "{model.name}"'
         return query
 
-    def handle(self, query: list[str], **kwargs) -> bool:
-        del query
-        name = kwargs.get("description")
-
-        if not isinstance(name, str):
+    def handle(self, query: Query, **_: Any) -> bool:
+        if not isinstance(query.name, str):
             return False
 
-        body = ClientBody(name, kwargs.get("status"), kwargs.get("notes"))
+        body = ClientBody(query.name)
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
 
         try:
@@ -179,16 +199,16 @@ class DeleteClientCommand(ClientCommand):
     """Delete a client."""
 
     PREFIX = "delete"
-    ALIASES = ("d", "del", "rm", "remove")
+    ALIASES = ("del", "rm", "remove")
     ICON = DELETE_IMG
     ESSENTIAL = True
-    OPTIONS = ("refresh", '"')
+    OPTIONS = ("refresh", ":", "^-")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
-        self.amend_query(query)
+        self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -196,8 +216,8 @@ class DeleteClientCommand(ClientCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        self.amend_query(query.raw_args)
         data: list[partial] = kwargs.get("data", [])
         if not data:
             data = [
@@ -212,16 +232,18 @@ class DeleteClientCommand(ClientCommand):
                         **kwargs,
                     ),
                 )
-                for client in self.get_models(**kwargs)
+                for client in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(query, data, page=kwargs.get("page", 0))
 
-    def handle(self, query: list[str], **kwargs) -> bool:
-        del query
-        model = kwargs.get("model") or kwargs.get("name")
+    def handle(self, query: Query, **kwargs: Any) -> bool:
+        model = kwargs.get("model", query.id)
 
-        if not isinstance(model, TogglClient | int):
+        if isinstance(model, str):
+            model = self.get_model(model)
+
+        if model is None:
             return False
 
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
@@ -240,16 +262,16 @@ class EditClientCommand(ClientCommand):
     """Edit a client."""
 
     PREFIX = "edit"
-    ALIASES = ("e", "change", "amend")
+    ALIASES = ("ed", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
-    OPTIONS = ("refresh", '"')
+    OPTIONS = ("refresh", '"', ":", "^-")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
-        self.amend_query(query)
+        self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -257,8 +279,8 @@ class EditClientCommand(ClientCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        self.amend_query(query.raw_args)
         data: list[partial] = kwargs.get("data", [])
         if not data:
             data = [
@@ -273,7 +295,7 @@ class EditClientCommand(ClientCommand):
                         **kwargs,
                     ),
                 )
-                for client in self.get_models(**kwargs)
+                for client in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(
@@ -283,19 +305,16 @@ class EditClientCommand(ClientCommand):
             page=kwargs.get("page", 0),
         )
 
-    def handle(self, query: list[str], **kwargs) -> bool:
-        del query
-        name = kwargs.get("description")
-        model = kwargs.get("model") or name
+    def handle(self, query: Query, **kwargs: Any) -> bool:
+        model = kwargs.get("model", query.id)
 
         if not isinstance(model, TogglClient | int):
+            model = self.get_model(model)
+
+        if model is None:
             return False
 
-        body = ClientBody(
-            name if isinstance(name, str) else None,
-            kwargs.get("status"),
-            kwargs.get("notes"),
-        )
+        body = ClientBody(query.name)
         endpoint = ClientEndpoint(self.workspace_id, self.auth, self.cache)
 
         try:
@@ -320,16 +339,16 @@ class RefreshClientCommand(ClientCommand):
     ICON = REFRESH_IMG
     ESSENTIAL = True
 
-    OPTIONS = ("refresh", "distinct")
+    OPTIONS = ("refresh", "distinct", ":")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:  # noqa: PLR6301
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:  # noqa: PLR6301
         del query, kwargs
         return []
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
         if not data:
-            kwargs["distinct"] = not kwargs.get("distinct", True)
+            query.distinct = not query.distinct
             data = [
                 partial(
                     self.process_model,
@@ -343,13 +362,16 @@ class RefreshClientCommand(ClientCommand):
                     ),
                     fmt_str="{name}",
                 )
-                for client in self.get_models(**kwargs)
+                for client in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(query, data, page=kwargs.get("page", 0))
 
-    def handle(self, query: list[str], **kwargs) -> Literal[False]:  # noqa: ARG002
-        model = kwargs.get("model")
+    def handle(self, query: Query, **kwargs: Any) -> Literal[False]:
+        model = kwargs.get("model", query.id)
+        if isinstance(model, str):
+            model = self.get_model(model)
+
         if model is None:
             return False
 

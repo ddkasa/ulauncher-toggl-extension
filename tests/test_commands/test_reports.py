@@ -117,12 +117,14 @@ def test_fetch_break_down(frame, dummy_ext, httpx_mock, number):
         (MonthlyReportCommand, "csv"),
     ],
 )
-def test_report_dump(command, fmt, dummy_ext, tmp_path):
+def test_report_dump(command, fmt, dummy_ext, tmp_path, query_parser):
     cmd = command(dummy_ext)
     tmp_path = Path(tmp_path)
     now = datetime.now(tz=timezone.utc)
-    handle = cmd.handle([], start=now, format=fmt, path=tmp_path)
-    assert handle
+
+    query = query_parser.parse(f"tgl reports  .{fmt} >{now.strftime('%H:%M')}")
+    query.path = tmp_path
+    assert cmd.handle(query)
     if fmt == "csv":
         assert (
             tmp_path / f"{now.date().isoformat()}_{cmd.FRAME.name.lower()}_report.{fmt}"

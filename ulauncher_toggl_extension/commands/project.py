@@ -2,37 +2,39 @@ from __future__ import annotations
 
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from httpx import HTTPStatusError
-from toggl_api import ProjectBody, ProjectEndpoint, TogglProject
+from toggl_api import ProjectBody, ProjectEndpoint, TogglProject, TogglQuery
 
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
-    APP_IMG,
     BROWSER_IMG,
     CIRCULAR_SVG,
     DELETE_IMG,
     EDIT_IMG,
+    PROJECT_IMG,
     REFRESH_IMG,
 )
-from ulauncher_toggl_extension.utils import quote_member
+from ulauncher_toggl_extension.utils import get_distance, quote_member
 
 from .client import ClientCommand
-from .meta import ACTION_TYPE, QueryParameters, SubCommand
+from .meta import ACTION_TYPE, QueryResults, SubCommand
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from ulauncher_toggl_extension.query import Query
+
 log = logging.getLogger(__name__)
 
 
-class ProjectCommand(SubCommand):
+class ProjectCommand(SubCommand[TogglProject]):
     """Subcommand for all project based tasks."""
 
     PREFIX = "project"
-    ALIASES = ("p", "proj")
-    ICON = APP_IMG  # TODO: Need a custom image
+    ALIASES = ("proj", "projects")
+    ICON = PROJECT_IMG
     EXPIRATION = None
     OPTIONS = ()
 
@@ -44,13 +46,13 @@ class ProjectCommand(SubCommand):
         *,
         advanced: bool = False,
         fmt_str: str = "{prefix} {name}",
-    ) -> list[QueryParameters]:
+    ) -> list[QueryResults]:
         cmd = ClientCommand(self)
-        client = cmd.get_client(model.client)
+        client = cmd.get_model(model.client)
 
         model_name = quote_member(self.PREFIX, model.name)
         results = [
-            QueryParameters(
+            QueryResults(
                 self.get_icon(model),
                 fmt_str.format(prefix=self.PREFIX.title(), name=model_name),
                 f"${client.name if client else model.client}" if model.client else "",
@@ -62,13 +64,13 @@ class ProjectCommand(SubCommand):
         if advanced:
             results.extend(
                 (
-                    QueryParameters(
+                    QueryResults(
                         self.ICON,
                         f"{model.name} is{' not' if not model.active else ''} active.",
                         "",
                         small=True,
                     ),
-                    QueryParameters(
+                    QueryResults(
                         self.get_icon(model),
                         "Color",
                         model.color,
@@ -79,92 +81,107 @@ class ProjectCommand(SubCommand):
 
         return results
 
-    def get_models(self, **kwargs) -> list[TogglProject]:
+    def get_models(self, query: Query, **kwargs: Any) -> list[TogglProject]:
+        del kwargs
         user = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
         try:
-            projects = user.collect(refresh=kwargs.get("refresh", False))
+            projects = user.collect(refresh=query.refresh)
         except HTTPStatusError as err:
             self.handle_error(err)
             return []
 
-        if kwargs.get("active", True):
+        if query.active:
             projects = [project for project in projects if project.active]
-        projects.sort(key=lambda x: x.timestamp, reverse=True)
+
+        if isinstance(query.id, int):
+            projects.sort(
+                key=lambda x: get_distance(query.id, x.id),
+                reverse=query.sort_order,
+            )
+        elif isinstance(query.id, str):
+            projects.sort(
+                key=lambda x: get_distance(query.id, x.name),
+                reverse=query.sort_order,
+            )
+        else:
+            projects.sort(key=lambda x: x.timestamp, reverse=query.sort_order)
         return projects
 
-    def get_project(
+    def get_model(
         self,
-        project_id: Optional[int] = None,
+        project_id: Optional[int | str | TogglProject] = None,
         *,
         refresh: bool = False,
     ) -> TogglProject | None:
-        if project_id is None:
-            return None
+        if project_id is None or isinstance(project_id, TogglProject):
+            return project_id
 
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
+        if isinstance(project_id, str):
+            project = list(endpoint.query(TogglQuery("name", project_id)))
+            return project[0] if project else None
+
         try:
-            project = endpoint.get(project_id, refresh=refresh)
+            return endpoint.get(project_id, refresh=refresh)
         except HTTPStatusError as err:
             self.handle_error(err)
             return None
 
-        return project
-
-    def autocomplete(
-        self,
-        query: list[str],
-        **kwargs,
-    ) -> list[QueryParameters]:
-        query = query.copy()
-        query.insert(0, self.prefix)
-        autocomplete: list[QueryParameters] = []
-        if not self.check_autocmp(query):
+    def autocomplete(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        raw_args = query.raw_args.copy()
+        autocomplete: list[QueryResults] = []
+        if not self.check_autocmp(raw_args):
             return autocomplete
 
-        if query[-1][0] == '"' and query[-1][-1] != '"':
-            models = self.get_models(**kwargs)
+        if raw_args[-1][0] == '"' and raw_args[-1][-1] != '"':
+            models = self.get_models(query, **kwargs)
 
             for model in models:
-                query[-1] = f'"{model.name}"'
+                raw_args[-1] = f'"{model.name}"'
                 autocomplete.append(
-                    QueryParameters(
+                    QueryResults(
                         self.get_icon(model),
                         model.name,
                         "Use this project name.",
-                        " ".join(query),
+                        " ".join(raw_args),
                     ),
                 )
 
-        elif query[-1][0] == "#" and len(query[-1]) < 6:  # noqa: PLR2004
+        elif raw_args[-1][0] == "#" and len(raw_args[-1]) < 6:  # noqa: PLR2004
             path = self.cache_path / "svg"
             path.mkdir(parents=True, exist_ok=True)
             for name, color in ProjectEndpoint.BASIC_COLORS.items():
-                query[-1] = f"{color}"
+                raw_args[-1] = f"{color}"
                 icon = path / f"{color}.svg"
                 if not icon.exists():
                     self.create_color(icon, color)
                 autocomplete.append(
-                    QueryParameters(
+                    QueryResults(
                         icon,
                         name.title(),
                         color,
-                        " ".join(query),
+                        " ".join(raw_args),
                     ),
                 )
 
-        elif query[-1][0] == "$" and len(query[-1]) < 3:  # noqa: PLR2004
+        elif raw_args[-1][0] == "$" and len(raw_args[-1]) < 3:  # noqa: PLR2004
             cmd = ClientCommand(self)
 
-            for model in cmd.get_models(**kwargs):
-                query[-1] = f"${model.id}"
+            for model in cmd.get_models(query, **kwargs):
+                raw_args[-1] = f'$"{model.name}"'
                 autocomplete.append(
-                    QueryParameters(
+                    QueryResults(
                         cmd.ICON,
                         model.name,
                         "Use this client.",
-                        " ".join(query),
+                        " ".join(raw_args),
                     ),
                 )
+
+        autocomplete.sort(
+            key=lambda x: get_distance(query.raw_args[-1][1:], x.name),
+            reverse=True,
+        )
 
         return autocomplete
 
@@ -198,15 +215,15 @@ class ListProjectCommand(ProjectCommand):
     """List all projects."""
 
     PREFIX = "list"
-    ALIASES = ("ls", "l")
+    ALIASES = ("ls", "lst")
     ICON = BROWSER_IMG
-    OPTIONS = ("refresh",)
+    OPTIONS = ("refresh", ":")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
-        self.amend_query(query)
+        self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "List Projects.",
@@ -215,24 +232,23 @@ class ListProjectCommand(ProjectCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        if query.id:
+            kwargs["model"] = self.get_model(query.id)
+            if kwargs["model"]:
+                return self.handle(query, **kwargs)  # type: ignore[return-value]
+
+        self.amend_query(query.raw_args)
         data: list[partial] = kwargs.get("data", [])
         if not data:
             data = [
                 partial(
                     self.process_model,
                     project,
-                    partial(
-                        self.call_pickle,
-                        method="handle",
-                        query=query,
-                        model=project,
-                        **kwargs,
-                    ),
+                    self.get_cmd() + f' :"{project.id}"',
                     fmt_str="{name}",
                 )
-                for project in self.get_models(**kwargs)
+                for project in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(query, data, page=kwargs.get("page", 0))
@@ -242,14 +258,14 @@ class AddProjectCommand(ProjectCommand):
     """Create a new project."""
 
     PREFIX = "add"
-    ALIASES = ("a", "create", "insert")
+    ALIASES = ("create", "insert")
     ICON = ADD_IMG
-    OPTIONS = ("refresh", "#", "$", '"')
+    OPTIONS = ("refresh", "#", "$", '"', ">", "<")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "Add a new project.",
@@ -263,8 +279,8 @@ class AddProjectCommand(ProjectCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        self.amend_query(query.raw_args)
         cmp = self.autocomplete(query, **kwargs)
         data = kwargs.get("data", [])
         if not data:
@@ -274,7 +290,7 @@ class AddProjectCommand(ProjectCommand):
                     project,
                     self.generate_query(project),
                 )
-                for project in self.get_models(**kwargs)
+                for project in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(
@@ -295,28 +311,23 @@ class AddProjectCommand(ProjectCommand):
             query += f" #{project.color}"
         return query
 
-    def handle(self, query: list[str], **kwargs) -> bool:
-        del query
-        name = kwargs.get("description")
-        if name is None:
+    def handle(self, query: Query, **kwargs: Any) -> bool:
+        del kwargs
+        if not query.name:
             return False
-        endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
-        client = kwargs.get("client")
-        color = kwargs.get("tags", [None])[0]
-
-        if isinstance(color, str):
-            color = "#" + color
 
         body = ProjectBody(
-            name=name,
-            active=kwargs.get("active", True),
-            client_id=client if isinstance(client, int) else None,
-            client_name=client if isinstance(client, str) else None,
-            is_private=kwargs.get("private", True),
-            color=color,
-            start_date=kwargs.get("start"),
-            end_date=kwargs.get("end_date"),
+            name=query.name,
+            active=query.active,
+            client_id=query.client if isinstance(query.client, int) else None,
+            client_name=query.client if isinstance(query.client, str) else None,
+            is_private=query.private,
+            color=query.color,
+            start_date=query.start,
+            end_date=query.stop,
         )
+
+        endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
         try:
             proj = endpoint.add(body)
         except HTTPStatusError as err:
@@ -335,16 +346,16 @@ class EditProjectCommand(ProjectCommand):
     """Edit a project."""
 
     PREFIX = "edit"
-    ALIASES = ("e", "change", "amend")
+    ALIASES = ("ed", "change", "amend")
     ICON = EDIT_IMG
     ESSENTIAL = True
-    OPTIONS = ("refresh", "#", "$", '"')
+    OPTIONS = ("refresh", "#", "$", '"', ":")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
-        self.amend_query(query)
+        self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -352,8 +363,8 @@ class EditProjectCommand(ProjectCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        self.amend_query(query.raw_args)
         cmp = self.autocomplete(query, **kwargs)
         data = kwargs.get("data", [])
         if not data:
@@ -370,7 +381,7 @@ class EditProjectCommand(ProjectCommand):
                     ),
                     self.generate_query(project),
                 )
-                for project in self.get_models(**kwargs)
+                for project in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(
@@ -386,24 +397,21 @@ class EditProjectCommand(ProjectCommand):
             query += f" ${project.client}"
         return query
 
-    def handle(self, query: list[str], **kwargs) -> bool:
-        del query
+    def handle(self, query: Query, **kwargs: Any) -> bool:
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
-        model = kwargs.get("model") or kwargs.get("project")
-        description = kwargs.get("description")
+        model = kwargs.get("model") or self.get_model(query.id)
         if not isinstance(model, TogglProject | int):
             return False
-        client = kwargs.get("client")
 
         body = ProjectBody(
-            name=description if isinstance(description, str) else None,
-            active=kwargs.get("active", True),
-            client_id=client if isinstance(client, int) else None,
-            client_name=client if isinstance(client, str) else None,
-            is_private=kwargs.get("private", True),
-            color=kwargs.get("color"),
-            start_date=kwargs.get("start"),
-            end_date=kwargs.get("end_date"),
+            name=query.name,
+            active=query.active,
+            client_id=query.client if isinstance(query.client, int) else None,
+            client_name=query.client if isinstance(query.client, str) else None,
+            is_private=query.private,
+            color=query.color,
+            start_date=query.start,
+            end_date=query.stop,
         )
         if isinstance(model, int):
             model = TogglProject(model, "")
@@ -426,16 +434,16 @@ class DeleteProjectCommand(ProjectCommand):
     """Delete a project."""
 
     PREFIX = "delete"
-    ALIASES = ("rm", "d", "del")
+    ALIASES = ("rm", "del", "remove")
     ICON = DELETE_IMG
     ESSENTIAL = True
-    OPTIONS = ("refresh",)
+    OPTIONS = ("refresh", ":", "^-")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
-        self.amend_query(query)
+        self.amend_query(query.raw_args)
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 self.__doc__,
@@ -443,8 +451,8 @@ class DeleteProjectCommand(ProjectCommand):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
-        self.amend_query(query)
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
+        self.amend_query(query.raw_args)
         cmp = self.autocomplete(query, **kwargs)
         data = kwargs.get("data", [])
         if not data:
@@ -460,7 +468,7 @@ class DeleteProjectCommand(ProjectCommand):
                         **kwargs,
                     ),
                 )
-                for project in self.get_models(**kwargs)
+                for project in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(
@@ -477,10 +485,9 @@ class DeleteProjectCommand(ProjectCommand):
 
         return query
 
-    def handle(self, query: list[str], **kwargs) -> bool:
-        del query
+    def handle(self, query: Query, **kwargs: Any) -> bool:
         endpoint = ProjectEndpoint(self.workspace_id, self.auth, self.cache)
-        model = kwargs.get("model") or kwargs.get("project")
+        model = kwargs.get("model") or self.get_model(query.id)
         if not isinstance(model, TogglProject | int):
             return False
 
@@ -506,16 +513,15 @@ class RefreshProjectCommand(ProjectCommand):
     ICON = REFRESH_IMG
     ESSENTIAL = True
 
-    OPTIONS = ("refresh", "distinct")
+    OPTIONS = ("refresh", "distinct", ":", "^-")
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:  # noqa: PLR6301
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:  # noqa: PLR6301
         del query, kwargs
         return []
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         data: list[partial] = kwargs.get("data", [])
         if not data:
-            kwargs["distinct"] = not kwargs.get("distinct", True)
             data = [
                 partial(
                     self.process_model,
@@ -529,17 +535,20 @@ class RefreshProjectCommand(ProjectCommand):
                     ),
                     fmt_str="{name}",
                 )
-                for project in self.get_models(**kwargs)
+                for project in self.get_models(query, **kwargs)
             ]
 
         return self._paginator(query, data, page=kwargs.get("page", 0))
 
-    def handle(self, query: list[str], **kwargs) -> Literal[False]:  # noqa: ARG002
-        model = kwargs.get("model")
+    def handle(self, query: Query, **kwargs: Any) -> Literal[False]:
+        model = kwargs.get("model") or query.id
+        if isinstance(model, str):
+            model = self.get_model(model)
+
         if model is None:
             return False
 
-        model = self.get_project(model.id, refresh=True)
+        model = self.get_model(model, refresh=True)
         if model is None:
             return False
 

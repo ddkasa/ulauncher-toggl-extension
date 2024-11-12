@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from httpx import BasicAuth
-from toggl_api import JSONCache, UserEndpoint
+from toggl_api import UserEndpoint
 from toggl_api.config import AuthenticationError, generate_authentication, use_togglrc
 from ulauncher.api.client.EventListener import EventListener
 
@@ -16,6 +15,8 @@ from ulauncher_toggl_extension.images import TIP_IMAGES, TipSeverity
 from ulauncher_toggl_extension.utils import show_notification
 
 if TYPE_CHECKING:
+    from datetime import timedelta
+
     from ulauncher.api.shared.event import (
         PreferencesEvent,
         PreferencesUpdateEvent,
@@ -57,20 +58,12 @@ class PreferencesEventListener(EventListener):
         )
         extension.workspace_id = wid
         extension.hints = event.preferences["hints"] == "true"
-        extension.auth = self.authentication(
-            wid,
-            extension.cache_path,
-            event.preferences["api_token"],
-        )
+        extension.auth = self.authentication(event.preferences["api_token"])
         extension.expiration = self.parse_expiration(event.preferences["expiration"])
         extension.report_format = event.preferences["report_format"]
 
     @staticmethod
-    def authentication(
-        workspace: int,
-        cache: Path,
-        api_key: Optional[str] = None,
-    ) -> BasicAuth:
+    def authentication(api_key: Optional[str] = None) -> BasicAuth:
         """Method checking for authentication and verifying its validity.
 
         Checks preferences -> environment variables -> .togglrc file.
@@ -95,12 +88,7 @@ class PreferencesEventListener(EventListener):
                     log.exception("Authentication is missing.")
                     raise
 
-        endpoint = UserEndpoint(
-            workspace_id=workspace,
-            auth=auth,
-            cache=JSONCache(cache, timedelta(0)),
-        )
-        if not endpoint.check_authentication():
+        if not UserEndpoint.verify_authentication(auth):
             err = (
                 "Authentication failed with provided details."
                 "Check your config or the Toggl API might be down."
@@ -154,8 +142,28 @@ class PreferencesUpdateEventListener(EventListener):
     def on_event(  # noqa: PLR6301
         self,
         event: PreferencesUpdateEvent,
-        extension: TogglExtension,
+        ext: TogglExtension,
     ) -> None:
-        new_preferences = extension.preferences.copy()
-        new_preferences[event.id] = event.new_value
-        extension.preferences = new_preferences
+        if event.id == "prefix":
+            ext.prefix = event.new_value or "tgl"
+        elif event.id == "cache":
+            ext.cache_path = event.new_value or Path.home() / (
+                ".cache/ulauncher_toggl_extension"
+            )
+        elif event.id == "max_search_results":
+            ext.max_results = PreferencesEventListener.max_results(event.new_value)
+        elif event.id == "workspace":
+            wid = PreferencesEventListener.workspace(
+                os.environ.get("TOGGL_WORKSPACE_ID") or event.new_value,
+            )
+            ext.workspace_id = wid
+        elif event.id == "hints":
+            ext.hints = event.new_value == "true"
+        elif event.id == "api_token":
+            ext.auth = PreferencesEventListener.authentication(event.new_value)
+        elif event.id == "expiration":
+            ext.expiration = PreferencesEventListener.parse_expiration(event.new_value)
+        elif event.id == "report_format":
+            ext.report_format = event.new_value
+
+        log.info("Updated %s preference!", event.id.replace("_", " "))

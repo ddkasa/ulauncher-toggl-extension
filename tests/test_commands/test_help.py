@@ -9,10 +9,12 @@ def help_command(dummy_ext):
 
 
 @pytest.mark.unit
-def test_help_preview(help_command):
-    assert help_command.preview([])
+def test_help_preview(help_command, query_parser):
+    query = query_parser.parse("tgl help")
+    assert help_command.preview(query)
 
 
 @pytest.mark.unit
-def test_help_view(help_command):
-    assert help_command.view([])
+def test_help_view(help_command, query_parser):
+    query = query_parser.parse("tgl help")
+    assert help_command.view(query)
