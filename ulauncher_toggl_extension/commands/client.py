@@ -15,6 +15,7 @@ from ulauncher_toggl_extension.images import (
     EDIT_IMG,
     REFRESH_IMG,
 )
+from ulauncher_toggl_extension.utils import get_distance
 
 from .meta import QueryResults, SubCommand
 
@@ -42,7 +43,19 @@ class ClientCommand(SubCommand[TogglClient]):
             self.handle_error(err)
             clients = endpoint.collect()
 
-        clients.sort(key=lambda x: x.timestamp, reverse=query.sort_order)
+        if isinstance(query.id, int):
+            clients.sort(
+                key=lambda x: get_distance(query.id, x.id),
+                reverse=query.sort_order,
+            )
+        elif isinstance(query.id, str):
+            clients.sort(
+                key=lambda x: get_distance(query.id, x.name),
+                reverse=query.sort_order,
+            )
+        else:
+            clients.sort(key=lambda x: x.timestamp, reverse=query.sort_order)
+
         return clients
 
     def get_model(
