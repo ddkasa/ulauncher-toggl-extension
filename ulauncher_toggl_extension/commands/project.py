@@ -9,11 +9,11 @@ from toggl_api import ProjectBody, ProjectEndpoint, TogglProject, TogglQuery
 
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
-    APP_IMG,
     BROWSER_IMG,
     CIRCULAR_SVG,
     DELETE_IMG,
     EDIT_IMG,
+    PROJECT_IMG,
     REFRESH_IMG,
 )
 from ulauncher_toggl_extension.utils import get_distance, quote_member
@@ -34,7 +34,7 @@ class ProjectCommand(SubCommand[TogglProject]):
 
     PREFIX = "project"
     ALIASES = ("proj", "projects")
-    ICON = APP_IMG  # TODO: Need a custom image
+    ICON = PROJECT_IMG
     EXPIRATION = None
     OPTIONS = ()
 

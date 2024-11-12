@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 21.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
+<svg
+   version="1.1"
+   id="Layer_1"
+   x="0px"
+   y="0px"
+   viewBox="0 0 512 512"
+   style="enable-background:new 0 0 512 512;"
+   xml:space="preserve"
+   sodipodi:docname="project.svg"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+   id="namedview1"
+   pagecolor="#ffffff"
+   bordercolor="#000000"
+   borderopacity="0.25"
+   inkscape:showpageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   inkscape:zoom="0.94833738"
+   inkscape:cx="178.20662"
+   inkscape:cy="222.49466"
+   inkscape:window-width="1920"
+   inkscape:window-height="1009"
+   inkscape:window-x="1080"
+   inkscape:window-y="35"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="Layer_1" /><defs
+   id="defs4">
+	
+</defs>
+<style
+   type="text/css"
+   id="style1">
+	.st0{fill:url(#SVGID_1_);}
+	.st1{fill:#C95EBE;}
+	.st2{fill:#FCFCFC;}
+	.st3{fill:#C95EBC;}
+</style>
+<g
+   id="svg_1">
+		
+			<radialGradient
+   id="SVGID_1_"
+   cx="-24.309099"
+   cy="672.21552"
+   r="13.2297"
+   gradientTransform="matrix(0,15.3688,15.4467,0,-10127.536,629.6019)"
+   gradientUnits="userSpaceOnUse">
+			<stop
+   offset="0"
+   style="stop-color:#412A4C"
+   id="stop1" />
+			<stop
+   offset="4.280270e-03"
+   style="stop-color:#412A4C"
+   id="stop2" />
+			<stop
+   offset="1"
+   style="stop-color:#2C1338"
+   id="stop3" />
+		</radialGradient>
+		<path
+   class="st0"
+   d="M 360.6,52.7 H 151.4 c -54.5,0 -98.7,44.2 -98.7,98.7 v 209.2 c 0,54.5 44.2,98.7 98.7,98.7 h 209.2 c 54.5,0 98.7,-44.2 98.7,-98.7 V 151.4 c 0,-54.5 -44.2,-98.7 -98.7,-98.7 z"
+   id="path3"
+   style="fill:url(#SVGID_1_)" />
+		<path
+   id="svg_2"
+   class="st1"
+   d="m 256,104.5 v 0 c 83.7,0 151.5,67.8 151.5,151.5 v 0 c 0,83.7 -67.8,151.5 -151.5,151.5 v 0 C 172.3,407.5 104.5,339.7 104.5,256 v 0 c 0,-83.7 67.8,-151.5 151.5,-151.5 z" />
+		
+		<path
+   class="st3"
+   d="m 248.1,255.6 v 0.4 c 0,4.4 3.5,7.9 7.9,7.9 h 23.7 c 4.4,0 7.9,-3.5 7.9,-7.9 0,-4.4 -3.5,-7.9 -7.9,-7.9 h -15.8 v -31.6 c 0,-4.4 -3.5,-7.9 -7.9,-7.9 -4.4,0 -7.9,3.5 -7.9,7.9 v 38.7 z"
+   id="path4" />
+	</g>
+<path
+   style="fill:#ffffff;stroke-width:0.228686"
+   d="m 203.81451,316.95397 c -5.97407,-0.23297 -10.30102,-1.42763 -13.94513,-3.85023 -5.1658,-3.43422 -8.34216,-8.31608 -9.52482,-14.63905 -0.40761,-2.17923 -0.42774,-4.18646 -0.42774,-42.64995 v -40.36309 l 0.49749,-2.32053 c 1.37214,-6.40022 4.82978,-11.38012 10.12332,-14.58021 3.96135,-2.39474 6.5955,-3.03982 13.61991,-3.3354 6.53895,-0.27515 35.48785,-0.2774 39.334,-0.003 3.51794,0.25094 5.65437,0.79988 8.46139,2.17411 2.84589,1.39326 4.47799,2.69835 9.58947,7.6681 4.29368,4.17462 4.47213,4.31763 5.961,4.7775 1.4988,0.46293 1.96753,0.47411 19.97713,0.4761 10.14327,0.001 20.09852,0.10279 22.12278,0.22592 6.99485,0.42549 11.22772,2.11903 15.54395,6.21903 2.95432,2.80632 5.08018,6.42838 6.01421,10.24709 0.93839,3.83652 0.97882,5.58212 0.88996,38.41926 -0.0839,31.01019 -0.0918,31.47478 -0.56899,33.64991 -0.89087,4.0605 -2.74873,7.70415 -5.45584,10.69999 -2.34471,2.5948 -6.54565,5.16654 -9.91984,6.07276 -4.28295,1.15029 -1.56211,1.09683 -57.97931,1.13917 -28.92879,0.0217 -53.36961,0.009 -54.31294,-0.0274 z"
+   id="path1"
+   sodipodi:nodetypes="cssscssssssscsssssssscc" /></svg>
