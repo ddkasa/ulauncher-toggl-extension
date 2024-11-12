@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ulauncher_toggl_extension.images import TIP_IMAGES, TipSeverity
 
@@ -12,7 +12,7 @@ from .client import (
     ListClientCommand,
     RefreshClientCommand,
 )
-from .meta import Command, QueryParameters
+from .meta import Command, QueryResults
 from .project import (
     AddProjectCommand,
     DeleteProjectCommand,
@@ -47,7 +47,10 @@ from .tracker import (
 )
 
 if TYPE_CHECKING:
+    from toggl_api.models import TogglClass
+
     from ulauncher_toggl_extension.extension import TogglExtension
+    from ulauncher_toggl_extension.query import Query
 
 
 class HelpCommand(Command):
@@ -90,8 +93,10 @@ class HelpCommand(Command):
     }
 
     PREFIX = "help"
-    ALIASES = ("h", "hint", "guide")
+    ALIASES = ("hint", "guide")
     ICON = TIP_IMAGES[TipSeverity.INFO]
+
+    OPTIONS = ()
 
     __slots__ = ("hints",)
 
@@ -99,15 +104,15 @@ class HelpCommand(Command):
         super().__init__(extension)
         self.hints = extension.hints
 
-    def preview(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def preview(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
         if not self.hints:
             return []
 
-        self.amend_query(query)
+        self.amend_query(query.raw_args)
 
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 self.PREFIX.title(),
                 "Show help.",
@@ -115,24 +120,27 @@ class HelpCommand(Command):
             ),
         ]
 
-    def view(self, query: list[str], **kwargs) -> list[QueryParameters]:
+    def view(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         del kwargs
-        self.amend_query(query)
-        if len(query) >= self.MIN_ARGS and query[-1] == self.PREFIX:
+        self.amend_query(query.raw_args)
+        if query.subcommand == "help":
             return self.hint()
 
-        cmd = " ".join(query[1:])
+        cmd = f"{query.subcommand}"
+        if len(query.raw_args) >= 4:  # noqa: PLR2004  # NOTE: Help for subcommands.
+            cmd += f" {query.raw_args[3]}"
+
         hints = self.HINT_COMMANDS.get(cmd)
         if hints:
             return hints.hint()
 
         return [
-            QueryParameters(
+            QueryResults(
                 self.ICON,
                 "Usage",
                 "tgl help <command>",
             ),
-            QueryParameters(
+            QueryResults(
                 TIP_IMAGES[TipSeverity.ERROR],
                 "Go Back",
                 "Go back to the default command.",
@@ -140,9 +148,12 @@ class HelpCommand(Command):
             ),
         ]
 
-    def handle(self, query: list[str], **kwargs) -> bool:  # noqa: PLR6301
+    def handle(self, query: Query, **kwargs: Any) -> bool:  # noqa: PLR6301
         del query, kwargs
         return True
 
-    def get_models(self, **kwargs) -> None:  # type: ignore[override]
+    def get_models(self, *args: Any, **kwargs: Any) -> list[TogglClass]:
+        raise NotImplementedError
+
+    def get_model(self, *args: Any, **kwargs: Any) -> TogglClass | None:
         raise NotImplementedError

@@ -23,9 +23,12 @@ SVG_PATH = Path("images/svg")
 
 APP_IMG = SVG_PATH / Path("icon.svg")
 START_IMG = SVG_PATH / Path("start.svg")
+PREV_IMG = SVG_PATH / Path("previous.svg")
 EDIT_IMG = SVG_PATH / Path("edit.svg")
 ADD_IMG = SVG_PATH / Path("add.svg")
-PROJECT_IMG = SVG_PATH / Path("project.svg")  # TODO: Needs to be created.
+PROJECT_IMG = SVG_PATH / Path("project.svg")
+CLIENT_IMG = SVG_PATH / Path("client.svg")
+TAG_IMG = SVG_PATH / Path("tag.svg")
 STOP_IMG = SVG_PATH / Path("stop.svg")
 DELETE_IMG = SVG_PATH / Path("delete.svg")
 CONTINUE_IMG = SVG_PATH / Path("continue.svg")
@@ -51,13 +54,17 @@ __all__ = (
     "BLANK_IMG",
     "BROWSER_IMG",
     "CIRCULAR_SVG",
+    "CLIENT_IMG",
     "CONTINUE_IMG",
     "DELETE_IMG",
     "EDIT_IMG",
+    "PREV_IMG",
+    "PROJECT_IMG",
     "PROJECT_IMG",
     "REPORT_IMG",
     "START_IMG",
     "STOP_IMG",
+    "TAG_IMG",
     "TIP_IMAGES",
     "TipSeverity",
 )

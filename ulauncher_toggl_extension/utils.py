@@ -19,8 +19,18 @@ import importlib
 import logging
 import subprocess  # noqa: S404
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
+
+try:
+    import Levenshtein
+
+    _leven = True
+except ImportError:
+    from difflib import SequenceMatcher
+
+    _leven = False
 
 import gi
 
@@ -29,12 +39,26 @@ gi.require_version("Notify", "0.7")
 from gi.repository import Notify  # noqa: E402
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable
     from types import ModuleType
 
 log = logging.getLogger(__name__)
 
 
+@lru_cache(1000)
+def get_distance(target: Hashable, search: Hashable | None) -> float:
+    if not search:
+        return 0
+
+    target, search = str(target), str(search)
+
+    if _leven:
+        return Levenshtein.ratio(target, search)
+    return SequenceMatcher(None, target, search).ratio()  # type: ignore[call-overload]
+
+
 def quote_member(text: str, member: str) -> str:
+    text, member = str(text), str(member)
     if member.lower() in text.lower():
         return f'"{text}"'
     return member

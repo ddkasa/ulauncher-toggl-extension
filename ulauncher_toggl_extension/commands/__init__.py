@@ -48,7 +48,7 @@ Classes:
 
 from .client import AddClientCommand, ClientCommand, DeleteClientCommand
 from .help import HelpCommand
-from .meta import ActionEnum, Command, QueryParameters
+from .meta import ActionEnum, Command, QueryResults
 from .project import AddProjectCommand, DeleteProjectCommand, ProjectCommand
 from .report import ReportCommand
 from .tag import AddTagCommand, DeleteTagCommand, TagCommand
@@ -82,7 +82,7 @@ __all__ = (
     "HelpCommand",
     "ListCommand",
     "ProjectCommand",
-    "QueryParameters",
+    "QueryResults",
     "RefreshCommand",
     "ReportCommand",
     "StartCommand",
