@@ -23,6 +23,7 @@ SVG_PATH = Path("images/svg")
 
 APP_IMG = SVG_PATH / Path("icon.svg")
 START_IMG = SVG_PATH / Path("start.svg")
+PREV_IMG = SVG_PATH / Path("previous.svg")
 EDIT_IMG = SVG_PATH / Path("edit.svg")
 ADD_IMG = SVG_PATH / Path("add.svg")
 PROJECT_IMG = SVG_PATH / Path("project.svg")
@@ -57,6 +58,7 @@ __all__ = (
     "CONTINUE_IMG",
     "DELETE_IMG",
     "EDIT_IMG",
+    "PREV_IMG",
     "PROJECT_IMG",
     "PROJECT_IMG",
     "REPORT_IMG",

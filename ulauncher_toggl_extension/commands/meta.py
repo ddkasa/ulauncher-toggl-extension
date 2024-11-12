@@ -22,7 +22,13 @@ from typing import (
 from toggl_api import JSONCache
 from toggl_api.models import TogglClass
 
-from ulauncher_toggl_extension.images import APP_IMG, TIP_IMAGES, TipSeverity
+from ulauncher_toggl_extension.images import (
+    APP_IMG,
+    PREV_IMG,
+    START_IMG,
+    TIP_IMAGES,
+    TipSeverity,
+)
 from ulauncher_toggl_extension.query import Query
 from ulauncher_toggl_extension.utils import quote_member, show_notification
 
@@ -277,7 +283,7 @@ class Command(Generic[T], metaclass=Singleton):
         if len(data) > self.max_results and page < total_pages:
             page_data.append(
                 QueryResults(
-                    self.ICON,  # TODO: Custom Icon
+                    START_IMG,
                     "Next Page",
                     f"{page + 2}/{total_pages + 1}",
                     partial(
@@ -300,7 +306,7 @@ class Command(Generic[T], metaclass=Singleton):
         if page > 0:
             page_data.append(
                 QueryResults(
-                    self.ICON,  # TODO: Custom Icon
+                    PREV_IMG,
                     "Previous Page",
                     f"{page}/{total_pages + 1}",
                     partial(
