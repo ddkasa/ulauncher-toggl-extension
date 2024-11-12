@@ -30,7 +30,7 @@ from ulauncher_toggl_extension.images import (
     TIP_IMAGES,
     TipSeverity,
 )
-from ulauncher_toggl_extension.utils import quote_member
+from ulauncher_toggl_extension.utils import get_distance, quote_member
 
 from .meta import ACTION_TYPE, ActionEnum, Command, QueryResults
 from .project import ProjectCommand
@@ -160,11 +160,21 @@ class TrackerCommand(Command[TogglTracker]):
                 kwargs.get("end_date"),
                 kwargs.get("start_date"),
             )
-
-        trackers.sort(
-            key=lambda x: (x.stop or datetime.now(tz=timezone.utc), x.start),
-            reverse=query.sort_order,
-        )
+        if isinstance(query.id, int):
+            trackers.sort(
+                key=lambda x: get_distance(query.id, x.id),
+                reverse=query.sort_order,
+            )
+        elif isinstance(query.id, str):
+            trackers.sort(
+                key=lambda x: get_distance(query.id, x.name),
+                reverse=query.sort_order,
+            )
+        else:
+            trackers.sort(
+                key=lambda x: (x.stop or datetime.now(tz=timezone.utc), x.start),
+                reverse=query.sort_order,
+            )
         if query.distinct:
             data: list[TogglTracker] = []
             for tracker in trackers:
@@ -222,7 +232,7 @@ class TrackerCommand(Command[TogglTracker]):
             pcmd = ProjectCommand(self)
 
             for project in pcmd.get_models(query, **kwargs):
-                raw_args[-1] = f"@{project.id}"
+                raw_args[-1] = f'@"{project.name}"'
                 autocomplete.append(
                     QueryResults(
                         pcmd.get_icon(project),
@@ -253,9 +263,10 @@ class TrackerCommand(Command[TogglTracker]):
                     ),
                 )
 
-        elif raw_args[-1][0] in {">", "<"}:
-            # TODO: Autocomplete possibility for dates and time.
-            pass
+        autocomplete.sort(
+            key=lambda x: get_distance(query.raw_args[-1][1:], x.name),
+            reverse=True,
+        )
 
         return autocomplete
 
