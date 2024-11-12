@@ -16,7 +16,7 @@ from ulauncher_toggl_extension.images import (
     EDIT_IMG,
     REFRESH_IMG,
 )
-from ulauncher_toggl_extension.utils import quote_member
+from ulauncher_toggl_extension.utils import get_distance, quote_member
 
 from .client import ClientCommand
 from .meta import ACTION_TYPE, QueryResults, SubCommand
@@ -93,7 +93,18 @@ class ProjectCommand(SubCommand[TogglProject]):
         if query.active:
             projects = [project for project in projects if project.active]
 
-        projects.sort(key=lambda x: x.timestamp, reverse=query.sort_order)
+        if isinstance(query.id, int):
+            projects.sort(
+                key=lambda x: get_distance(query.id, x.id),
+                reverse=query.sort_order,
+            )
+        elif isinstance(query.id, str):
+            projects.sort(
+                key=lambda x: get_distance(query.id, x.name),
+                reverse=query.sort_order,
+            )
+        else:
+            projects.sort(key=lambda x: x.timestamp, reverse=query.sort_order)
         return projects
 
     def get_model(
@@ -166,6 +177,11 @@ class ProjectCommand(SubCommand[TogglProject]):
                         " ".join(raw_args),
                     ),
                 )
+
+        autocomplete.sort(
+            key=lambda x: get_distance(query.raw_args[-1][1:], x.name),
+            reverse=True,
+        )
 
         return autocomplete
 
