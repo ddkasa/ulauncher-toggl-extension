@@ -26,6 +26,7 @@ START_IMG = SVG_PATH / Path("start.svg")
 EDIT_IMG = SVG_PATH / Path("edit.svg")
 ADD_IMG = SVG_PATH / Path("add.svg")
 PROJECT_IMG = SVG_PATH / Path("project.svg")
+CLIENT_IMG = SVG_PATH / Path("client.svg")
 STOP_IMG = SVG_PATH / Path("stop.svg")
 DELETE_IMG = SVG_PATH / Path("delete.svg")
 CONTINUE_IMG = SVG_PATH / Path("continue.svg")
@@ -51,6 +52,7 @@ __all__ = (
     "BLANK_IMG",
     "BROWSER_IMG",
     "CIRCULAR_SVG",
+    "CLIENT_IMG",
     "CONTINUE_IMG",
     "DELETE_IMG",
     "EDIT_IMG",

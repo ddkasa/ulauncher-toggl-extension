@@ -9,8 +9,8 @@ from toggl_api import ClientBody, ClientEndpoint, TogglClient, TogglQuery
 
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
-    APP_IMG,
     BROWSER_IMG,
+    CLIENT_IMG,
     DELETE_IMG,
     EDIT_IMG,
     REFRESH_IMG,
@@ -30,7 +30,7 @@ class ClientCommand(SubCommand[TogglClient]):
 
     PREFIX = "client"
     ALIASES = ("cli", "clients")
-    ICON = APP_IMG  # TODO: Need a custom image
+    ICON = CLIENT_IMG
     EXPIRATION = None
     OPTIONS = ()
 
