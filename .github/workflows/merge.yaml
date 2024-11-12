@@ -1,0 +1,19 @@
+name: Publish
+
+on:
+  workflow_call:
+
+jobs:
+  merge-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Merge main -> production
+        uses: devmasx/merge-branch@master
+        with:
+          type: now
+          github_token: ${{ github.token }}
+          from_branch: main
+          target_branch: production
+          message: "automated: merged main into production"
