@@ -160,6 +160,10 @@ class TrackerCommand(Command[TogglTracker]):
                 kwargs.get("end_date"),
                 kwargs.get("start_date"),
             )
+
+        if query.distinct:
+            trackers = self._distinct(trackers)
+
         if isinstance(query.id, int):
             trackers.sort(
                 key=lambda x: get_distance(query.id, x.id),
@@ -175,27 +179,24 @@ class TrackerCommand(Command[TogglTracker]):
                 key=lambda x: (x.stop or datetime.now(tz=timezone.utc), x.start),
                 reverse=query.sort_order,
             )
-        if query.distinct:
-            data: list[TogglTracker] = []
-            for tracker in trackers:
-                if self.distinct(tracker, data):
-                    data.append(tracker)
-
-            return data
 
         return trackers
 
     @staticmethod
-    def distinct(tracker: TogglTracker, data: list[TogglTracker]) -> bool:
-        for t in data:
-            if (
-                tracker.name == t.name
-                and tracker.tags == t.tags
-                and tracker.project == t.project
-            ):
-                return False
+    def _distinct(trackers: list[TogglTracker]) -> list[TogglTracker]:
+        data: list[TogglTracker] = []
 
-        return True
+        names, projects = set(), set()
+
+        for tracker in trackers:
+            if tracker.name in names and tracker.project in projects:
+                continue
+            names.add(tracker.name)
+            projects.add(tracker.project)
+
+            data.append(tracker)
+
+        return data
 
     def get_current_tracker(self, *, refresh: bool = True) -> TogglTracker | None:
         user = UserEndpoint(self.workspace_id, self.auth, self.cache)
