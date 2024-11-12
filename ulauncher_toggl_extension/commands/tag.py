@@ -14,6 +14,7 @@ from ulauncher_toggl_extension.images import (
     DELETE_IMG,
     EDIT_IMG,
 )
+from ulauncher_toggl_extension.utils import get_distance
 
 from .meta import QueryResults, SubCommand
 
@@ -39,8 +40,21 @@ class TagCommand(SubCommand[TogglTag]):
         except HTTPStatusError as err:
             self.handle_error(err)
             tags = endpoint.collect()
-
-        tags.sort(key=lambda x: x.timestamp, reverse=query.sort_order)
+        if isinstance(query.id, int):
+            tags.sort(
+                key=lambda x: get_distance(query.id, x.id),
+                reverse=query.sort_order,
+            )
+        elif isinstance(query.id, str):
+            tags.sort(
+                key=lambda x: get_distance(query.id, x.name),
+                reverse=query.sort_order,
+            )
+        else:
+            tags.sort(
+                key=lambda x: x.timestamp,
+                reverse=query.sort_order,
+            )
         return tags
 
     def get_model(self, model: int | str | TogglTag | None) -> TogglTag | None:
