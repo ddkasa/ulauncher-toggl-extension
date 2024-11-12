@@ -27,6 +27,7 @@ EDIT_IMG = SVG_PATH / Path("edit.svg")
 ADD_IMG = SVG_PATH / Path("add.svg")
 PROJECT_IMG = SVG_PATH / Path("project.svg")
 CLIENT_IMG = SVG_PATH / Path("client.svg")
+TAG_IMG = SVG_PATH / Path("tag.svg")
 STOP_IMG = SVG_PATH / Path("stop.svg")
 DELETE_IMG = SVG_PATH / Path("delete.svg")
 CONTINUE_IMG = SVG_PATH / Path("continue.svg")
@@ -61,6 +62,7 @@ __all__ = (
     "REPORT_IMG",
     "START_IMG",
     "STOP_IMG",
+    "TAG_IMG",
     "TIP_IMAGES",
     "TipSeverity",
 )

@@ -9,10 +9,10 @@ from toggl_api import TagEndpoint, TogglQuery, TogglTag
 
 from ulauncher_toggl_extension.images import (
     ADD_IMG,
-    APP_IMG,
     BROWSER_IMG,
     DELETE_IMG,
     EDIT_IMG,
+    TAG_IMG,
 )
 from ulauncher_toggl_extension.utils import get_distance
 
@@ -29,7 +29,7 @@ class TagCommand(SubCommand[TogglTag]):
 
     PREFIX = "tag"
     ALIASES = ("tags",)
-    ICON = APP_IMG  # TODO: Need a custom image
+    ICON = TAG_IMG
     EXPIRATION = None
     OPTIONS = ()
 
