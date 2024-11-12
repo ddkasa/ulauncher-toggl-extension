@@ -407,24 +407,6 @@ class Command(Generic[T], metaclass=Singleton):
         """Abstract method for querying for a single model."""
 
 
-# TODO: Might not need this as a seperate subclass, but could also just be
-# used as a mixin.
-class SearchCommand(Command[T]):
-    """Base class for all search commands.
-
-    Methods:
-        query: Executes a query depending on the command.
-
-    """
-
-    PREFIX = "search"
-    ALIASES = ("find", "locate")
-
-    @abstractmethod
-    def query(self, query: Query) -> T:
-        pass
-
-
 class SubCommand(Command[T]):
     """Base class for all subcommands.
 
