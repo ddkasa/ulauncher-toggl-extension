@@ -1,8 +1,0 @@
-.gitattributes merge=ours
-tests/ merge=ours
-.github/ merge=ours
-docs/ merge=ours
-pyproject.toml merge=ours
-poetry.toml merge=ours
-.pre-commit-config.yaml merge=ours
-README.md merge=ours
