@@ -18,7 +18,9 @@ from ulauncher_toggl_extension.commands import (
     StartCommand,
     StopCommand,
 )
+from ulauncher_toggl_extension.commands.project import AddProjectCommand, ProjectCommand
 from ulauncher_toggl_extension.commands.tracker import RefreshCommand
+from ulauncher_toggl_extension.query import Query
 
 
 @pytest.mark.integration
@@ -104,6 +106,27 @@ def test_start_command(dummy_ext, description, query_parser):
 
     cmd = CurrentTrackerCommand(dummy_ext)
     assert cmd.get_current_tracker().name == description
+
+
+@pytest.mark.integration
+def test_start_command_args(dummy_ext, query_parser, faker):
+    cmd = StartCommand(dummy_ext)
+
+    pquery = query_parser.parse(f'tgl project add "{faker.name().split()[0]}"')
+    pcmd = AddProjectCommand(dummy_ext)
+    assert pcmd.handle(pquery)
+    pid = pcmd.get_model(pquery.name)
+
+    name = faker.name().split()[-1]
+    tag = faker.name().split()[-1]
+    query = query_parser.parse(f'tgl start "{name}" @{pid.id} #{tag} refresh')
+
+    assert cmd.handle(query)
+    model = cmd.get_model(name)
+    assert isinstance(model, TogglTracker)
+    assert model.name == name
+    assert model.project == pid.id
+    assert model.tags[0].name == tag
 
 
 @pytest.mark.integration
