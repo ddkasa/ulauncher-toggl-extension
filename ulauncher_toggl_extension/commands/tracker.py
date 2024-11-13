@@ -290,7 +290,7 @@ class TrackerCommand(Command[TogglTracker]):
         self,
         model_id: TogglTracker | int | str | None,
         *,
-        refresh: bool = True,
+        refresh: bool = False,
     ) -> TogglTracker | None:
         if model_id is None or isinstance(model_id, TogglTracker):
             return model_id
