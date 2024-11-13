@@ -290,7 +290,7 @@ class TrackerCommand(Command[TogglTracker]):
         self,
         model_id: TogglTracker | int | str | None,
         *,
-        refresh: bool = True,
+        refresh: bool = False,
     ) -> TogglTracker | None:
         if model_id is None or isinstance(model_id, TogglTracker):
             return model_id
@@ -647,7 +647,7 @@ class StartCommand(TrackerCommand):
     def handle(self, query: Query, **_: Any) -> bool:
         now = datetime.now(tz=timezone.utc)
 
-        project = self.get_model(query.project)
+        project = ProjectCommand(self).get_model(query.project, refresh=query.refresh)
         body = TrackerBody(
             query.name,
             project_id=project.id if project else None,
