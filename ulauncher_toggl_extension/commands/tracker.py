@@ -647,7 +647,7 @@ class StartCommand(TrackerCommand):
     def handle(self, query: Query, **_: Any) -> bool:
         now = datetime.now(tz=timezone.utc)
 
-        project = self.get_model(query.project)
+        project = ProjectCommand(self).get_model(query.project, refresh=query.refresh)
         body = TrackerBody(
             query.name,
             project_id=project.id if project else None,
