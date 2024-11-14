@@ -161,9 +161,6 @@ class TrackerCommand(Command[TogglTracker]):
                 kwargs.get("start_date"),
             )
 
-        if query.distinct:
-            trackers = self._distinct(trackers)
-
         if isinstance(query.id, int):
             trackers.sort(
                 key=lambda x: get_distance(query.id, x.id),
@@ -180,19 +177,28 @@ class TrackerCommand(Command[TogglTracker]):
                 reverse=query.sort_order,
             )
 
+        if query.distinct:
+            trackers = self._distinct(trackers)
+
         return trackers
 
     @staticmethod
     def _distinct(trackers: list[TogglTracker]) -> list[TogglTracker]:
         data: list[TogglTracker] = []
 
-        names, projects = set(), set()
+        names, projects, tags = set(), set(), set()
 
         for tracker in trackers:
-            if tracker.name in names and tracker.project in projects:
+            tracker_tags = str(tracker.tags)
+            if (
+                tracker.name in names
+                and tracker.project in projects
+                and tracker_tags in tags
+            ):
                 continue
             names.add(tracker.name)
             projects.add(tracker.project)
+            tags.add(tracker_tags)
 
             data.append(tracker)
 
