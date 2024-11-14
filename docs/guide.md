@@ -123,7 +123,7 @@
 
 - Description: Display a list of subcommands related to projects.
 - Usage: `tgl project`
-- Aliases: projects, proj
+- Aliases: projects, proj, project
 
 #### **Subcommands**:
 
