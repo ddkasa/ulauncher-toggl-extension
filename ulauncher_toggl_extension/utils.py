@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import importlib
 import logging
+import os
 import subprocess  # noqa: S404
 import sys
 from functools import lru_cache
@@ -97,6 +98,8 @@ def ensure_import(
         return _ensure_import(package, version)
     except ModuleNotFoundError:
         log.info("Package %s is missing. Installing...", package_name)
+        env = os.environ.copy()
+        env["PIP_BREAK_SYSTEM_PACKAGES"] = "1"
         subprocess.call(  # noqa: S603
             [
                 sys.executable,
@@ -106,6 +109,7 @@ def ensure_import(
                 "--upgrade",
                 f"{package_name}=={version}" if version else package_name,
             ],
+            env=env,
         )
         return importlib.import_module(package)
 
