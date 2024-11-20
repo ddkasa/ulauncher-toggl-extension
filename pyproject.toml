@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ulauncher-toggl-extension"
-version = "2.8.2"
+version = "2.8.3"
 description = "Toggl time tracker extension for Ulauncher."
 authors = ["David Kasakaitis <davidkasakaitis@proton.me>"]
 readme = "README.md"
@@ -21,6 +21,7 @@ ruff = "^0.5.7"
 mypy = "^1.11.1"
 faker = "^27.0.0"
 pytest-httpx = "^0.32.0"
+tomli = "^2.1.0"
 
 [build-system]
 requires = ["poetry-core"]

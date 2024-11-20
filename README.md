@@ -9,18 +9,22 @@
 
 ## Installation
 
-1. Install through Ulauncher GUI or clone the production branch into `~/.local/share/ulauncher/extensions/`
-2. Setup your authentication. It checks in order of:
+1. Make sure [Pip](https://github.com/pypa/pip) is installed on your system
+2. Install through Ulauncher GUI or clone the production branch into `~/.local/share/ulauncher/extensions/`
+3. Setup your authentication. It checks in order of:
    1. Ulauncher Config Api Token
    2. Environment Variables
       - Either **TOGGL_API_TOKEN** or if using email **TOGGL_API_TOKEN** + **TOGGL_PASSWORD**
    3. _.togglrc_ in the default home location. Configuration from [Toggl CLI](https://github.com/AuHau/toggl-cli)
-3. Set your default workspace inside the configuration or as an environment variable: **TOGGL_WORKSPACE_ID**
-4. Customize any other settings inside the Ulauncher configuration
-5. You're now ready to use the extension
+4. Set your default workspace inside the configuration or as an environment variable: **TOGGL_WORKSPACE_ID**
+5. Customize any other settings inside the Ulauncher configuration
+6. You're now ready to use the extension
 
 > [!NOTE]
-> This will install [Toggl Api Wrapper](https://pypi.org/project/toggl-api-wrapper/) on startup and update the dependency if needed. If you run into issues please check your root pip installation to see if the wrapper is present with `/usr/bin/pip list | grep toggl`.
+> This extension will install [Toggl Api Wrapper](https://pypi.org/project/toggl-api-wrapper/) on startup and update the dependency if needed. If you run into issues please check your root pip installation to see if the wrapper is present with `/usr/bin/pip list | grep toggl`.
+
+> [!WARNING]
+> If on a Debian based system the `PIP_BREAK_SYSTEM_PACKAGES=1` environment variable will be used to install the dependency.
 
 ## Usage
 

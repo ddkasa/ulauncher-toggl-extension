@@ -215,6 +215,7 @@ class TrackerCommand(Command[TogglTracker]):
 
     def autocomplete(self, query: Query, **kwargs: Any) -> list[QueryResults]:
         raw_args = query.raw_args.copy()
+        self.amend_query(raw_args)
         autocomplete: list[QueryResults] = []
         if not self.check_autocmp(raw_args):
             return autocomplete
