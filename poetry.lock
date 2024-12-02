@@ -774,13 +774,13 @@ files = [
 
 [[package]]
 name = "toggl-api-wrapper"
-version = "1.4.0"
+version = "1.5.1"
 description = "Simple Toggl API wrapper for non-premium features."
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "toggl_api_wrapper-1.4.0-py3-none-any.whl", hash = "sha256:1627234ab8ed39dc8d7ae5a5e811d95e16cbfe29d6c5cdadde83fc134229671d"},
-    {file = "toggl_api_wrapper-1.4.0.tar.gz", hash = "sha256:52f91dee9334485d61cabb6b572766be75c1bd0bfbdf376fb8dde180b0f0d851"},
+    {file = "toggl_api_wrapper-1.5.1-py3-none-any.whl", hash = "sha256:70141043931d8e3012a2fbbd02671cd730256335d893bcd4e4c6fb67ccae25c9"},
+    {file = "toggl_api_wrapper-1.5.1.tar.gz", hash = "sha256:8cbff8f97196e8cc7b958148ba0b003c63034859a56c3c8b446e7da2e5c98408"},
 ]
 
 [package.dependencies]
