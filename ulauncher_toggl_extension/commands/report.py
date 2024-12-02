@@ -75,11 +75,7 @@ class ReportMixin(Command):
             include_time_entry_ids=False,
         )
         trackers: list[dict] = []
-        endpoint = DetailedReportEndpoint(
-            self.workspace_id,
-            self.auth,
-            include_time_entry_ids=False,
-        )
+        endpoint = DetailedReportEndpoint(self.workspace_id, self.auth)
         search = self._break_down_helper(endpoint, body, trackers)
 
         while (
