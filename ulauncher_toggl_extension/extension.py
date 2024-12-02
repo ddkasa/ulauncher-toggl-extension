@@ -1,11 +1,10 @@
 # ruff: noqa: E402
 from __future__ import annotations
 
-import contextlib
 import logging
 from collections import OrderedDict
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Final, Iterable, Optional
+from typing import TYPE_CHECKING, Callable, Final, Iterable, Optional, cast
 
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -199,33 +198,42 @@ class TogglExtension(Extension):
     ) -> bool:
         return get_score(query, target) >= threshold
 
-    def match_results(
-        self,
-        query: Query,
-        **kwargs,
-    ) -> list[QueryResults]:
+    def match_results(self, query: Query, max_results: int = 5) -> list[QueryResults]:
         """Fuzzy matches query terms against a dictionary of functions using
         the `match_query` method.
 
         Will ignore any other parameters supplied with *_ parameters.
 
         Args:
-            match_dict(dict): Dictionary of functions to match against.
-                Will only display the first result of each viwer method.
-            query (str): Query term to match against.
+            query: Query term to match against.
+            max_results: Max results to match for. Soft edge as the method will
+                let through previews with more than result through.
 
         Returns:
-            list: List of possible matches that are produced by matched
-                functions.
+            List of possible matches that are produced by matched functions.
         """
-        results: list[QueryResults] = []
-        for trg, fn in self.COMMANDS.items():
-            if self.match_query(query.raw_args[0], trg):
-                cmd = fn(self)
-                with contextlib.suppress(IndexError):
-                    results.append(cmd.preview(query, **kwargs)[0])
+        if query.command is None:
+            return self.default_results(query)
 
-        return results or self.default_results(query, **kwargs)
+        raw_results = list(self.COMMANDS.values())
+        raw_results.sort(
+            key=lambda x: self.match_query(
+                cast(str, query.command),
+                x.PREFIX,
+            ),
+        )
+
+        results = []
+        i = 0
+        for result in raw_results:
+            preview = result(self).preview(query)
+            if preview:
+                results.extend(preview)
+                i += len(preview)
+            if i >= max_results:
+                break
+
+        return results
 
     def create_action(
         self,
