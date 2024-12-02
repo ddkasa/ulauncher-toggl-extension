@@ -8,7 +8,7 @@ from ulauncher_toggl_extension.commands.help import HelpCommand
 from ulauncher_toggl_extension.commands.meta import Command, SubCommand
 from ulauncher_toggl_extension.commands.project import ProjectCommand
 from ulauncher_toggl_extension.commands.tag import TagCommand
-from ulauncher_toggl_extension.commands.tracker import TrackerCommand
+from ulauncher_toggl_extension.commands.tracker import EditCommand, TrackerCommand
 
 
 @pytest.mark.unit
@@ -110,3 +110,20 @@ def _min_alias_length(command: type[Command], done: set[type[Command]]) -> bool:
 def test_alias_length():
     commands = set()
     assert _min_alias_length(Command, commands)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("query"),
+    [
+        ("tgl", "edit"),
+        ("tgl", "project"),
+        ("tgl", "continue"),
+    ],
+)
+def test_amend_query(dummy_ext, query):
+    cmd = EditCommand(dummy_ext)
+
+    query = list(query)
+    cmd.amend_query(query)
+    assert query == ["tgl", cmd.PREFIX]

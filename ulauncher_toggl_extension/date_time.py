@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+from calendar import monthrange
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from functools import cache
@@ -132,6 +133,7 @@ def localize_timezone(ts: datetime) -> datetime:
 
 
 def get_caps(date_obj: date, frame: TimeFrame) -> tuple[datetime, datetime]:
+    """Helper function that gets a target time frame for querying an filtering."""
     if isinstance(date_obj, datetime):
         date_obj = date_obj.date()
 
@@ -164,8 +166,10 @@ def get_caps(date_obj: date, frame: TimeFrame) -> tuple[datetime, datetime]:
             datetime.min.time(),
             tzinfo=timezone.utc,
         )
+
+        _, day = monthrange(date_obj.year, date_obj.month)
         stop = datetime.combine(
-            date(date_obj.year, (date_obj.month % 12) + 1, 1) - timedelta(days=1),
+            date(date_obj.year, date_obj.month, day),
             datetime.max.time(),
             tzinfo=timezone.utc,
         )
