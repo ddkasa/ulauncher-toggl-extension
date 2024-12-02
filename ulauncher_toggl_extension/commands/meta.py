@@ -331,8 +331,9 @@ class Command(Generic[T], metaclass=Singleton):
     def amend_query(self, query: list[str]) -> None:
         if not query:
             query.append(self.PREFIX)
-        elif query[0] != self.PREFIX:
-            query[0] = self.PREFIX
+
+        elif len(query) >= 2 and query[1] != self.PREFIX:  # noqa: PLR2004
+            query[1] = self.PREFIX
 
     def notification(
         self,
