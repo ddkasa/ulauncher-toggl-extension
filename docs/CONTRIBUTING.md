@@ -6,8 +6,8 @@
 
 1. `git clone https://github.com/ddkasa/ulauncher-toggl-extension`
 2. `cd toggl-api-wrapper`
-3. `$ poetry shell`
-4. `$ poetry install`
+3. `poetry shell`
+4. `poetry install`
 
 - Lint with `ruff ulauncher_toggl_extension`
 - Check typing with `mypy ulauncher_toggl_extension`
