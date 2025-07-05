@@ -9,8 +9,8 @@
 3. `poetry shell`
 4. `poetry install`
 
-- Lint with `ruff ulauncher_toggl_extension`
-- Check typing with `mypy ulauncher_toggl_extension`
+- Lint with `poetry run ruff ulauncher_toggl_extension`
+- Check typing with `poetry run mypy ulauncher_toggl_extension`
 - Make sure to install pre-commit hook with `pre-commit install`
 
 - In order to debug/test the extension inside Ulauncher:
@@ -36,8 +36,8 @@ VERBOSE=1 ULAUNCHER_WS_API=ws://127.0.0.1:5054/ulauncher-toggl-extension PYTHONP
 
 ### Deployment
 
-- Merge with **production** branch
-- Make sure to add new development files to the _.gitattributes_ file
+- Add new _tag_ which will run tests & merge workflow to merge with **production** branch
+- Make sure to add new development files to _merge.yaml_ workflow
 
 ### Git
 
